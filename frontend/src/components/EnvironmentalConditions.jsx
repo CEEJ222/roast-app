@@ -2,9 +2,6 @@ import React from 'react'
 
 const EnvironmentalConditions = ({ conditions, units }) => {
   if (!conditions) return null
-  
-  // Debug logging
-  console.log('EnvironmentalConditions received:', conditions)
 
   const formatTemperature = (tempCelsius) => {
     if (!tempCelsius || isNaN(tempCelsius)) return 'N/A'
@@ -37,6 +34,16 @@ const EnvironmentalConditions = ({ conditions, units }) => {
     }
   }
 
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return 'Unknown'
+    try {
+      const date = new Date(timestamp)
+      return date.toLocaleTimeString()
+    } catch {
+      return 'Unknown'
+    }
+  }
+
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3 shadow-sm">
       <div className="flex items-center mb-2">
@@ -45,6 +52,12 @@ const EnvironmentalConditions = ({ conditions, units }) => {
         </svg>
         <h3 className="text-xs font-semibold text-blue-800">Environmental</h3>
       </div>
+      
+      {conditions.as_of && (
+        <div className="text-xs text-blue-600 mb-2">
+          Updated: {formatTimestamp(conditions.as_of)}
+        </div>
+      )}
       
       <div className="grid grid-cols-2 gap-2 text-xs">
         <div className="flex justify-between">

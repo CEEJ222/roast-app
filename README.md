@@ -45,9 +45,16 @@ A professional coffee roasting logging and analysis application built with React
 - **Machine Configuration:** SR800/SR450 support with extension tube tracking
 - **Coffee Details:** Origin, processing method, and roast level preferences
 - **Real-time Logging:** Fan/heat changes, temperature readings, and control adjustments
-- **Milestone Tracking:** First crack, second crack, and drop/cool events
+- **Milestone Tracking:** First crack, second crack, and drop/cool events with temperature input
 - **Environmental Conditions:** Automatic elevation, temperature, humidity, and pressure data
 - **Unit Preferences:** Configurable temperature (Fahrenheit/Celsius) and elevation (feet/meters)
+
+### 📈 Roast Curve Visualization
+- **Live Roast Curve:** Real-time temperature and rate of rise graphing during roasting
+- **Milestone Markers:** Visual indicators for First Crack (red), Second Crack (purple), and Drop/Cool (cyan)
+- **Historical Comparison:** Compare multiple roasts with customizable line colors and labels
+- **Interactive Charts:** Built with Recharts for smooth, responsive data visualization
+- **Custom Tooltips:** Hover to see detailed temperature and milestone information
 - **Weight Tracking:** Before and after roast weights with automatic loss calculations
 - **Complete Event History:** Full roast session timeline with edit/delete capabilities
 

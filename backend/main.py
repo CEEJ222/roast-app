@@ -204,7 +204,15 @@ def get_environmental_conditions(address: str, unit: str = "C") -> Dict[str, Any
             "elevation_m": elevation_m, "elevation_ft": elevation_ft,
             "as_of": sample_time, "timezone": tz_name, "timezone_abbreviation": tz_abbr,
         }
-        print(f"DEBUG: Environmental conditions result: {result}")
+        print(f"DEBUG: Environmental conditions for address '{address}':")
+        print(f"  - Resolved to: {display_name}")
+        print(f"  - Coordinates: {lat}, {lon}")
+        print(f"  - Temperature: {temp_c}°C ({temperature_f}°F)")
+        print(f"  - Humidity: {rh}%")
+        print(f"  - Pressure: {pressure} hPa")
+        print(f"  - Elevation: {elevation_m}m ({elevation_ft}ft)")
+        print(f"  - Data timestamp: {sample_time}")
+        print(f"  - Timezone: {tz_name} ({tz_abbr})")
         return result
     except Exception as e:
         print(f"DEBUG: Error fetching environmental conditions: {e}")

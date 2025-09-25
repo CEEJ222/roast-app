@@ -5,6 +5,10 @@ import UserProfile from './components/UserProfile';
 import SetupWizard from './components/SetupWizard';
 import ProfilePage from './components/ProfilePage';
 import EnvironmentalConditions from './components/EnvironmentalConditions';
+import RoastCurveGraph from './components/RoastCurveGraph';
+import HistoricalRoasts from './components/HistoricalRoasts';
+import ConfirmationModal from './components/ConfirmationModal';
+import TemperatureInputModal from './components/TemperatureInputModal';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'  // Local development
@@ -35,6 +39,15 @@ function RoastAssistant() {
   const [roastEnded, setRoastEnded] = useState(false);
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const [setupComplete, setSetupComplete] = useState(false);
+  const [showHistoricalRoasts, setShowHistoricalRoasts] = useState(false);
+  const [showEndRoastConfirm, setShowEndRoastConfirm] = useState(false);
+  const [showTemperatureInput, setShowTemperatureInput] = useState(false);
+  const [pendingMilestone, setPendingMilestone] = useState(null);
+  const [milestonesMarked, setMilestonesMarked] = useState({
+    firstCrack: false,
+    secondCrack: false,
+    cool: false
+  });
 
   // Form state
   const [formData, setFormData] = useState({
@@ -237,6 +250,13 @@ function RoastAssistant() {
       setCurrentTab('during');
       setEnvironmentalConditions(data.env);
       
+      // Update form data with initial settings
+      setFormData(prev => ({
+        ...prev,
+        fan: initialSettings.fan_level || 5,
+        heat: initialSettings.heat_level || 5
+      }));
+      
       // Create initial SET event with user-provided settings
       if (initialSettings.fan_level || initialSettings.heat_level) {
         await apiCall(`${API_BASE}/roasts/${data.roast_id}/events`, {
@@ -282,15 +302,57 @@ function RoastAssistant() {
   const markMilestone = async (kind) => {
     if (!roastId) return;
 
+    // Check if milestone has already been marked
+    if (kind === 'FIRST_CRACK' && milestonesMarked.firstCrack) return;
+    if (kind === 'SECOND_CRACK' && milestonesMarked.secondCrack) return;
+    if (kind === 'COOL' && milestonesMarked.cool) return;
+
+      // For First Crack, Second Crack, and Cool, show temperature input modal
+      if (kind === 'FIRST_CRACK' || kind === 'SECOND_CRACK' || kind === 'COOL') {
+        setPendingMilestone(kind);
+        setShowTemperatureInput(true);
+      } else {
+        // For other milestones (END), no temperature needed
+        try {
+          await apiCall(`${API_BASE}/roasts/${roastId}/events`, {
+            method: 'POST',
+            body: JSON.stringify({ kind })
+          });
+
+          refreshEvents();
+        } catch (error) {
+          // Error already handled in apiCall
+        }
+      }
+  };
+
+  const handleTemperatureConfirm = async (temperature) => {
+    if (!pendingMilestone || !roastId) return;
+
     try {
       await apiCall(`${API_BASE}/roasts/${roastId}/events`, {
         method: 'POST',
-        body: JSON.stringify({ kind })
+        body: JSON.stringify({ 
+          kind: pendingMilestone,
+          temp_f: temperature
+        })
       });
+
+        // Update milestone tracking
+        if (pendingMilestone === 'FIRST_CRACK') {
+          setMilestonesMarked(prev => ({ ...prev, firstCrack: true }));
+        } else if (pendingMilestone === 'SECOND_CRACK') {
+          setMilestonesMarked(prev => ({ ...prev, secondCrack: true }));
+        } else if (pendingMilestone === 'COOL') {
+          setMilestonesMarked(prev => ({ ...prev, cool: true }));
+        }
 
       refreshEvents();
     } catch (error) {
       // Error already handled in apiCall
+    } finally {
+      setShowTemperatureInput(false);
+      setPendingMilestone(null);
     }
   };
 
@@ -300,6 +362,17 @@ function RoastAssistant() {
       const data = await apiCall(`${API_BASE}/roasts/${id}/events`);
       // Your backend returns the array directly, not wrapped in an object
       setEvents(data); // This is correct
+      
+      // Check if milestones have already been marked
+      const hasFirstCrack = data.some(event => event.kind === 'FIRST_CRACK');
+      const hasSecondCrack = data.some(event => event.kind === 'SECOND_CRACK');
+      const hasCool = data.some(event => event.kind === 'COOL');
+      
+      setMilestonesMarked({
+        firstCrack: hasFirstCrack,
+        secondCrack: hasSecondCrack,
+        cool: hasCool
+      });
     } catch (error) {
       console.error('Error fetching events:', error);
     }
@@ -317,6 +390,27 @@ function RoastAssistant() {
       });
 
       setStatus(`✅ Roast finished! Weight out: ${formData.weightAfter}g`);
+      
+      // Reset roast state and redirect to home
+      setRoastId(null);
+      setStartTs(null);
+      setRoastEnded(false);
+      setEvents([]);
+      setCurrentTab('before');
+      setFormData({
+        beanType: '',
+        weightBefore: '',
+        weightAfter: '',
+        notes: '',
+        fan: 5,
+        heat: 5,
+        temp: ''
+      });
+      setMilestonesMarked({
+        firstCrack: false,
+        secondCrack: false,
+        cool: false
+      });
     } catch (error) {
       // Error already handled in apiCall
     }
@@ -432,7 +526,15 @@ function RoastAssistant() {
               <h1 className="text-3xl font-bold">☕ FreshRoast Assistant</h1>
               <p className="opacity-90">Professional roast logging and analysis</p>
             </div>
-            <UserProfile />
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setShowHistoricalRoasts(true)}
+                className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg font-medium transition"
+              >
+                📊 Historical Roasts
+              </button>
+              <UserProfile />
+            </div>
           </div>
         </div>
 
@@ -705,14 +807,6 @@ function RoastAssistant() {
                   </div>
                 )}
                 
-                <div className="mt-4">
-                  <button
-                    onClick={endRoastSession}
-                    className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-lg hover:from-green-700 hover:to-emerald-700 font-semibold text-lg shadow-lg transform transition hover:scale-105"
-                  >
-                    🛑 End Roast Session
-                  </button>
-                </div>
               </div>
 
               {/* Controls */}
@@ -757,49 +851,103 @@ function RoastAssistant() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">BT/ET Temp (°F)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={formData.tempF}
-                      onChange={(e) => handleInputChange('tempF', e.target.value)}
-                      placeholder="Optional"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        step="1"
+                        value={formData.tempF}
+                        onChange={(e) => handleInputChange('tempF', e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            logChange();
+                          } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            const currentValue = parseFloat(formData.tempF) || 0;
+                            handleInputChange('tempF', (currentValue + 1).toString());
+                          } else if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            const currentValue = parseFloat(formData.tempF) || 0;
+                            handleInputChange('tempF', (currentValue - 1).toString());
+                          }
+                        }}
+                        placeholder="Optional"
+                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
+                      <button
+                        onClick={logChange}
+                        disabled={loading}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium transition disabled:opacity-50 flex items-center gap-2"
+                      >
+                        ⚙️ Log
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <button
-                  onClick={logChange}
-                  disabled={loading}
-                  className="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-medium transition disabled:opacity-50"
-                >
-                  ⚙️ Log Change
-                </button>
+              {/* Milestone Buttons */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <button
                   onClick={() => markMilestone('FIRST_CRACK')}
-                  disabled={loading}
-                  className="bg-amber-600 text-white px-4 py-3 rounded-lg hover:bg-amber-700 font-medium transition disabled:opacity-50"
+                  disabled={loading || milestonesMarked.firstCrack}
+                  className={`px-4 py-3 rounded-lg font-medium transition ${
+                    milestonesMarked.firstCrack 
+                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                      : 'bg-amber-600 text-white hover:bg-amber-700'
+                  } ${loading ? 'opacity-50' : ''}`}
                 >
-                  🔥 First Crack
+                  {milestonesMarked.firstCrack ? '✅ First Crack' : '🔥 First Crack'}
                 </button>
                 <button
                   onClick={() => markMilestone('SECOND_CRACK')}
-                  disabled={loading}
-                  className="bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 font-medium transition disabled:opacity-50"
+                  disabled={loading || milestonesMarked.secondCrack}
+                  className={`px-4 py-3 rounded-lg font-medium transition ${
+                    milestonesMarked.secondCrack 
+                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                      : 'bg-red-600 text-white hover:bg-red-700'
+                  } ${loading ? 'opacity-50' : ''}`}
                 >
-                  🔥 Second Crack
+                  {milestonesMarked.secondCrack ? '✅ Second Crack' : '🔥🔥 Second Crack'}
                 </button>
                 <button
                   onClick={() => markMilestone('COOL')}
-                  disabled={loading}
-                  className="bg-cyan-600 text-white px-4 py-3 rounded-lg hover:bg-cyan-700 font-medium transition disabled:opacity-50"
+                  disabled={loading || milestonesMarked.cool}
+                  className={`px-4 py-3 rounded-lg font-medium transition ${
+                    milestonesMarked.cool 
+                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                      : 'bg-cyan-600 text-white hover:bg-cyan-700'
+                  } ${loading ? 'opacity-50' : ''}`}
                 >
-                  🧊 Drop/Cool
+                  {milestonesMarked.cool ? '✅ Drop/Cool' : '🧊 Drop/Cool'}
+                </button>
+                <button
+                  onClick={() => setShowEndRoastConfirm(true)}
+                  disabled={loading}
+                  className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-3 rounded-lg hover:from-green-700 hover:to-emerald-700 font-medium transition disabled:opacity-50"
+                >
+                  🛑 End Roast
                 </button>
               </div>
+
+              {/* Live Roast Curve Graph */}
+              <RoastCurveGraph
+                data={events}
+                mode="live"
+                showROR={true}
+                showMilestones={true}
+                height={300}
+                title="Live Roast Curve"
+                units={{ temperature: userProfile?.units?.temperature === 'celsius' ? 'C' : 'F', time: 'min' }}
+                className="mb-6"
+                showLegend={true}
+                showGrid={true}
+                showTooltip={true}
+                enableZoom={false}
+                enablePan={false}
+                compact={false}
+                interactive={true}
+              />
 
               {/* Events Table */}
               <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -1020,6 +1168,27 @@ function RoastAssistant() {
                 </button>
               </div>
 
+              {/* Completed Roast Curve */}
+              {events.length > 0 && (
+                <RoastCurveGraph
+                  data={events}
+                  mode="live"
+                  showROR={true}
+                  showMilestones={true}
+                  height={250}
+                  title="Completed Roast Curve"
+                  units={{ temperature: userProfile?.units?.temperature === 'celsius' ? 'C' : 'F', time: 'min' }}
+                  className="mb-6"
+                  showLegend={true}
+                  showGrid={true}
+                  showTooltip={true}
+                  enableZoom={true}
+                  enablePan={true}
+                  compact={true}
+                  interactive={true}
+                />
+              )}
+
               {/* Events Log - Show complete event history */}
               <div className="bg-white rounded-lg shadow overflow-hidden">
                 <div className="px-4 py-3 bg-gray-50 border-b">
@@ -1087,6 +1256,41 @@ function RoastAssistant() {
           }} 
         />
       )}
+
+      {/* Historical Roasts Modal */}
+      {showHistoricalRoasts && (
+        <HistoricalRoasts 
+          onClose={() => setShowHistoricalRoasts(false)} 
+        />
+      )}
+
+      {/* End Roast Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showEndRoastConfirm}
+        onClose={() => setShowEndRoastConfirm(false)}
+        onConfirm={() => {
+          setShowEndRoastConfirm(false);
+          endRoastSession();
+        }}
+        title="End Roast Session"
+        message="Are you sure you want to end the roast session? This will complete the roast and move to the final step where you can record the final weight and notes."
+        confirmText="End Roast"
+        cancelText="Continue Roasting"
+        confirmButtonColor="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+        icon="🛑"
+      />
+
+      {/* Temperature Input Modal */}
+      <TemperatureInputModal
+        isOpen={showTemperatureInput}
+        onClose={() => {
+          setShowTemperatureInput(false);
+          setPendingMilestone(null);
+        }}
+        onConfirm={handleTemperatureConfirm}
+        milestoneType={pendingMilestone === 'FIRST_CRACK' ? 'First Crack' : pendingMilestone === 'SECOND_CRACK' ? 'Second Crack' : 'Drop/Cool'}
+        title={`${pendingMilestone === 'FIRST_CRACK' ? '🔥' : pendingMilestone === 'SECOND_CRACK' ? '🔥🔥' : '🧊'} ${pendingMilestone === 'FIRST_CRACK' ? 'First Crack' : pendingMilestone === 'SECOND_CRACK' ? 'Second Crack' : 'Drop/Cool'}`}
+      />
     </div>
   );
 }
