@@ -47,7 +47,13 @@ security = HTTPBearer()
 def verify_jwt_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
     """Verify JWT token and return user ID"""
     try:
+        if not credentials or not credentials.credentials:
+            raise HTTPException(status_code=401, detail="No token provided")
+        
         token = credentials.credentials
+        if not isinstance(token, str) or not token.strip():
+            raise HTTPException(status_code=401, detail="Invalid token format")
+        
         # Decode JWT token
         payload = jwt.decode(
             token,
@@ -55,9 +61,11 @@ def verify_jwt_token(credentials: HTTPAuthorizationCredentials = Depends(securit
             algorithms=["HS256"],
             audience="authenticated"
         )
+        
         user_id = payload.get("sub")
         if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
+            raise HTTPException(status_code=401, detail="Invalid token payload")
+        
         return user_id
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
@@ -86,6 +94,16 @@ class LogEventRequest(BaseModel):
 
 class UpdateRoastRequest(BaseModel):
     weight_after_g: Optional[float] = None
+
+class UserMachineRequest(BaseModel):
+    name: str
+    model: str
+    has_extension: bool = False
+
+class UserProfileRequest(BaseModel):
+    display_name: Optional[str] = None
+    address: Optional[str] = None
+    units: Optional[dict] = None
 
 # Your existing helper functions (copied from your code)
 def get_or_create_machine_id(label: str) -> str:
@@ -179,13 +197,15 @@ def get_environmental_conditions(address: str, unit: str = "C") -> Dict[str, Any
         temperature_f = (temp_c * 9 / 5 + 32) if isinstance(temp_c, (int, float)) else None
         elevation_ft = (elevation_m * 3.28084) if isinstance(elevation_m, (int, float)) else None
 
-        return {
+        result = {
             "resolved_address": display_name, "latitude": lat, "longitude": lon,
             "temperature_c": temp_c, "temperature_f": temperature_f,
             "humidity_pct": rh, "pressure_hpa": pressure,
             "elevation_m": elevation_m, "elevation_ft": elevation_ft,
             "as_of": sample_time, "timezone": tz_name, "timezone_abbreviation": tz_abbr,
         }
+        print(f"DEBUG: Environmental conditions result: {result}")
+        return result
     except Exception as e:
         print(f"DEBUG: Error fetching environmental conditions: {e}")
         return {"error": f"Error fetching environmental conditions: {e}"}
@@ -400,6 +420,136 @@ async def get_roasts(limit: int = 25, user_id: str = Depends(verify_jwt_token)):
         sb = get_supabase()
         result = sb.table("roast_entries").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(limit).execute()
         return result.data
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# User Profile Endpoints
+@app.get("/user/profile")
+async def get_user_profile(user_id: str = Depends(verify_jwt_token)):
+    try:
+        sb = get_supabase()
+        # Use Supabase Admin API to get user data
+        user_response = sb.auth.admin.get_user_by_id(user_id)
+        if not user_response.user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        user_data = user_response.user
+        user_meta = user_data.user_metadata or {}
+        
+        return {
+            "id": user_data.id,
+            "email": user_data.email,
+            "display_name": user_meta.get("display_name") or user_meta.get("full_name") or user_meta.get("name") or user_data.email.split("@")[0],
+            "address": user_meta.get("address", ""),
+            "avatar_url": user_meta.get("avatar_url") or user_meta.get("picture"),
+            "units": user_meta.get("units", {"temperature": "fahrenheit", "elevation": "feet"}),
+            "created_at": user_data.created_at,
+            "last_sign_in_at": user_data.last_sign_in_at
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.patch("/user/profile")
+async def update_user_profile(request: UserProfileRequest, user_id: str = Depends(verify_jwt_token)):
+    try:
+        sb = get_supabase()
+        
+        # Get current user data using Admin API
+        user_response = sb.auth.admin.get_user_by_id(user_id)
+        if not user_response.user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        current_meta = user_response.user.user_metadata or {}
+        
+        # Update the metadata with new display name, address, and units
+        updated_meta = current_meta.copy()
+        if request.display_name:
+            updated_meta["display_name"] = request.display_name
+        if request.address is not None:
+            updated_meta["address"] = request.address
+        if request.units is not None:
+            updated_meta["units"] = request.units
+        
+        # Update the user record using Admin API
+        sb.auth.admin.update_user_by_id(user_id, {
+            "user_metadata": updated_meta
+        })
+        
+        return {"success": True, "message": "Profile updated"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# User Machines Endpoints
+@app.get("/user/machines")
+async def get_user_machines(user_id: str = Depends(verify_jwt_token)):
+    try:
+        sb = get_supabase()
+        # Get machines directly from machines table filtered by user_id
+        machines_result = sb.table("machines").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
+        return machines_result.data
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/user/machines")
+async def add_user_machine(request: UserMachineRequest, user_id: str = Depends(verify_jwt_token)):
+    try:
+        sb = get_supabase()
+        
+        # Create machine in machines table
+        machine_result = sb.table("machines").insert({
+            "user_id": user_id,
+            "name": request.name,
+            "model": request.model,
+            "has_extension": request.has_extension
+        }).execute()
+        
+        machine_id = machine_result.data[0]["id"]
+        
+        return {"success": True, "machine_id": machine_id, "message": "Machine added"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.patch("/user/machines/{machine_id}")
+async def update_user_machine(machine_id: str, request: UserMachineRequest, user_id: str = Depends(verify_jwt_token)):
+    try:
+        sb = get_supabase()
+        
+        # Verify machine ownership
+        machine_result = sb.table("machines").select("id").eq("id", machine_id).eq("user_id", user_id).execute()
+        if not machine_result.data:
+            raise HTTPException(status_code=404, detail="Machine not found")
+        
+        # Update machine in machines table
+        sb.table("machines").update({
+            "name": request.name,
+            "model": request.model,
+            "has_extension": request.has_extension
+        }).eq("id", machine_id).execute()
+        
+        return {"success": True, "message": "Machine updated"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/user/machines/{machine_id}")
+async def delete_user_machine(machine_id: str, user_id: str = Depends(verify_jwt_token)):
+    try:
+        sb = get_supabase()
+        
+        # Verify machine ownership
+        machine_result = sb.table("machines").select("id").eq("id", machine_id).eq("user_id", user_id).execute()
+        if not machine_result.data:
+            raise HTTPException(status_code=404, detail="Machine not found")
+        
+        # Delete the machine
+        sb.table("machines").delete().eq("id", machine_id).execute()
+        
+        return {"success": True, "message": "Machine deleted"}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -2,9 +2,12 @@ import React, { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
 const LoginForm = () => {
-  const { signInWithGoogle, signInWithGitHub } = useAuth()
+  const { signInWithGoogle, signInWithGitHub, signInWithEmail, signUpWithEmail } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [isSignUp, setIsSignUp] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
   const handleGoogleSignIn = async () => {
     try {
@@ -30,6 +33,25 @@ const LoginForm = () => {
     }
   }
 
+  const handleEmailAuth = async (e) => {
+    e.preventDefault()
+    try {
+      setLoading(true)
+      setError(null)
+      
+      if (isSignUp) {
+        await signUpWithEmail(email, password)
+        setError('Account created successfully! You are now signed in.')
+      } else {
+        await signInWithEmail(email, password)
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-xl shadow-2xl overflow-hidden">
@@ -47,10 +69,81 @@ const LoginForm = () => {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm">{error}</p>
+            <div className={`mb-6 p-4 border rounded-lg ${
+              error.includes('Account created successfully') 
+                ? 'bg-green-50 border-green-200' 
+                : 'bg-red-50 border-red-200'
+            }`}>
+              <p className={`text-sm ${
+                error.includes('Account created successfully') 
+                  ? 'text-green-700' 
+                  : 'text-red-700'
+              }`}>{error}</p>
             </div>
           )}
+
+          {/* Email/Password Form */}
+          <form onSubmit={handleEmailAuth} className="mb-6">
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  placeholder="Enter your email"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  placeholder="Enter your password"
+                />
+              </div>
+              
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white py-2 px-4 rounded-lg hover:from-orange-700 hover:to-red-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Sign In')}
+              </button>
+              
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setIsSignUp(!isSignUp)}
+                  className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                >
+                  {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+                </button>
+              </div>
+            </div>
+          </form>
+
+          {/* Divider */}
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            </div>
+          </div>
 
           <div className="space-y-3">
             <button

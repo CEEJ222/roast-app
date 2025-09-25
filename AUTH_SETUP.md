@@ -1,6 +1,6 @@
 # Authentication Setup Guide
 
-This guide will help you set up Supabase Auth with Google and GitHub sign-in for your FreshRoast Assistant application.
+This guide will help you set up Supabase Auth with Google, GitHub, and email/password sign-in for your FreshRoast Assistant application.
 
 ## 1. Supabase Configuration
 
@@ -23,6 +23,16 @@ This guide will help you set up Supabase Auth with Google and GitHub sign-in for
    - **Client ID**: From GitHub OAuth App
    - **Client Secret**: From GitHub OAuth App
 5. The callback URL will auto-populate: `https://your-project-id.supabase.co/auth/v1/callback`
+
+### Enable Email/Password Authentication
+
+1. Go to your Supabase project dashboard
+2. Navigate to **Authentication** > **Settings**
+3. Under **Auth Providers**, ensure **Email** is enabled (it's enabled by default)
+4. Configure email settings:
+   - **Enable email confirmations**: Turn OFF for instant signup (recommended for better UX)
+   - **Enable email change confirmations**: Optional
+   - **Enable phone confirmations**: Optional
 
 ### Get Required Keys
 
@@ -104,9 +114,10 @@ CREATE POLICY "Users can delete own roasts" ON roast_entries
 1. Start your frontend: `cd frontend && npm run dev`
 2. Start your backend: `cd backend && uvicorn main:app --reload`
 3. Visit `http://localhost:5173`
-4. Test both authentication methods:
-   - Click "Continue with Google" to test Google OAuth
-   - Click "Continue with GitHub" to test GitHub OAuth
+4. Test all authentication methods:
+   - **Email/Password**: Enter email and password to sign in or sign up
+   - **Google OAuth**: Click "Continue with Google"
+   - **GitHub OAuth**: Click "Continue with GitHub"
 5. Verify that roasts are now user-specific
 
 ## 7. Deployment

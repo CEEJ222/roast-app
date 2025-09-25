@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import ProfilePage from './ProfilePage'
 
 const UserProfile = () => {
   const { user, signOut } = useAuth()
   const [showDropdown, setShowDropdown] = useState(false)
+  const [showProfilePage, setShowProfilePage] = useState(false)
 
   const handleSignOut = async () => {
     try {
@@ -14,6 +16,9 @@ const UserProfile = () => {
   }
 
   const getUserDisplayName = () => {
+    if (user?.user_metadata?.display_name) {
+      return user.user_metadata.display_name
+    }
     if (user?.user_metadata?.full_name) {
       return user.user_metadata.full_name
     }
@@ -27,7 +32,27 @@ const UserProfile = () => {
     if (user?.user_metadata?.avatar_url) {
       return user.user_metadata.avatar_url
     }
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(getUserDisplayName())}&background=orange&color=white&size=40`
+    return null // We'll use a custom gradient avatar instead
+  }
+
+  const getInitials = () => {
+    const name = getUserDisplayName()
+    return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2)
+  }
+
+  const getAvatarGradient = () => {
+    // Generate a consistent gradient based on the user's initials
+    const initials = getInitials()
+    const colors = [
+      'from-orange-400 to-red-500',
+      'from-blue-400 to-purple-500', 
+      'from-green-400 to-blue-500',
+      'from-purple-400 to-pink-500',
+      'from-red-400 to-orange-500',
+      'from-indigo-400 to-blue-500'
+    ]
+    const colorIndex = initials.charCodeAt(0) % colors.length
+    return colors[colorIndex]
   }
 
   return (
@@ -36,14 +61,22 @@ const UserProfile = () => {
         onClick={() => setShowDropdown(!showDropdown)}
         className="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-white/10 transition-colors"
       >
-        <img
-          src={getUserAvatar()}
-          alt={getUserDisplayName()}
-          className="w-8 h-8 rounded-full border-2 border-white/20"
-        />
+        {getUserAvatar() ? (
+          <img
+            src={getUserAvatar()}
+            alt={getUserDisplayName()}
+            className="w-8 h-8 rounded-full border-2 border-white/20"
+          />
+        ) : (
+          <div className={`w-8 h-8 rounded-full border-2 border-white/20 bg-gradient-to-br ${getAvatarGradient()} flex items-center justify-center`}>
+            <span className="text-white text-xs font-semibold">{getInitials()}</span>
+          </div>
+        )}
         <div className="text-left">
           <p className="text-sm font-medium text-white">{getUserDisplayName()}</p>
-          <p className="text-xs text-white/70">{user?.email}</p>
+          {!user?.user_metadata?.display_name && (
+            <p className="text-xs text-white/70">{user?.email}</p>
+          )}
         </div>
         <svg
           className={`w-4 h-4 text-white/70 transition-transform ${showDropdown ? 'rotate-180' : ''}`}
@@ -67,19 +100,40 @@ const UserProfile = () => {
           <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
             <div className="p-4 border-b border-gray-100">
               <div className="flex items-center space-x-3">
-                <img
-                  src={getUserAvatar()}
-                  alt={getUserDisplayName()}
-                  className="w-12 h-12 rounded-full"
-                />
+                {getUserAvatar() ? (
+                  <img
+                    src={getUserAvatar()}
+                    alt={getUserDisplayName()}
+                    className="w-12 h-12 rounded-full"
+                  />
+                ) : (
+                  <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getAvatarGradient()} flex items-center justify-center`}>
+                    <span className="text-white text-lg font-semibold">{getInitials()}</span>
+                  </div>
+                )}
                 <div>
                   <p className="font-medium text-gray-900">{getUserDisplayName()}</p>
-                  <p className="text-sm text-gray-500">{user?.email}</p>
+                  {!user?.user_metadata?.display_name && (
+                    <p className="text-sm text-gray-500">{user?.email}</p>
+                  )}
                 </div>
               </div>
             </div>
             
             <div className="p-2">
+              <button
+                onClick={() => {
+                  setShowProfilePage(true)
+                  setShowDropdown(false)
+                }}
+                className="w-full flex items-center px-4 py-3 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Profile Settings
+              </button>
+              
               <button
                 onClick={handleSignOut}
                 className="w-full flex items-center px-4 py-3 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
@@ -92,6 +146,11 @@ const UserProfile = () => {
             </div>
           </div>
         </>
+      )}
+
+      {/* Profile Page Modal */}
+      {showProfilePage && (
+        <ProfilePage onClose={() => setShowProfilePage(false)} />
       )}
     </div>
   )

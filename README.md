@@ -12,32 +12,56 @@ A professional coffee roasting logging and analysis application built with React
 **Frontend:** [roastbuddy.app](https://www.roastbuddy.app)  
 **Backend API:** [Railway](https://roast-backend-production-8883.up.railway.app)
 
+## 🆕 Latest Updates
+
+### Major Feature Additions
+- **🌟 Setup Wizard:** Beautiful onboarding flow for new users with progress indicators
+- **👤 Profile Management:** Complete user profile system with display names and settings
+- **🌡️ Environmental Data:** Real-time weather integration with elevation, temperature, humidity, pressure
+- **⚙️ Machine Management:** Add, edit, and manage multiple roasting machines (SR800/SR450)
+- **📏 Unit Preferences:** Configurable temperature (Fahrenheit/Celsius) and elevation (feet/meters)
+- **🎨 Enhanced UI:** Custom gradient avatars, improved styling, and better user experience
+- **📱 Responsive Design:** Optimized for all device sizes with clean, modern interface
+- **🔐 Multiple Auth Options:** Google, GitHub, and email/password authentication
+
 ## ✨ Features
 
-### 🔐 User Authentication
+### 🔐 User Authentication & Profile Management
 - **Google Sign-In:** Secure authentication with Gmail accounts
+- **GitHub Sign-In:** Alternative authentication option
+- **Email/Password:** Traditional login and signup
 - **User-Specific Data:** Each user's roast logs are private and isolated
 - **Session Management:** Persistent login sessions with automatic token refresh
+- **Profile Settings:** Customizable display names, addresses, and unit preferences
+- **Machine Management:** Add, edit, and manage multiple roasting machines
 
 ### 🎯 Roasting Workflow
-- **Before Roast:** Configure machine settings, coffee details, and initial parameters
-- **During Roast:** Real-time logging of fan/heat changes, temperature readings, and milestone tracking
-- **After Roast:** Record final weight and add detailed notes
+- **Initial Setup Wizard:** Beautiful step-by-step setup for new users (display name, machines, location)
+- **Before Roast:** Simplified configuration with profile defaults (machine, address, coffee details)
+- **During Roast:** Real-time logging with environmental conditions display and milestone tracking
+- **After Roast:** Complete event log review, final weight recording, and detailed notes
 
-### 📊 Data Tracking
-- Machine configuration (SR540/SR800, extension tube)
-- Coffee origin and processing details
-- Real-time temperature and control logging
-- Milestone tracking (first crack, second crack, drop/cool)
-- Weight loss calculations
-- Detailed notes and observations
+### 📊 Data Tracking & Environmental Data
+- **Machine Configuration:** SR800/SR450 support with extension tube tracking
+- **Coffee Details:** Origin, processing method, and roast level preferences
+- **Real-time Logging:** Fan/heat changes, temperature readings, and control adjustments
+- **Milestone Tracking:** First crack, second crack, and drop/cool events
+- **Environmental Conditions:** Automatic elevation, temperature, humidity, and pressure data
+- **Unit Preferences:** Configurable temperature (Fahrenheit/Celsius) and elevation (feet/meters)
+- **Weight Tracking:** Before and after roast weights with automatic loss calculations
+- **Complete Event History:** Full roast session timeline with edit/delete capabilities
 
-### 🎨 User Experience
-- Clean, intuitive interface with professional styling
-- Responsive design for desktop and mobile
-- Real-time timer during roasting sessions
-- Inline editing of logged events
-- Color-coded event types for easy identification
+### 🎨 User Experience & Interface
+- **Clean, Intuitive Design:** Professional styling with orange theme and modern UI
+- **Responsive Layout:** Optimized for desktop and mobile devices
+- **Setup Wizard:** Beautiful step-by-step onboarding for new users
+- **Profile Management:** Easy access to settings via user avatar dropdown
+- **Environmental Display:** Real-time weather data in upper-right corner during roasting
+- **Real-time Timer:** Live countdown with environmental conditions overlay
+- **Event Management:** Inline editing, deletion, and color-coded event types
+- **Smart Defaults:** Profile-based machine and location pre-filling
+- **Custom Avatars:** Gradient-based avatars with user initials
+- **Unit Preferences:** User-configurable temperature and elevation units
 
 ## 🏗️ Architecture
 
@@ -45,15 +69,26 @@ A professional coffee roasting logging and analysis application built with React
 roast-app/
 ├── frontend/          # React + Vite + Tailwind CSS
 │   ├── src/
-│   │   ├── App.jsx    # Main application component
-│   │   ├── App.css    # Component styles
-│   │   └── main.jsx   # Application entry point
+│   │   ├── App.jsx              # Main application component
+│   │   ├── App.css              # Component styles
+│   │   ├── main.jsx             # Application entry point
+│   │   ├── contexts/
+│   │   │   └── AuthContext.jsx  # Authentication state management
+│   │   ├── components/
+│   │   │   ├── LoginForm.jsx    # Authentication UI
+│   │   │   ├── UserProfile.jsx  # User profile dropdown
+│   │   │   ├── SetupWizard.jsx  # New user onboarding
+│   │   │   ├── ProfilePage.jsx  # Profile settings modal
+│   │   │   └── EnvironmentalConditions.jsx # Weather data display
+│   │   └── lib/
+│   │       └── supabase.js      # Supabase client configuration
 │   ├── package.json
 │   └── tailwind.config.js
 ├── backend/           # FastAPI + Python + Supabase
 │   ├── main.py        # API server with Supabase integration
 │   ├── requirements.txt
 │   └── Procfile       # Railway deployment
+├── AUTH_SETUP.md      # Detailed authentication setup guide
 └── README.md
 ```
 
@@ -142,26 +177,42 @@ The API will be available at `http://localhost:8000`
 
 ## 📱 Usage
 
-### Starting a Roast Session
+### Getting Started
 
-1. **Setup:** Enter coffee details (type, region, process, target roast level)
-2. **Machine:** Select your FreshRoast model and extension tube status
-3. **Location:** Optionally add roasting location for environmental data
+**New Users:**
+1. **Sign Up:** Use Google, GitHub, or email/password authentication
+2. **Setup Wizard:** Complete the beautiful onboarding flow (display name, machines, location)
+3. **Profile Setup:** Configure unit preferences (Fahrenheit/Celsius, Feet/Meters)
+
+**Starting a Roast Session:**
+1. **Auto-filled Settings:** Machine and location automatically populated from profile
+2. **Coffee Details:** Enter coffee type, region, process, and target roast level
+3. **Environmental Data:** Address automatically fetches elevation, temperature, humidity, pressure
 4. **Start:** Click "Start Roast Session" and set initial fan/heat levels
 
 ### During Roasting
 
-1. **Timer:** Watch the real-time roast timer
-2. **Controls:** Adjust fan and heat levels as needed
-3. **Log Changes:** Click "Log Change" to record settings and temperature
-4. **Milestones:** Mark first crack, second crack, and drop/cool events
-5. **End Session:** Click "End Roast Session" when roasting is complete
+1. **Timer:** Watch the real-time roast timer with environmental conditions overlay
+2. **Environmental Data:** View temperature, humidity, elevation, and pressure in upper-right corner
+3. **Controls:** Adjust fan and heat levels as needed
+4. **Log Changes:** Click "Log Change" to record settings and temperature readings
+5. **Milestones:** Mark first crack, second crack, and drop/cool events
+6. **Event Management:** Edit or delete logged events inline
+7. **End Session:** Click "End Roast Session" when roasting is complete
 
 ### Completing the Roast
 
-1. **Weight:** Record the final weight of roasted beans
-2. **Notes:** Add detailed notes about the roast
-3. **Complete:** Click "Complete Roast Session" to finalize
+1. **Event Review:** View complete roast event log including END event
+2. **Weight:** Record the final weight of roasted beans
+3. **Notes:** Add detailed notes about the roast
+4. **Complete:** Click "Complete Roast Session" to finalize
+
+### Profile Management
+
+1. **Access:** Click your avatar in the top-right corner
+2. **Settings:** Access profile settings, machine management, and unit preferences
+3. **Machines:** Add, edit, or delete roasting machines (SR800/SR450 support)
+4. **Units:** Configure temperature (Fahrenheit/Celsius) and elevation (feet/meters) preferences
 
 ## 🔧 Configuration
 
@@ -183,12 +234,21 @@ The API will be available at `http://localhost:8000`
 
 ### API Endpoints
 
+**Roast Management:**
 - `POST /roasts` - Create new roast session
 - `GET /roasts/{id}/events` - Get roast events
 - `POST /roasts/{id}/events` - Add new event
 - `PUT /roasts/{id}/events/{event_id}` - Update event
 - `DELETE /roasts/{id}/events/{event_id}` - Delete event
 - `PATCH /roasts/{id}` - Update roast details
+
+**User Profile Management:**
+- `GET /user/profile` - Get user profile data
+- `PATCH /user/profile` - Update user profile (display name, address, units)
+- `GET /user/machines` - Get user's roasting machines
+- `POST /user/machines` - Add new roasting machine
+- `PATCH /user/machines/{id}` - Update machine details
+- `DELETE /user/machines/{id}` - Delete machine
 
 ## 🚀 Deployment
 

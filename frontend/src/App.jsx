@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginForm from './components/LoginForm';
 import UserProfile from './components/UserProfile';
+import SetupWizard from './components/SetupWizard';
+import ProfilePage from './components/ProfilePage';
+import EnvironmentalConditions from './components/EnvironmentalConditions';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'  // Local development
@@ -11,6 +14,10 @@ const API_BASE = import.meta.env.DEV
 
 function RoastAssistant() {
   const { user, getAuthToken, loading: authLoading } = useAuth();
+  const [userProfile, setUserProfile] = useState(null);
+  const [userMachines, setUserMachines] = useState([]);
+  const [showProfilePage, setShowProfilePage] = useState(false);
+  const [environmentalConditions, setEnvironmentalConditions] = useState(null);
   const [currentTab, setCurrentTab] = useState('before');
   const [roastId, setRoastId] = useState(null);
   const [startTs, setStartTs] = useState(null);
@@ -26,6 +33,8 @@ function RoastAssistant() {
     heat_level: 5
   });
   const [roastEnded, setRoastEnded] = useState(false);
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
+  const [setupComplete, setSetupComplete] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -55,6 +64,110 @@ function RoastAssistant() {
 
     return () => clearInterval(interval);
   }, [startTs]);
+
+  // Load user profile data
+  const loadUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const token = await getAuthToken();
+      const response = await fetch(`${API_BASE}/user/profile`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const profile = await response.json();
+        setUserProfile(profile);
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+  };
+
+  // Load user machines data
+  const loadUserMachines = async () => {
+    if (!user) return;
+    
+    try {
+      const token = await getAuthToken();
+      const response = await fetch(`${API_BASE}/user/machines`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const machines = await response.json();
+        setUserMachines(machines);
+      }
+    } catch (error) {
+      console.error('Error loading user machines:', error);
+    }
+  };
+
+  // Check if user has completed setup
+  useEffect(() => {
+    const checkSetupStatus = async () => {
+      if (user && !setupComplete) {
+        try {
+          const token = await getAuthToken();
+          const response = await fetch(`${API_BASE}/user/machines`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (response.ok) {
+            const machines = await response.json();
+            // If user has no machines, show setup wizard
+            if (machines.length === 0) {
+              setShowSetupWizard(true);
+            } else {
+              setSetupComplete(true);
+            }
+          }
+        } catch (error) {
+          console.error('Error checking setup status:', error);
+          // On error, assume setup is needed
+          setShowSetupWizard(true);
+        }
+      }
+    };
+
+    checkSetupStatus();
+    loadUserProfile();
+    loadUserMachines();
+  }, [user, setupComplete, getAuthToken]);
+
+  const handleSetupComplete = () => {
+    setShowSetupWizard(false);
+    setSetupComplete(true);
+  }
+
+  // Set form data to user profile settings when available
+  useEffect(() => {
+    if (userProfile?.address) {
+      setFormData(prev => ({
+        ...prev,
+        address: userProfile.address
+      }));
+    }
+  }, [userProfile?.address]);
+
+  // Set form machine data to user's first machine when available
+  useEffect(() => {
+    if (userMachines.length > 0) {
+      const firstMachine = userMachines[0];
+      setFormData(prev => ({
+        ...prev,
+        selectedMachineId: firstMachine.id,
+        model: firstMachine.model,
+        hasExtension: firstMachine.has_extension
+      }));
+    }
+  }, [userMachines]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -100,7 +213,9 @@ function RoastAssistant() {
   };
 
   const startRoast = async () => {
-    const machineLabel = `${formData.model}${formData.hasExtension ? ' + ET' : ''}`;
+    // Get the selected machine name or use a fallback
+    const selectedMachine = userMachines.find(m => m.id === formData.selectedMachineId);
+    const machineLabel = selectedMachine?.name || `${formData.model}${formData.hasExtension ? ' + ET' : ''}`;
     
     try {
       const data = await apiCall(`${API_BASE}/roasts`, {
@@ -120,7 +235,7 @@ function RoastAssistant() {
       setRoastId(data.roast_id);
       setStartTs(data.start_ts);
       setCurrentTab('during');
-      setStatus(`Roast started! ID: ${data.roast_id} at ${data.env.resolved_address}`);
+      setEnvironmentalConditions(data.env);
       
       // Create initial SET event with user-provided settings
       if (initialSettings.fan_level || initialSettings.heat_level) {
@@ -173,12 +288,6 @@ function RoastAssistant() {
         body: JSON.stringify({ kind })
       });
 
-      const labels = {
-        'FIRST_CRACK': 'First crack',
-        'SECOND_CRACK': 'Second crack',
-        'DROP': 'Drop/Cool'
-      };
-      setStatus(`🏁 ${labels[kind]} marked @ ${formatTime(elapsedTime)}`);
       refreshEvents();
     } catch (error) {
       // Error already handled in apiCall
@@ -283,7 +392,7 @@ function RoastAssistant() {
 
       setRoastEnded(true);
       setCurrentTab('after');
-      setStatus('🏁 Roast session ended! Ready to weigh beans.');
+      setEnvironmentalConditions(null);
       refreshEvents();
     } catch (error) {
       // Error already handled in apiCall
@@ -306,6 +415,11 @@ function RoastAssistant() {
   // Show login form if user is not authenticated
   if (!user) {
     return <LoginForm />;
+  }
+
+  // Show setup wizard if user hasn't completed setup
+  if (showSetupWizard) {
+    return <SetupWizard onComplete={handleSetupComplete} />;
   }
 
   return (
@@ -353,12 +467,6 @@ function RoastAssistant() {
             </div>
           )}
 
-          {/* Status message */}
-          {status && (
-            <div className="mb-4 p-3 bg-green-50 border-l-4 border-green-400 text-green-700">
-              {status}
-            </div>
-          )}
 
           {/* Before Tab */}
           {currentTab === 'before' && (
@@ -373,38 +481,66 @@ function RoastAssistant() {
                   <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">Machine Setup</h3>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">FreshRoast Model</label>
-                    <select
-                      value={formData.model}
-                      onChange={(e) => handleInputChange('model', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    >
-                      <option value="SR540">SR540</option>
-                      <option value="SR800">SR800</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="extension"
-                      checked={formData.hasExtension}
-                      onChange={(e) => handleInputChange('hasExtension', e.target.checked)}
-                      className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
-                    />
-                    <label htmlFor="extension" className="text-sm font-medium text-gray-700">Extension Tube Installed</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Machine <span className="text-red-500">*</span>
+                    </label>
+                    {userMachines.length === 0 ? (
+                      <button
+                        onClick={() => setShowProfilePage(true)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 text-gray-500 italic hover:bg-gray-100 transition-colors text-left flex items-center justify-between"
+                      >
+                        <span>Click to add a machine in your profile settings</span>
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </button>
+                    ) : userMachines.length === 1 ? (
+                      <div className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 text-gray-700">
+                        {userMachines[0].name}
+                      </div>
+                    ) : (
+                      <select
+                        value={formData.selectedMachineId || userMachines[0]?.id}
+                        onChange={(e) => {
+                          const selectedMachine = userMachines.find(m => m.id === e.target.value);
+                          setFormData(prev => ({
+                            ...prev,
+                            selectedMachineId: e.target.value,
+                            model: selectedMachine?.model || '',
+                            hasExtension: selectedMachine?.has_extension || false
+                          }));
+                        }}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white text-gray-900"
+                      >
+                        {userMachines.map((machine) => (
+                          <option key={machine.id} value={machine.id}>
+                            {machine.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Roasting Location</label>
-                    <input
-                      type="text"
-                      value={formData.address}
-                      onChange={(e) => handleInputChange('address', e.target.value)}
-                      placeholder="123 Main St, Los Angeles, CA"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Used for environmental data logging</p>
+                    {userProfile?.address ? (
+                      <div className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 text-gray-700">
+                        {userProfile.address}
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setShowProfilePage(true)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 text-gray-500 italic hover:bg-gray-100 transition-colors text-left flex items-center justify-between"
+                      >
+                        <span>Click to add an address in your profile settings</span>
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </button>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      We'll fetch elevation, temperature, humidity, and pressure data for this roast.
+                    </p>
                   </div>
                 </div>
 
@@ -412,13 +548,17 @@ function RoastAssistant() {
                   <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">Coffee Details</h3>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Coffee Region</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Coffee Region <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       value={formData.coffeeType}
                       onChange={(e) => handleInputChange('coffeeType', e.target.value)}
                       placeholder="Ethiopia"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                        !formData.coffeeType ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      }`}
                     />
                   </div>
 
@@ -435,11 +575,15 @@ function RoastAssistant() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Process</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Process <span className="text-red-500">*</span>
+                      </label>
                       <select
                         value={formData.coffeeProcess}
                         onChange={(e) => handleInputChange('coffeeProcess', e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                          !formData.coffeeProcess ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                        }`}
                       >
                         <option value="Washed">Washed</option>
                         <option value="Natural">Natural</option>
@@ -480,7 +624,7 @@ function RoastAssistant() {
               <div className="text-center pt-4">
                 <button
                   onClick={showInitialSettingsForm}
-                  disabled={loading || !formData.coffeeType}
+                  disabled={loading || !formData.coffeeType || !formData.coffeeProcess || userMachines.length === 0}
                   className="bg-gradient-to-r from-orange-600 to-red-600 text-white px-8 py-4 rounded-lg hover:from-orange-700 hover:to-red-700 font-bold text-lg shadow-lg transform transition hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   🚦 Start Roast Session
@@ -545,15 +689,26 @@ function RoastAssistant() {
           {/* During Tab */}
           {currentTab === 'during' && (
             <div className="space-y-6">
-              <div className="text-center mb-6">
+              <div className="text-center mb-6 relative">
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">Active Roast Session</h2>
                 <div className="text-5xl font-mono font-bold text-orange-600 bg-gray-100 rounded-lg py-4">
                   ⏱️ {formatTime(elapsedTime)}
                 </div>
+                
+                {/* Environmental Conditions - Upper Right */}
+                {environmentalConditions && (
+                  <div className="absolute top-0 right-0 max-w-xs">
+                    <EnvironmentalConditions 
+                      conditions={environmentalConditions} 
+                      units={userProfile?.units}
+                    />
+                  </div>
+                )}
+                
                 <div className="mt-4">
                   <button
                     onClick={endRoastSession}
-                    className="bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-3 rounded-lg hover:from-red-700 hover:to-red-800 font-semibold text-lg shadow-lg transform transition hover:scale-105"
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-lg hover:from-green-700 hover:to-emerald-700 font-semibold text-lg shadow-lg transform transition hover:scale-105"
                   >
                     🛑 End Roast Session
                   </button>
@@ -638,7 +793,7 @@ function RoastAssistant() {
                   🔥 Second Crack
                 </button>
                 <button
-                  onClick={() => markMilestone('DROP')}
+                  onClick={() => markMilestone('COOL')}
                   disabled={loading}
                   className="bg-cyan-600 text-white px-4 py-3 rounded-lg hover:bg-cyan-700 font-medium transition disabled:opacity-50"
                 >
@@ -822,7 +977,7 @@ function RoastAssistant() {
                         <div className="mt-3">
                           <button
                             onClick={endRoastSession}
-                            className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 font-medium"
+                            className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded-lg hover:from-green-700 hover:to-emerald-700 font-medium"
                           >
                             🛑 End Roast Session Now
                           </button>
@@ -864,10 +1019,74 @@ function RoastAssistant() {
                   ✅ Complete Roast Session
                 </button>
               </div>
+
+              {/* Events Log - Show complete event history */}
+              <div className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="px-4 py-3 bg-gray-50 border-b">
+                  <h3 className="text-lg font-medium text-gray-800">Complete Roast Event Log</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fan</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Heat</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Temp °F</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {events.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                            No events logged yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        events.map((event, index) => (
+                          <tr key={event.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td className="px-4 py-2 text-sm font-mono">{formatTime(event.t_offset_sec)}</td>
+                            <td className="px-4 py-2 text-sm">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                event.kind === 'SET' ? 'bg-blue-100 text-blue-800' :
+                                event.kind === 'FIRST_CRACK' ? 'bg-amber-100 text-amber-800' :
+                                event.kind === 'SECOND_CRACK' ? 'bg-red-100 text-red-800' :
+                                event.kind === 'COOL' ? 'bg-cyan-100 text-cyan-800' :
+                                event.kind === 'END' ? 'bg-purple-100 text-purple-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {event.kind.replace('_', ' ')}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2 text-sm text-gray-900">{event.fan_level || '—'}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900">{event.heat_level || '—'}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900">{event.temp_f || '—'}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900">{event.note || '—'}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Profile Page Modal */}
+      {showProfilePage && (
+        <ProfilePage 
+          onClose={() => {
+            setShowProfilePage(false);
+            // Reload user data when profile page closes
+            loadUserProfile();
+            loadUserMachines();
+          }} 
+        />
+      )}
     </div>
   );
 }
