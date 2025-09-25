@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
-const API_BASE = 'https://roast-backend-production-8883.up.railway.app';
+const API_BASE = import.meta.env.DEV 
+  ? 'http://localhost:8000'  // Local development
+  : 'https://roast-backend-production-8883.up.railway.app';  // Production
+
+// Using inline editing instead of modal
 
 function RoastAssistant() {
   const [currentTab, setCurrentTab] = useState('before');
@@ -10,6 +14,14 @@ function RoastAssistant() {
   const [events, setEvents] = useState([]);
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
+  const [editingEventId, setEditingEventId] = useState(null);
+  const [editingFormData, setEditingFormData] = useState({});
+  const [showInitialSettings, setShowInitialSettings] = useState(false);
+  const [initialSettings, setInitialSettings] = useState({
+    fan_level: 5,
+    heat_level: 5
+  });
+  const [roastEnded, setRoastEnded] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -72,6 +84,10 @@ function RoastAssistant() {
     }
   };
 
+  const showInitialSettingsForm = () => {
+    setShowInitialSettings(true);
+  };
+
   const startRoast = async () => {
     const machineLabel = `${formData.model}${formData.hasExtension ? ' + ET' : ''}`;
     
@@ -94,7 +110,22 @@ function RoastAssistant() {
       setStartTs(data.start_ts);
       setCurrentTab('during');
       setStatus(`Roast started! ID: ${data.roast_id} at ${data.env.resolved_address}`);
+      
+      // Create initial SET event with user-provided settings
+      if (initialSettings.fan_level || initialSettings.heat_level) {
+        await apiCall(`${API_BASE}/roasts/${data.roast_id}/events`, {
+          method: 'POST',
+          body: JSON.stringify({
+            kind: 'SET',
+            fan_level: initialSettings.fan_level ? parseInt(initialSettings.fan_level) : null,
+            heat_level: initialSettings.heat_level ? parseInt(initialSettings.heat_level) : null,
+            note: 'Initial settings'
+          })
+        });
+      }
+      
       refreshEvents(data.roast_id);
+      setShowInitialSettings(false);
     } catch (error) {
       // Error already handled in apiCall
     }
@@ -166,6 +197,83 @@ function RoastAssistant() {
       });
 
       setStatus(`✅ Roast finished! Weight out: ${formData.weightAfter}g`);
+    } catch (error) {
+      // Error already handled in apiCall
+    }
+  };
+
+  const deleteEvent = async (eventId) => {
+    if (!roastId || !eventId) return;
+
+    try {
+      await apiCall(`${API_BASE}/roasts/${roastId}/events/${eventId}`, {
+        method: 'DELETE'
+      });
+
+      setStatus(`🗑️ Event deleted`);
+      refreshEvents();
+    } catch (error) {
+      // Error already handled in apiCall
+    }
+  };
+
+  const startEditEvent = (event) => {
+    setEditingEventId(event.id);
+    setEditingFormData({
+      kind: event.kind,
+      fan_level: event.fan_level || '',
+      heat_level: event.heat_level || '',
+      temp_f: event.temp_f || '',
+      note: event.note || ''
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingEventId(null);
+    setEditingFormData({});
+  };
+
+  const saveEditedEvent = async (eventId) => {
+    if (!roastId) return;
+
+    try {
+      await apiCall(`${API_BASE}/roasts/${roastId}/events/${eventId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          kind: editingFormData.kind,
+          fan_level: editingFormData.fan_level ? parseInt(editingFormData.fan_level) : null,
+          heat_level: editingFormData.heat_level ? parseInt(editingFormData.heat_level) : null,
+          temp_f: editingFormData.temp_f ? parseFloat(editingFormData.temp_f) : null,
+          note: editingFormData.note || null
+        })
+      });
+
+      setStatus(`✏️ Event updated`);
+      setEditingEventId(null);
+      setEditingFormData({});
+      refreshEvents();
+    } catch (error) {
+      // Error already handled in apiCall
+    }
+  };
+
+  const endRoastSession = async () => {
+    if (!roastId) return;
+
+    try {
+      // Create an END event to mark the roast completion
+      await apiCall(`${API_BASE}/roasts/${roastId}/events`, {
+        method: 'POST',
+        body: JSON.stringify({
+          kind: 'END',
+          note: 'Roast session ended'
+        })
+      });
+
+      setRoastEnded(true);
+      setCurrentTab('after');
+      setStatus('🏁 Roast session ended! Ready to weigh beans.');
+      refreshEvents();
     } catch (error) {
       // Error already handled in apiCall
     }
@@ -349,12 +457,65 @@ function RoastAssistant() {
 
               <div className="text-center pt-4">
                 <button
-                  onClick={startRoast}
+                  onClick={showInitialSettingsForm}
                   disabled={loading || !formData.address || !formData.coffeeType}
                   className="bg-gradient-to-r from-orange-600 to-red-600 text-white px-8 py-4 rounded-lg hover:from-orange-700 hover:to-red-700 font-bold text-lg shadow-lg transform transition hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   🚦 Start Roast Session
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Initial Settings Modal */}
+          {showInitialSettings && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                <h3 className="text-lg font-bold mb-4">Initial Roaster Settings</h3>
+                <p className="text-gray-600 mb-4">Set your starting fan and heat levels before beginning the roast.</p>
+                
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Fan Level</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="9"
+                        value={initialSettings.fan_level}
+                        onChange={(e) => setInitialSettings(prev => ({ ...prev, fan_level: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Heat Level</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="9"
+                        value={initialSettings.heat_level}
+                        onChange={(e) => setInitialSettings(prev => ({ ...prev, heat_level: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  
+                </div>
+
+                <div className="flex space-x-3 pt-6">
+                  <button
+                    onClick={startRoast}
+                    className="flex-1 bg-gradient-to-r from-orange-600 to-red-600 text-white py-2 px-4 rounded-lg hover:from-orange-700 hover:to-red-700 font-medium transition"
+                  >
+                    🔥 Start Roast
+                  </button>
+                  <button
+                    onClick={() => setShowInitialSettings(false)}
+                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 font-medium transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -366,6 +527,14 @@ function RoastAssistant() {
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">Active Roast Session</h2>
                 <div className="text-5xl font-mono font-bold text-orange-600 bg-gray-100 rounded-lg py-4">
                   ⏱️ {formatTime(elapsedTime)}
+                </div>
+                <div className="mt-4">
+                  <button
+                    onClick={endRoastSession}
+                    className="bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-3 rounded-lg hover:from-red-700 hover:to-red-800 font-semibold text-lg shadow-lg transform transition hover:scale-105"
+                  >
+                    🛑 End Roast Session
+                  </button>
                 </div>
               </div>
 
@@ -433,13 +602,6 @@ function RoastAssistant() {
                   ⚙️ Log Change
                 </button>
                 <button
-                  onClick={refreshEvents}
-                  disabled={loading}
-                  className="bg-gray-600 text-white px-4 py-3 rounded-lg hover:bg-gray-700 font-medium transition disabled:opacity-50"
-                >
-                  🔄 Refresh
-                </button>
-                <button
                   onClick={() => markMilestone('FIRST_CRACK')}
                   disabled={loading}
                   className="bg-amber-600 text-white px-4 py-3 rounded-lg hover:bg-amber-700 font-medium transition disabled:opacity-50"
@@ -477,12 +639,13 @@ function RoastAssistant() {
                         <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Heat</th>
                         <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Temp °F</th>
                         <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Note</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {events.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                          <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
                             No events logged yet. Start making adjustments!
                           </td>
                         </tr>
@@ -491,19 +654,118 @@ function RoastAssistant() {
                           <tr key={event.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                             <td className="px-4 py-2 text-sm font-mono">{formatTime(event.t_offset_sec)}</td>
                             <td className="px-4 py-2 text-sm">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                event.kind === 'SET' ? 'bg-blue-100 text-blue-800' :
-                                event.kind === 'FIRST_CRACK' ? 'bg-amber-100 text-amber-800' :
-                                event.kind === 'SECOND_CRACK' ? 'bg-red-100 text-red-800' :
-                                'bg-cyan-100 text-cyan-800'
-                              }`}>
-                                {event.kind.replace('_', ' ')}
-                              </span>
+                              {editingEventId === event.id ? (
+                                <select
+                                  value={editingFormData.kind}
+                                  onChange={(e) => setEditingFormData(prev => ({ ...prev, kind: e.target.value }))}
+                                  className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                                >
+                                  <option value="SET">Settings Change</option>
+                                  <option value="FIRST_CRACK">First Crack</option>
+                                  <option value="SECOND_CRACK">Second Crack</option>
+                                  <option value="COOL">Cool</option>
+                                  <option value="END">End Roast</option>
+                                </select>
+                              ) : (
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  event.kind === 'SET' ? 'bg-blue-100 text-blue-800' :
+                                  event.kind === 'FIRST_CRACK' ? 'bg-amber-100 text-amber-800' :
+                                  event.kind === 'SECOND_CRACK' ? 'bg-red-100 text-red-800' :
+                                  event.kind === 'COOL' ? 'bg-cyan-100 text-cyan-800' :
+                                  event.kind === 'END' ? 'bg-purple-100 text-purple-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {event.kind.replace('_', ' ')}
+                                </span>
+                              )}
                             </td>
-                            <td className="px-4 py-2 text-sm">{event.fan_level ?? '—'}</td>
-                            <td className="px-4 py-2 text-sm">{event.heat_level ?? '—'}</td>
-                            <td className="px-4 py-2 text-sm">{event.temp_f ?? '—'}</td>
-                            <td className="px-4 py-2 text-sm">{event.note || '—'}</td>
+                            <td className="px-4 py-2 text-sm">
+                              {editingEventId === event.id ? (
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="9"
+                                  value={editingFormData.fan_level}
+                                  onChange={(e) => setEditingFormData(prev => ({ ...prev, fan_level: e.target.value }))}
+                                  className="w-16 text-xs border border-gray-300 rounded px-2 py-1"
+                                />
+                              ) : (
+                                event.fan_level ?? '—'
+                              )}
+                            </td>
+                            <td className="px-4 py-2 text-sm">
+                              {editingEventId === event.id ? (
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="9"
+                                  value={editingFormData.heat_level}
+                                  onChange={(e) => setEditingFormData(prev => ({ ...prev, heat_level: e.target.value }))}
+                                  className="w-16 text-xs border border-gray-300 rounded px-2 py-1"
+                                />
+                              ) : (
+                                event.heat_level ?? '—'
+                              )}
+                            </td>
+                            <td className="px-4 py-2 text-sm">
+                              {editingEventId === event.id ? (
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  value={editingFormData.temp_f}
+                                  onChange={(e) => setEditingFormData(prev => ({ ...prev, temp_f: e.target.value }))}
+                                  className="w-20 text-xs border border-gray-300 rounded px-2 py-1"
+                                />
+                              ) : (
+                                event.temp_f ?? '—'
+                              )}
+                            </td>
+                            <td className="px-4 py-2 text-sm">
+                              {editingEventId === event.id ? (
+                                <input
+                                  type="text"
+                                  value={editingFormData.note}
+                                  onChange={(e) => setEditingFormData(prev => ({ ...prev, note: e.target.value }))}
+                                  className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                                  placeholder="Note"
+                                />
+                              ) : (
+                                event.note || '—'
+                              )}
+                            </td>
+                            <td className="px-4 py-2 text-sm">
+                              {editingEventId === event.id ? (
+                                <div className="flex space-x-1">
+                                  <button
+                                    onClick={() => saveEditedEvent(event.id)}
+                                    className="text-green-600 hover:text-green-800 text-xs font-medium"
+                                  >
+                                    ✅ Save
+                                  </button>
+                                  <button
+                                    onClick={cancelEdit}
+                                    className="text-gray-600 hover:text-gray-800 text-xs font-medium"
+                                  >
+                                    ❌ Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={() => startEditEvent(event)}
+                                    className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                                  >
+                                    ✏️ Edit
+                                  </button>
+                                  <button
+                                    onClick={() => deleteEvent(event.id)}
+                                    className="text-red-600 hover:text-red-800 text-xs font-medium"
+                                  >
+                                    🗑️ Delete
+                                  </button>
+                                </div>
+                              )}
+                            </td>
                           </tr>
                         ))
                       )}
@@ -511,6 +773,7 @@ function RoastAssistant() {
                   </table>
                 </div>
               </div>
+
             </div>
           )}
 
@@ -521,6 +784,32 @@ function RoastAssistant() {
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">Complete Your Roast</h2>
                 <p className="text-gray-600">Record final measurements and notes</p>
               </div>
+              
+              {!roastEnded && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <span className="text-yellow-400 text-2xl">⚠️</span>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-yellow-800">
+                        Roast Session Not Ended
+                      </h3>
+                      <div className="mt-2 text-sm text-yellow-700">
+                        <p>It looks like you haven't ended the roast session yet. If you're weighing your beans, the roast is complete!</p>
+                        <div className="mt-3">
+                          <button
+                            onClick={endRoastSession}
+                            className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 font-medium"
+                          >
+                            🛑 End Roast Session Now
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               <div className="max-w-md mx-auto space-y-4">
                 <div>

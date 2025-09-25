@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo "🛑 Stopping all development servers..."
+
+# Kill all related processes
+pkill -f uvicorn
+pkill -f vite  
+pkill -f "npm run dev"
+
+echo "✅ All servers stopped"
