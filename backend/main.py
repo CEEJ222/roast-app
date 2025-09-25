@@ -1,11 +1,13 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import time
 import os
 import requests
 import datetime
+import jwt
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
@@ -32,11 +34,37 @@ app.add_middleware(
 # Supabase setup
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
 
 def get_supabase() -> Client:
     if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
         raise HTTPException(status_code=500, detail="Supabase not configured")
     return create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+# JWT verification
+security = HTTPBearer()
+
+def verify_jwt_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    """Verify JWT token and return user ID"""
+    try:
+        token = credentials.credentials
+        # Decode JWT token
+        payload = jwt.decode(
+            token,
+            SUPABASE_JWT_SECRET,
+            algorithms=["HS256"],
+            audience="authenticated"
+        )
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return user_id
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Token verification failed: {str(e)}")
 
 # Request/Response models
 class CreateRoastRequest(BaseModel):
@@ -164,7 +192,7 @@ def get_environmental_conditions(address: str, unit: str = "C") -> Dict[str, Any
 
 # API endpoints
 @app.post("/roasts")
-async def create_roast(request: CreateRoastRequest):
+async def create_roast(request: CreateRoastRequest, user_id: str = Depends(verify_jwt_token)):
     try:
         sb = get_supabase()
         
@@ -178,6 +206,7 @@ async def create_roast(request: CreateRoastRequest):
         
         # Create roast entry
         roast_data = {
+            "user_id": user_id,
             "machine_id": machine_id,
             "resolved_address": env.get("resolved_address"),
             "latitude": env.get("latitude"),
@@ -216,12 +245,12 @@ async def create_roast(request: CreateRoastRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/roasts/{roast_id}/events")
-async def log_event(roast_id: int, request: LogEventRequest):
+async def log_event(roast_id: int, request: LogEventRequest, user_id: str = Depends(verify_jwt_token)):
     try:
         sb = get_supabase()
         
-        # Get roast start time
-        roast_result = sb.table("roast_entries").select("created_at").eq("id", roast_id).execute()
+        # Get roast start time and verify ownership
+        roast_result = sb.table("roast_entries").select("created_at").eq("id", roast_id).eq("user_id", user_id).execute()
         if not roast_result.data:
             raise HTTPException(status_code=404, detail="Roast not found")
         
@@ -264,9 +293,14 @@ async def log_event(roast_id: int, request: LogEventRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/roasts/{roast_id}/events")
-async def get_events(roast_id: int):
+async def get_events(roast_id: int, user_id: str = Depends(verify_jwt_token)):
     try:
         sb = get_supabase()
+        # Verify roast ownership first
+        roast_result = sb.table("roast_entries").select("id").eq("id", roast_id).eq("user_id", user_id).execute()
+        if not roast_result.data:
+            raise HTTPException(status_code=404, detail="Roast not found")
+        
         result = sb.table("roast_events").select("*").eq("roast_id", roast_id).order("t_offset_sec").execute()
         return result.data
         
@@ -274,9 +308,14 @@ async def get_events(roast_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/roasts/{roast_id}/events/{event_id}")
-async def delete_event(roast_id: int, event_id: str):
+async def delete_event(roast_id: int, event_id: str, user_id: str = Depends(verify_jwt_token)):
     try:
         sb = get_supabase()
+        
+        # Verify roast ownership first
+        roast_result = sb.table("roast_entries").select("id").eq("id", roast_id).eq("user_id", user_id).execute()
+        if not roast_result.data:
+            raise HTTPException(status_code=404, detail="Roast not found")
         
         # Verify the event exists and belongs to this roast
         event_result = sb.table("roast_events").select("id").eq("id", event_id).eq("roast_id", roast_id).execute()
@@ -294,9 +333,14 @@ async def delete_event(roast_id: int, event_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/roasts/{roast_id}/events/{event_id}")
-async def update_event(roast_id: int, event_id: str, request: LogEventRequest):
+async def update_event(roast_id: int, event_id: str, request: LogEventRequest, user_id: str = Depends(verify_jwt_token)):
     try:
         sb = get_supabase()
+        
+        # Verify roast ownership first
+        roast_result = sb.table("roast_entries").select("id").eq("id", roast_id).eq("user_id", user_id).execute()
+        if not roast_result.data:
+            raise HTTPException(status_code=404, detail="Roast not found")
         
         # Verify the event exists and belongs to this roast
         event_result = sb.table("roast_events").select("id").eq("id", event_id).eq("roast_id", roast_id).execute()
@@ -325,17 +369,21 @@ async def update_event(roast_id: int, event_id: str, request: LogEventRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.patch("/roasts/{roast_id}")
-async def update_roast(roast_id: int, request: UpdateRoastRequest):
+async def update_roast(roast_id: int, request: UpdateRoastRequest, user_id: str = Depends(verify_jwt_token)):
     try:
         sb = get_supabase()
+        
+        # Verify roast ownership first
+        roast_result = sb.table("roast_entries").select("weight_before_g").eq("id", roast_id).eq("user_id", user_id).execute()
+        if not roast_result.data:
+            raise HTTPException(status_code=404, detail="Roast not found")
         
         update_data = {}
         if request.weight_after_g is not None:
             update_data["weight_after_g"] = request.weight_after_g
             
             # Calculate weight loss percentage
-            roast_result = sb.table("roast_entries").select("weight_before_g").eq("id", roast_id).execute()
-            if roast_result.data and roast_result.data[0]["weight_before_g"]:
+            if roast_result.data[0]["weight_before_g"]:
                 weight_before = roast_result.data[0]["weight_before_g"]
                 loss_pct = ((weight_before - request.weight_after_g) / weight_before) * 100
                 update_data["weight_loss_pct"] = loss_pct
@@ -347,10 +395,10 @@ async def update_roast(roast_id: int, request: UpdateRoastRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/roasts")
-async def get_roasts(limit: int = 25):
+async def get_roasts(limit: int = 25, user_id: str = Depends(verify_jwt_token)):
     try:
         sb = get_supabase()
-        result = sb.table("roast_entries").select("*").order("created_at", desc=True).limit(limit).execute()
+        result = sb.table("roast_entries").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(limit).execute()
         return result.data
         
     except Exception as e:

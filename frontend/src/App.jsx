@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import LoginForm from './components/LoginForm';
+import UserProfile from './components/UserProfile';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'  // Local development
@@ -7,6 +10,7 @@ const API_BASE = import.meta.env.DEV
 // Using inline editing instead of modal
 
 function RoastAssistant() {
+  const { user, getAuthToken, loading: authLoading } = useAuth();
   const [currentTab, setCurrentTab] = useState('before');
   const [roastId, setRoastId] = useState(null);
   const [startTs, setStartTs] = useState(null);
@@ -65,8 +69,15 @@ function RoastAssistant() {
   const apiCall = async (url, options = {}) => {
     setLoading(true);
     try {
+      const token = await getAuthToken();
+      const headers = { 'Content-Type': 'application/json' };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(url, {
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         ...options
       });
       
@@ -280,13 +291,35 @@ function RoastAssistant() {
   };
 
 
+  // Show loading spinner while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login form if user is not authenticated
+  if (!user) {
+    return <LoginForm />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 p-4">
       <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-amber-600 to-orange-600 px-6 py-4 text-white">
-          <h1 className="text-3xl font-bold">☕ FreshRoast Assistant</h1>
-          <p className="opacity-90">Professional roast logging and analysis</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold">☕ FreshRoast Assistant</h1>
+              <p className="opacity-90">Professional roast logging and analysis</p>
+            </div>
+            <UserProfile />
+          </div>
         </div>
 
         {/* Tab Navigation */}
@@ -839,4 +872,12 @@ function RoastAssistant() {
   );
 }
 
-export default RoastAssistant;
+function App() {
+  return (
+    <AuthProvider>
+      <RoastAssistant />
+    </AuthProvider>
+  );
+}
+
+export default App;
