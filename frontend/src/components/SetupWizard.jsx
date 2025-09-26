@@ -385,18 +385,12 @@ const SetupWizard = ({ onComplete }) => {
           <div className="flex items-center justify-between">
             {steps.map((_, index) => (
               <div key={index} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg font-medium ${
-                  index < currentStep || index === steps.length - 1
-                    ? 'bg-transparent' 
-                    : index === currentStep
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-300 text-gray-600 dark:text-dark-text-secondary'
-                }`}>
-                  {index < currentStep ? '✅' : index === steps.length - 1 ? '🎉' : index === 0 ? '👨‍💼' : index === 1 ? '⚙️' : index === 2 ? '📍' : index + 1}
+                <div className="w-8 h-8 flex items-center justify-center text-lg font-medium">
+                  {index < currentStep ? '✅' : index === steps.length - 1 ? '🎉' : index === 0 ? '👽' : index === 1 ? '⚙️' : index === 2 ? '📍' : index + 1}
                 </div>
                 {index < steps.length - 1 && (
                   <div className={`w-16 h-1 mx-2 ${
-                    index < currentStep ? 'bg-green-600' : 'bg-gray-300'
+                    index < currentStep ? 'bg-green-600' : index === currentStep - 1 ? 'bg-indigo-600' : 'bg-gray-300'
                   }`} />
                 )}
               </div>
