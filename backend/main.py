@@ -35,7 +35,13 @@ app.add_middleware(
 # Add explicit OPTIONS handler for CORS preflight requests
 @app.options("/{path:path}")
 async def options_handler(path: str):
-    return {"message": "OK"}
+    from fastapi import Response
+    response = Response()
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
 
 # Supabase setup
 SUPABASE_URL = os.getenv("SUPABASE_URL")
