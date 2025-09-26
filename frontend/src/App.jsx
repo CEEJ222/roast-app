@@ -1581,7 +1581,7 @@ function RoastAssistant() {
                 ].map((step, index) => (
                   <div key={step.key} className="flex items-center">
                     <div className="w-10 h-10 flex items-center justify-center text-lg font-medium">
-                      {['machine', 'coffee', 'review'].indexOf(roastSetupStep) > index ? '✓' : step.icon}
+                      {['machine', 'coffee', 'review'].indexOf(roastSetupStep) > index ? '✅' : step.icon}
                     </div>
                     <span className={`ml-2 text-sm font-medium ${
                       roastSetupStep === step.key ? 'text-indigo-600 dark:text-white' : 'text-gray-600 dark:text-gray-300'
@@ -1784,25 +1784,25 @@ function RoastAssistant() {
               {roastSetupStep === 'review' && (
                 <div className="space-y-6">
                   <div className="text-center mb-6">
-                    <h3 className="text-xl font-bold text-gray-800 mb-2">Review & Start</h3>
-                    <p className="text-gray-600">Review your settings and start the roast</p>
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Review & Start</h3>
+                    <p className="text-gray-600 dark:text-dark-text-secondary">Review your settings and start the roast</p>
                   </div>
                   
-                  <div className="bg-gray-50 rounded-lg p-6">
-                    <h4 className="text-lg font-semibold text-gray-700 mb-4">Roast Summary</h4>
+                  <div className="bg-gray-50 dark:bg-dark-bg-tertiary rounded-lg p-6">
+                    <h4 className="text-lg font-semibold text-gray-700 dark:text-dark-text-primary mb-4">Roast Summary</h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <h5 className="font-medium text-gray-700 mb-2">Machine Setup</h5>
-                        <div className="space-y-1 text-sm">
+                        <h5 className="font-medium text-gray-700 dark:text-dark-text-primary mb-2">Machine Setup</h5>
+                        <div className="space-y-1 text-sm text-gray-600 dark:text-dark-text-secondary">
                           <p><span className="font-medium">Machine:</span> {userMachines.find(m => m.id === formData.selectedMachineId)?.name || userMachines[0]?.name || 'Not selected'}</p>
                           <p><span className="font-medium">Location:</span> {userProfile?.address || 'Not set'}</p>
                         </div>
                       </div>
                       
                       <div>
-                        <h5 className="font-medium text-gray-700 mb-2">Coffee Details</h5>
-                        <div className="space-y-1 text-sm">
+                        <h5 className="font-medium text-gray-700 dark:text-dark-text-primary mb-2">Coffee Details</h5>
+                        <div className="space-y-1 text-sm text-gray-600 dark:text-dark-text-secondary">
                           <p><span className="font-medium">Region:</span> {formData.coffeeType || 'Not specified'}</p>
                           <p><span className="font-medium">Process:</span> {formData.coffeeProcess}</p>
                           <p><span className="font-medium">Target:</span> {formData.roastLevel}</p>
