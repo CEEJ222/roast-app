@@ -30,6 +30,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Additional CORS middleware for Vercel serverless
+@app.middleware("http")
+async def add_cors_headers(request: Request, call_next):
+    # Handle preflight requests
+    if request.method == "OPTIONS":
+        return Response(
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": "https://www.roastbuddy.app",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, Accept, Origin",
+                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Max-Age": "86400",
+            }
+        )
+    
+    # Process the request
+    response = await call_next(request)
+    
+    # Add CORS headers to all responses
+    response.headers["Access-Control-Allow-Origin"] = "https://www.roastbuddy.app"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    
+    return response
+
 # Supabase setup
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
@@ -233,6 +260,27 @@ def get_environmental_conditions(address: str, unit: str = "C") -> Dict[str, Any
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "timestamp": time.time()}
+
+# Explicit OPTIONS handlers for Vercel
+@app.options("/roasts")
+async def options_roasts():
+    return Response(status_code=200)
+
+@app.options("/user/profile")
+async def options_user_profile():
+    return Response(status_code=200)
+
+@app.options("/user/machines")
+async def options_user_machines():
+    return Response(status_code=200)
+
+@app.options("/roasts/{roast_id}/events")
+async def options_roast_events(roast_id: int):
+    return Response(status_code=200)
+
+@app.options("/roasts/{roast_id}")
+async def options_roast_detail(roast_id: int):
+    return Response(status_code=200)
 
 # API endpoints
 @app.post("/roasts")
