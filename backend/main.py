@@ -16,38 +16,22 @@ load_dotenv()
 
 app = FastAPI()
 
-# Add CORS middleware first
+# Railway-compatible CORS setup
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for Railway compatibility
-    allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods
-    allow_headers=["*"],  # Allow all headers
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Additional CORS handler for Railway-specific issues
+# Additional middleware for Railway-specific CORS issues
 @app.middleware("http")
-async def cors_handler(request: Request, call_next):
-    # Handle preflight requests directly
-    if request.method == "OPTIONS":
-        return Response(
-            status_code=200,
-            headers={
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-                "Access-Control-Max-Age": "86400",
-            }
-        )
-    
-    # Process the request
+async def add_cors_headers(request: Request, call_next):
     response = await call_next(request)
-    
-    # Add CORS headers to all responses
     response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
-    
+    response.headers["Access-Control-Allow-Methods"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "*"
     return response
 
 # Supabase setup
@@ -267,22 +251,6 @@ def get_environmental_conditions(address: str, unit: str = "C") -> Dict[str, Any
 async def health_check():
     return {"status": "healthy", "timestamp": time.time()}
 
-# Explicit OPTIONS handlers for Railway compatibility
-@app.options("/roasts")
-async def options_roasts():
-    return Response(status_code=200)
-
-@app.options("/user/profile")
-async def options_user_profile():
-    return Response(status_code=200)
-
-@app.options("/user/machines")
-async def options_user_machines():
-    return Response(status_code=200)
-
-@app.options("/roasts/{roast_id}/events")
-async def options_roast_events(roast_id: int):
-    return Response(status_code=200)
 
 # API endpoints
 @app.post("/roasts")
