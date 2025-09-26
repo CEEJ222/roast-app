@@ -20,13 +20,12 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",
+        "http://localhost:5173",  # Local development
         "http://localhost:5174", 
         "http://localhost:3000",
-        "https://roast-app-production.up.railway.app",  # Add your frontend Railway URL if you deploy it
+        "https://roast-app-production.up.railway.app",  # Railway frontend URL
         "https://www.roastbuddy.app",  # Production frontend domain
         "https://roastbuddy.app",  # Production frontend domain without www
-        "*"  # Allow all origins for development
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
