@@ -11,6 +11,34 @@ from jose import jwt, JWTError
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
+# Coffee regions validation
+COFFEE_REGIONS = [
+    # Africa
+    'Ethiopia', 'Kenya', 'Rwanda', 'Burundi', 'Tanzania', 'Uganda', 
+    'Zambia', 'Malawi', 'Zimbabwe', 'Madagascar', 'Côte d\'Ivoire', 
+    'Cameroon', 'Angola', 'Mozambique',
+    # Central & South America
+    'Colombia', 'Brazil', 'Peru', 'Ecuador', 'Bolivia', 'Venezuela', 
+    'Guyana', 'Suriname', 'French Guiana',
+    # Central America & Caribbean
+    'Guatemala', 'Costa Rica', 'Honduras', 'Nicaragua', 'El Salvador', 
+    'Panama', 'Mexico', 'Jamaica', 'Cuba', 'Dominican Republic', 
+    'Haiti', 'Puerto Rico',
+    # Asia Pacific
+    'Indonesia', 'Vietnam', 'India', 'Papua New Guinea', 'Philippines', 
+    'Thailand', 'Myanmar', 'Laos', 'Cambodia', 'Malaysia', 'Sri Lanka', 
+    'Nepal', 'China', 'Japan', 'Taiwan', 'South Korea', 'Australia', 
+    'New Zealand', 'Hawaii',
+    # Middle East
+    'Yemen', 'Saudi Arabia', 'Oman', 'United Arab Emirates',
+    # Other
+    'Other'
+]
+
+def validate_coffee_region(region: str) -> bool:
+    """Validate that the coffee region is in our predefined list"""
+    return region in COFFEE_REGIONS
+
 # Load environment variables from .env file for local development
 load_dotenv()
 
@@ -255,12 +283,24 @@ def get_environmental_conditions(address: str, unit: str = "C") -> Dict[str, Any
 async def health_check():
     return {"status": "healthy", "timestamp": time.time()}
 
+@app.get("/coffee-regions")
+async def get_coffee_regions():
+    """Get the list of valid coffee regions"""
+    return {"regions": COFFEE_REGIONS}
+
 
 
 # API endpoints
 @app.post("/roasts")
 async def create_roast(request: CreateRoastRequest, user_id: str = Depends(verify_jwt_token)):
     try:
+        # Validate coffee region
+        if not validate_coffee_region(request.coffee_region):
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid coffee region: {request.coffee_region}. Must be one of: {', '.join(COFFEE_REGIONS)}"
+            )
+        
         sb = get_supabase()
         
         # Get machine ID
