@@ -6,6 +6,7 @@ const UserProfile = () => {
   const { user, signOut } = useAuth()
   const [showDropdown, setShowDropdown] = useState(false)
   const [showProfilePage, setShowProfilePage] = useState(false)
+  const [avatarError, setAvatarError] = useState(false)
 
   const handleSignOut = async () => {
     try {
@@ -35,7 +36,7 @@ const UserProfile = () => {
   }
 
   const getUserAvatar = () => {
-    if (user?.user_metadata?.avatar_url) {
+    if (user?.user_metadata?.avatar_url && !avatarError) {
       return user.user_metadata.avatar_url
     }
     return null // We'll use a custom gradient avatar instead
@@ -72,6 +73,7 @@ const UserProfile = () => {
             src={getUserAvatar()}
             alt={getUserDisplayName()}
             className="w-8 h-8 rounded-full border-2 border-white/20"
+            onError={() => setAvatarError(true)}
           />
         ) : (
           <div className={`w-8 h-8 rounded-full border-2 border-white/20 bg-gradient-to-br ${getAvatarGradient()} flex items-center justify-center`}>
@@ -111,6 +113,7 @@ const UserProfile = () => {
                     src={getUserAvatar()}
                     alt={getUserDisplayName()}
                     className="w-12 h-12 rounded-full"
+                    onError={() => setAvatarError(true)}
                   />
                 ) : (
                   <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getAvatarGradient()} flex items-center justify-center`}>
