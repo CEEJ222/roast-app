@@ -16,45 +16,30 @@ load_dotenv()
 
 app = FastAPI()
 
-# CORS origins
-ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Local development
-    "http://localhost:5174", 
-    "http://localhost:3000",
-    "https://roast-app-production.up.railway.app",  # Railway frontend URL
-    "https://www.roastbuddy.app",  # Production frontend domain
-    "https://roastbuddy.app",  # Production frontend domain without www
-]
-
-# Add CORS headers to all responses
+# Simple CORS solution for Railway
 @app.middleware("http")
-async def add_cors_headers(request, call_next):
-    origin = request.headers.get("origin")
-    if origin in ALLOWED_ORIGINS:
-        response = await call_next(request)
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        return response
-    else:
-        return await call_next(request)
-
-# Handle OPTIONS requests explicitly
-@app.options("/{path:path}")
-async def options_handler(path: str, request):
-    origin = request.headers.get("origin")
-    if origin in ALLOWED_ORIGINS:
+async def cors_handler(request, call_next):
+    # Handle preflight requests
+    if request.method == "OPTIONS":
         return Response(
             status_code=200,
             headers={
-                "Access-Control-Allow-Origin": origin,
-                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
                 "Access-Control-Allow-Headers": "*",
+                "Access-Control-Max-Age": "86400",
             }
         )
-    return Response(status_code=403)
+    
+    # Process the request
+    response = await call_next(request)
+    
+    # Add CORS headers to all responses
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    
+    return response
 
 # Supabase setup
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -267,6 +252,11 @@ def get_environmental_conditions(address: str, unit: str = "C") -> Dict[str, Any
     except Exception as e:
         print(f"DEBUG: Error fetching environmental conditions: {e}")
         return {"error": f"Error fetching environmental conditions: {e}"}
+
+# Health check endpoint for Railway
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "timestamp": time.time()}
 
 # API endpoints
 @app.post("/roasts")
