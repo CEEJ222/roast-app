@@ -858,32 +858,32 @@ function RoastAssistant() {
           {/* Initial Settings Modal */}
           {showInitialSettings && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-                <h3 className="text-lg font-bold mb-4">Initial Roaster Settings</h3>
-                <p className="text-gray-600 mb-4">Set your starting fan and heat levels before beginning the roast.</p>
+              <div className="bg-white dark:bg-dark-card rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl dark:shadow-dark-glow">
+                <h3 className="text-lg font-bold mb-4 text-gray-800 dark:text-dark-text-primary">Initial Roaster Settings</h3>
+                <p className="text-gray-600 dark:text-dark-text-secondary mb-4">Set your starting fan and heat levels before beginning the roast.</p>
                 
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Fan Level</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-1">Fan Level</label>
                       <input
                         type="number"
                         min="0"
                         max="9"
                         value={initialSettings.fan_level}
                         onChange={(e) => setInitialSettings(prev => ({ ...prev, fan_level: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Heat Level</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-1">Heat Level</label>
                       <input
                         type="number"
                         min="0"
                         max="9"
                         value={initialSettings.heat_level}
                         onChange={(e) => setInitialSettings(prev => ({ ...prev, heat_level: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
                       />
                     </div>
                   </div>
@@ -899,7 +899,7 @@ function RoastAssistant() {
                   </button>
                   <button
                     onClick={() => setShowInitialSettings(false)}
-                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 font-medium transition"
+                    className="flex-1 bg-gray-300 dark:bg-dark-bg-tertiary text-gray-700 dark:text-dark-text-primary py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-dark-bg-quaternary font-medium transition"
                   >
                     Cancel
                   </button>
