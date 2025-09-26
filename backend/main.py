@@ -16,40 +16,46 @@ load_dotenv()
 
 app = FastAPI()
 
-# Railway-specific CORS solution based on community findings
-# Handle OPTIONS requests FIRST before any other middleware
+# Vercel-optimized CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://www.roastbuddy.app",
+        "https://roastbuddy.app", 
+        "http://localhost:5173",
+        "http://localhost:3000"
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
+
+# Additional CORS middleware for Vercel serverless
 @app.middleware("http")
-async def handle_options_requests(request: Request, call_next):
-    # Handle OPTIONS requests directly - this is the key fix for Railway
+async def add_cors_headers(request: Request, call_next):
+    # Handle preflight requests
     if request.method == "OPTIONS":
         return Response(
             status_code=200,
             headers={
-                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Origin": "https://www.roastbuddy.app",
                 "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
                 "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, Accept, Origin",
+                "Access-Control-Allow-Credentials": "true",
                 "Access-Control-Max-Age": "86400",
             }
         )
     
-    # Process other requests
+    # Process the request
     response = await call_next(request)
     
     # Add CORS headers to all responses
-    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Origin"] = "https://www.roastbuddy.app"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
     
     return response
-
-# Add CORSMiddleware as backup (but OPTIONS should be handled above)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
-)
 
 # Supabase setup
 SUPABASE_URL = os.getenv("SUPABASE_URL")
