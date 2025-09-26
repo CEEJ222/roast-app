@@ -343,7 +343,7 @@ const ProfilePage = ({ onClose }) => {
                         disabled={!newMachine.name.trim() || loading}
                         className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 shadow-lg"
                       >
-                        Add Machine
+                        Done
                       </button>
                       <button
                         onClick={() => {

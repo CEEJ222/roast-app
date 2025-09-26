@@ -228,13 +228,8 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
                 </div>
                 <div className="p-4">
                   <RoastCurveGraph
-                    data={[{
-                      id: roast.id,
-                      name: roast.coffee_type || 'Unknown',
-                      fullName: `${roast.coffee_type || 'Unknown'} - ${formatDate(roast.created_at)}`,
-                      events: events
-                    }]}
-                    mode="historical"
+                    data={events}
+                    mode="live"
                     showROR={true}
                     showMilestones={true}
                     height={300}

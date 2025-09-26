@@ -779,6 +779,7 @@ function RoastAssistant() {
                       setRoastDetails={setRoastDetails}
                       onRoastResume={handleRoastResume}
                       currentActiveRoastId={roastId}
+                      hideCompareButton={true}
                     />
                   </div>
                 ) : (
