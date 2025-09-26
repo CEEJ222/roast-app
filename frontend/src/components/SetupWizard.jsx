@@ -179,7 +179,7 @@ const SetupWizard = ({ onComplete }) => {
           </div>
 
           {/* Add Machine Form */}
-          <div className="bg-gray-50 rounded-lg p-6">
+          <div className="bg-gray-50 dark:bg-dark-bg-tertiary rounded-lg p-6">
             <h3 className="text-lg font-semibold text-gray-700 dark:text-dark-text-primary mb-4">Add a Machine</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
@@ -392,7 +392,7 @@ const SetupWizard = ({ onComplete }) => {
                     ? 'bg-indigo-600 text-white'
                     : 'bg-gray-300 text-gray-600 dark:text-dark-text-secondary'
                 }`}>
-                  {index < currentStep ? '✅' : index === steps.length - 1 ? '🎉' : index === 0 ? '👤' : index === 1 ? '⚙️' : index === 2 ? '📍' : index + 1}
+                  {index < currentStep ? '✅' : index === steps.length - 1 ? '🎉' : index === 0 ? '👨‍💼' : index === 1 ? '⚙️' : index === 2 ? '📍' : index + 1}
                 </div>
                 {index < steps.length - 1 && (
                   <div className={`w-16 h-1 mx-2 ${
@@ -420,7 +420,7 @@ const SetupWizard = ({ onComplete }) => {
               <button
                 onClick={handleBack}
                 disabled={currentStep === 0}
-                className="px-6 py-3 bg-gray-300 text-gray-700 dark:text-dark-text-primary rounded-lg hover:bg-gray-400 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-3 bg-gray-300 dark:bg-dark-bg-tertiary text-gray-700 dark:text-dark-text-primary rounded-lg hover:bg-gray-400 dark:hover:bg-dark-bg-quaternary font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Back
               </button>
