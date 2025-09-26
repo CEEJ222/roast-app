@@ -60,6 +60,9 @@ function RoastAssistant() {
     secondCrack: false,
     cool: false
   });
+  const [currentPhase, setCurrentPhase] = useState('drying'); // 'drying', 'development', 'cooling'
+  const [developmentStartTime, setDevelopmentStartTime] = useState(null);
+  const [developmentTime, setDevelopmentTime] = useState(0);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -85,10 +88,16 @@ function RoastAssistant() {
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - startTs * 1000) / 1000);
       setElapsedTime(elapsed);
+      
+      // Update development time if we're in development phase
+      if (currentPhase === 'development' && developmentStartTime) {
+        const devTime = Math.floor((Date.now() - developmentStartTime) / 1000);
+        setDevelopmentTime(devTime);
+      }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [startTs]);
+  }, [startTs, currentPhase, developmentStartTime]);
 
   // Load user profile data
   const loadUserProfile = async () => {
@@ -365,6 +374,11 @@ function RoastAssistant() {
       setStartTs(data.start_ts);
       setEnvironmentalConditions(data.env);
       
+      // Reset phase tracking for new roast
+      setCurrentPhase('drying');
+      setDevelopmentStartTime(null);
+      setDevelopmentTime(0);
+      
       // Update form data with initial settings
       setFormData(prev => ({
         ...prev,
@@ -453,13 +467,17 @@ function RoastAssistant() {
         })
       });
 
-        // Update milestone tracking
+        // Update milestone tracking and phase changes
         if (pendingMilestone === 'FIRST_CRACK') {
           setMilestonesMarked(prev => ({ ...prev, firstCrack: true }));
+          setCurrentPhase('development');
+          setDevelopmentStartTime(Date.now());
+          setDevelopmentTime(0);
         } else if (pendingMilestone === 'SECOND_CRACK') {
           setMilestonesMarked(prev => ({ ...prev, secondCrack: true }));
         } else if (pendingMilestone === 'COOL') {
           setMilestonesMarked(prev => ({ ...prev, cool: true }));
+          setCurrentPhase('cooling');
         }
 
       refreshEvents();
@@ -488,6 +506,23 @@ function RoastAssistant() {
         secondCrack: hasSecondCrack,
         cool: hasCool
       });
+      
+      // Determine current phase based on milestones
+      if (hasCool) {
+        setCurrentPhase('cooling');
+      } else if (hasFirstCrack) {
+        setCurrentPhase('development');
+        // Calculate development time if we're resuming
+        const firstCrackEvent = data.find(event => event.kind === 'FIRST_CRACK');
+        if (firstCrackEvent) {
+          const firstCrackTime = startTs * 1000 + (firstCrackEvent.t_offset_sec * 1000);
+          setDevelopmentStartTime(firstCrackTime);
+          const currentDevTime = Math.floor((Date.now() - firstCrackTime) / 1000);
+          setDevelopmentTime(currentDevTime);
+        }
+      } else {
+        setCurrentPhase('drying');
+      }
     } catch (error) {
       console.error('Error fetching events:', error);
     }
@@ -901,6 +936,36 @@ function RoastAssistant() {
               <div className="text-center mb-6 relative">
                 <div className="text-5xl font-mono font-bold text-orange-600 bg-gray-100 rounded-lg py-4">
                   ⏱️ {formatTime(elapsedTime)}
+                </div>
+                
+                {/* Phase Indicators */}
+                <div className="flex justify-center gap-4 mt-4">
+                  <div className={`px-4 py-2 rounded-lg font-medium transition ${
+                    currentPhase === 'drying' 
+                      ? 'bg-yellow-100 text-yellow-800 border-2 border-yellow-300' 
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    🌱 Drying Phase
+                  </div>
+                  <div className={`px-4 py-2 rounded-lg font-medium transition ${
+                    currentPhase === 'development' 
+                      ? 'bg-orange-100 text-orange-800 border-2 border-orange-300' 
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    🔥 Development Phase
+                    {currentPhase === 'development' && (
+                      <div className="text-sm font-bold mt-1">
+                        {formatTime(developmentTime)}
+                      </div>
+                    )}
+                  </div>
+                  <div className={`px-4 py-2 rounded-lg font-medium transition ${
+                    currentPhase === 'cooling' 
+                      ? 'bg-cyan-100 text-cyan-800 border-2 border-cyan-300' 
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    🧊 Cooling Phase
+                  </div>
                 </div>
                 
                 {/* Environmental Conditions - Upper Right */}
