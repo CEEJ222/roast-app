@@ -136,7 +136,7 @@ const SetupWizard = ({ onComplete }) => {
         <div className="space-y-6">
           <div className="text-center mb-8">
             <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <span className="text-6xl">☕</span>
+              <span className="text-8xl">☕</span>
             </div>
             <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Welcome to Roast Buddy!</h2>
             <p className="text-gray-600 dark:text-dark-text-secondary">
@@ -154,7 +154,7 @@ const SetupWizard = ({ onComplete }) => {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Enter your display name"
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
             />
             <p className="text-sm text-gray-500 dark:text-dark-text-secondary mt-1">
               This is how your name will appear in the app
@@ -191,7 +191,7 @@ const SetupWizard = ({ onComplete }) => {
                   value={currentMachine.name}
                   onChange={(e) => setCurrentMachine({...currentMachine, name: e.target.value})}
                   placeholder="e.g., My SR800"
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
                 />
               </div>
               <div>
@@ -201,7 +201,7 @@ const SetupWizard = ({ onComplete }) => {
                 <select
                   value={currentMachine.model}
                   onChange={(e) => setCurrentMachine({...currentMachine, model: e.target.value})}
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
                 >
                   <option value="SR800">SR800</option>
                   <option value="SR540">SR540</option>
@@ -275,20 +275,20 @@ const SetupWizard = ({ onComplete }) => {
               Add your address to get personalized environmental data for each roast.
             </p>
             
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <h3 className="text-sm font-semibold text-blue-800 mb-2">📍 Providing your location helps us collect the following data for each roast:</h3>
-              <ul className="text-sm text-blue-700 space-y-1">
+            <div className="bg-blue-50 dark:bg-dark-bg-tertiary border border-blue-200 dark:border-dark-border-primary rounded-lg p-4 mb-6">
+              <h3 className="text-sm font-semibold text-blue-800 dark:text-dark-text-primary mb-2">📍 Providing your location helps us collect the following data for each roast:</h3>
+              <ul className="text-sm text-blue-700 dark:text-dark-text-secondary space-y-1">
                 <li>• <strong>Elevation:</strong> Affects roasting time and heat transfer</li>
                 <li>• <strong>Temperature & Humidity:</strong> Impact bean moisture and roast development</li>
                 <li>• <strong>Barometric Pressure:</strong> Influences heat retention and airflow</li>
               </ul>
-              <p className="text-xs text-blue-600 mt-2">
+              <p className="text-xs text-blue-600 dark:text-dark-text-tertiary mt-2">
                 This data is only used to enhance your roasting experience and is never shared with third parties.
               </p>
             </div>
           </div>
 
-          <div className="bg-gray-50 rounded-lg p-6">
+          <div className="bg-gray-50 dark:bg-dark-bg-tertiary rounded-lg p-6">
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
@@ -299,7 +299,7 @@ const SetupWizard = ({ onComplete }) => {
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="Enter your full address..."
                   rows={3}
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
                 />
                 <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
                   We'll fetch real-time elevation, temperature, humidity, and pressure data for your location.
