@@ -1714,10 +1714,10 @@ function RoastAssistant() {
                       </label>
                       <CustomDropdown
                         options={COFFEE_REGIONS}
-                        value={formData.coffeeType}
-                        onChange={(value) => handleInputChange('coffeeType', value)}
+                        value={formData.coffeeRegion}
+                        onChange={(value) => handleInputChange('coffeeRegion', value)}
                         placeholder="Select a region..."
-                        error={!formData.coffeeType}
+                        error={!formData.coffeeRegion}
                       />
                     </div>
 
@@ -1725,8 +1725,8 @@ function RoastAssistant() {
                       <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">Origin (Subregion)</label>
                       <input
                         type="text"
-                        value={formData.coffeeRegion}
-                        onChange={(e) => handleInputChange('coffeeRegion', e.target.value)}
+                        value={formData.coffeeType}
+                        onChange={(e) => handleInputChange('coffeeType', e.target.value)}
                         placeholder="Yirgacheffe, Sidama, etc."
                         className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
                       />
@@ -1847,7 +1847,7 @@ function RoastAssistant() {
                 {roastSetupStep === 'coffee' && (
                   <button
                     onClick={() => setRoastSetupStep('review')}
-                    disabled={!formData.coffeeType || !formData.coffeeProcess}
+                    disabled={!formData.coffeeRegion || !formData.coffeeProcess}
                     className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                   >
                     Next: Review
@@ -1861,7 +1861,7 @@ function RoastAssistant() {
                       setRoastSetupStep('machine');
                       showInitialSettingsForm();
                     }}
-                    disabled={!formData.coffeeType || !formData.coffeeProcess || userMachines.length === 0}
+                    disabled={!formData.coffeeRegion || !formData.coffeeProcess || userMachines.length === 0}
                     className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                   >
                     🚦 Start Roast Session
