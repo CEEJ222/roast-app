@@ -14,6 +14,11 @@ A professional coffee roasting logging and analysis application built with React
 
 ## 🆕 Latest Updates
 
+### Recent Fixes & Improvements
+- **🔧 Environmental Data Accuracy Fix:** Fixed timestamp selection logic to ensure accurate current weather data instead of stale forecast data
+- **🌡️ Improved Weather Integration:** Enhanced Open-Meteo API integration with better timezone handling and current conditions
+- **📅 Real-time Timestamps:** Environmental data now shows actual current time instead of future forecast times
+
 ### Major Feature Additions
 - **🌟 Setup Wizard:** Beautiful onboarding flow for new users with progress indicators
 - **👤 Profile Management:** Complete user profile system with display names and settings

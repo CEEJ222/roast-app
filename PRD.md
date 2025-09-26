@@ -109,6 +109,8 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
   - Elevation, temperature, humidity, and pressure tracking
   - User-preferred unit display (Fahrenheit/Celsius, Feet/Meters)
   - Compact environmental conditions widget during roasting
+  - **FIXED:** Improved timestamp selection logic for accurate current conditions
+  - **FIXED:** Enhanced timezone handling and current weather data prioritization
 
 ### 4.3 Roast Logging ✅ **ENHANCED**
 - **Smart Defaults:** Machine and location automatically populated from user profile

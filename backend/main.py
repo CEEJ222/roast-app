@@ -164,21 +164,46 @@ def get_environmental_conditions(address: str, unit: str = "C") -> Dict[str, Any
         p_series = hourly.get("pressure_msl", []) or []
 
         def index_for_time(target_iso: str) -> int:
-            if not times: return -1
+            if not times or not target_iso: return -1
             if target_iso in times: return times.index(target_iso)
-            return len(times) - 1
+            
+            # Try to find the closest hourly forecast time
+            from datetime import datetime
+            try:
+                target_dt = datetime.fromisoformat(target_iso.replace('Z', '+00:00'))
+                closest_idx = -1
+                min_diff = float('inf')
+                
+                for i, time_str in enumerate(times):
+                    try:
+                        forecast_dt = datetime.fromisoformat(time_str.replace('Z', '+00:00'))
+                        diff = abs((target_dt - forecast_dt).total_seconds())
+                        if diff < min_diff:
+                            min_diff = diff
+                            closest_idx = i
+                    except:
+                        continue
+                
+                # Only use hourly data if we found a close match (within 2 hours)
+                if closest_idx >= 0 and min_diff <= 7200:  # 2 hours in seconds
+                    return closest_idx
+            except:
+                pass
+            
+            return -1
 
-        idx = index_for_time(current_time) if current_time else (len(times) - 1 if times else -1)
-        temp_c = rh = pressure = sample_time = None
-        if idx >= 0:
-            sample_time = times[idx] if idx < len(times) else None
-            temp_c = temp_series[idx] if idx < len(temp_series) else None
+        # Use current weather data as primary source, fall back to hourly if needed
+        cw = weather.get("current_weather", {})
+        temp_c = cw.get("temperature")
+        sample_time = cw.get("time")
+        rh = pressure = None
+        
+        # Try to get humidity and pressure from hourly data
+        idx = index_for_time(current_time) if current_time else -1
+        if idx >= 0 and idx < len(times):
+            sample_time = times[idx] if idx < len(times) else sample_time
             rh = rh_series[idx] if idx < len(rh_series) else None
             pressure = p_series[idx] if idx < len(p_series) else None
-        else:
-            cw = weather.get("current_weather", {})
-            temp_c = cw.get("temperature")
-            sample_time = cw.get("time")
 
         # 3) Elevation using Open-Meteo
         elev_resp = requests.get(
