@@ -24,6 +24,8 @@ app.add_middleware(
         "http://localhost:5174", 
         "http://localhost:3000",
         "https://roast-app-production.up.railway.app",  # Add your frontend Railway URL if you deploy it
+        "https://www.roastbuddy.app",  # Production frontend domain
+        "https://roastbuddy.app",  # Production frontend domain without www
         "*"  # Allow all origins for development
     ],
     allow_credentials=True,

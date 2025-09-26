@@ -11,6 +11,7 @@ import DashboardHistoricalRoasts from './components/DashboardHistoricalRoasts';
 import RoastDetailPage from './components/RoastDetailPage';
 import ConfirmationModal from './components/ConfirmationModal';
 import TemperatureInputModal from './components/TemperatureInputModal';
+import { Analytics } from '@vercel/analytics/react';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'  // Local development
@@ -1832,6 +1833,7 @@ function App() {
   return (
     <AuthProvider>
       <RoastAssistant />
+      <Analytics />
     </AuthProvider>
   );
 }
