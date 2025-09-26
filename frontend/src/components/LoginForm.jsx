@@ -54,18 +54,22 @@ const LoginForm = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 dark:bg-dark-gradient flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white dark:bg-dark-bg-secondary rounded-xl shadow-2xl dark:shadow-dark-xl overflow-hidden border dark:border-dark-border-primary">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-6 py-8 text-white text-center">
-          <h1 className="text-3xl font-bold mb-2">☕ FreshRoast Assistant</h1>
+      <div className="max-w-md w-full rounded-xl shadow-2xl dark:shadow-dark-glow overflow-hidden border-metallic border-gray-200 dark:border-gray-600 relative">
+        {/* Header with transparent background to show glow */}
+        <div className="px-6 py-8 text-white text-center relative z-10">
+          <h1 className="text-3xl font-bold mb-2">☕ Roast Buddy</h1>
           <p className="opacity-90">Professional roast logging and analysis</p>
         </div>
-
-        {/* Login Form */}
-        <div className="p-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Welcome Back</h2>
-            <p className="text-gray-600 dark:text-dark-text-secondary">Sign in to access your roast logs and continue your coffee journey</p>
+        
+        {/* Metallic separator line */}
+        <div className="border-metallic border-gray-200 dark:border-gray-600"></div>
+        
+        {/* Body with background */}
+        <div className="bg-white dark:bg-dark-bg-secondary">
+          {/* Login Form */}
+          <div className="p-8">
+          <div className="text-center mb-6">
+            <p className="text-gray-600 dark:text-dark-text-secondary">It's free to sign up and start logging your roasts</p>
           </div>
 
           {error && (
@@ -95,7 +99,7 @@ const LoginForm = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent-primary focus:border-transparent dark:bg-dark-bg-tertiary dark:text-dark-text-primary"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                   placeholder="Enter your email"
                 />
               </div>
@@ -110,7 +114,7 @@ const LoginForm = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent-primary focus:border-transparent dark:bg-dark-bg-tertiary dark:text-dark-text-primary"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                   placeholder="Enter your password"
                 />
               </div>
@@ -199,6 +203,7 @@ const LoginForm = () => {
             <p className="text-sm text-gray-500 dark:text-dark-text-tertiary">
               By signing in, you agree to our Terms of Service and Privacy Policy
             </p>
+          </div>
           </div>
         </div>
       </div>

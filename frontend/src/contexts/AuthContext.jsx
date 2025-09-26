@@ -90,10 +90,23 @@ export const AuthProvider = ({ children }) => {
 
   // Sign out
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) {
-      console.error('Error signing out:', error)
-      throw error
+    try {
+      // Try to sign out normally first
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('Error signing out:', error)
+        // If there's an error, force clear the local state
+        setUser(null)
+        // Clear any stored session data
+        localStorage.removeItem('supabase.auth.token')
+        return
+      }
+    } catch (error) {
+      console.error('Sign out failed, clearing local state:', error)
+      // Force clear the local state even if Supabase signOut fails
+      setUser(null)
+      // Clear any stored session data
+      localStorage.removeItem('supabase.auth.token')
     }
   }
 

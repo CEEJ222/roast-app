@@ -651,7 +651,7 @@ function RoastAssistant() {
   // Show loading spinner while checking authentication
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center">
+      <div className="min-h-screen bg-light-gradient-blue flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
@@ -671,13 +671,13 @@ function RoastAssistant() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 dark:bg-dark-gradient p-4">
+    <div className="min-h-screen bg-light-gradient-blue dark:bg-dark-gradient p-4">
       <div className="max-w-4xl mx-auto bg-white dark:bg-dark-bg-secondary rounded-xl shadow-2xl dark:shadow-dark-xl overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-6 py-4 text-white">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold">☕ FreshRoast Assistant</h1>
+              <h1 className="text-3xl font-bold">☕ Roast Buddy</h1>
               <p className="opacity-90">Professional roast logging and analysis</p>
             </div>
             <div className="flex items-center gap-4">

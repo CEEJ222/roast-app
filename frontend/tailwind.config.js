@@ -56,6 +56,8 @@ export default {
       backgroundImage: {
         'dark-gradient': 'linear-gradient(135deg, #0a0a0a 0%, #111111 100%)',
         'dark-card': 'linear-gradient(135deg, #111111 0%, #1a1a1a 100%)',
+        'light-gradient': 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
+        'light-gradient-blue': 'linear-gradient(135deg, #f1f5f9 0%, #e0e7ff 50%, #ddd6fe 100%)',
         'accent-gradient': 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a855f7 100%)',
         'accent-gradient-light': 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
         'accent-gradient-vibrant': 'linear-gradient(135deg, #3730a3 0%, #4f46e5 25%, #7c3aed 75%, #a855f7 100%)',
@@ -68,7 +70,7 @@ export default {
         'dark-md': '0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.2)',
         'dark-lg': '0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3)',
         'dark-xl': '0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.4)',
-        'dark-glow': '0 0 20px rgba(79, 70, 229, 0.4)',
+        'dark-glow': '0 0 40px rgba(79, 70, 229, 0.6)',
         'accent-glow': '0 0 20px rgba(79, 70, 229, 0.5)',
         'purple-glow': '0 0 20px rgba(124, 58, 237, 0.5)',
         'vibrant-glow': '0 0 25px rgba(124, 58, 237, 0.6)',

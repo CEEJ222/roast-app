@@ -9,9 +9,15 @@ const UserProfile = () => {
 
   const handleSignOut = async () => {
     try {
+      console.log('Attempting to sign out...')
       await signOut()
+      console.log('Sign out successful')
+      // Close the dropdown after successful sign out
+      setShowDropdown(false)
     } catch (error) {
       console.error('Error signing out:', error)
+      // Even if there's an error, close the dropdown
+      setShowDropdown(false)
     }
   }
 

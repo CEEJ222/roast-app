@@ -130,7 +130,7 @@ const SetupWizard = ({ onComplete }) => {
 
   const steps = [
     {
-      title: "Welcome to FreshRoast Assistant!",
+      title: "Welcome! From your Roast Buddy!",
       subtitle: "Let's set up your profile",
       content: (
         <div className="space-y-6">
@@ -138,7 +138,7 @@ const SetupWizard = ({ onComplete }) => {
             <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
               <span className="text-4xl">☕</span>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to FreshRoast Assistant!</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to Roast Buddy!</h2>
             <p className="text-gray-600">
               We're excited to help you track and perfect your coffee roasting journey.
               Let's start by setting up your profile.
@@ -366,7 +366,7 @@ const SetupWizard = ({ onComplete }) => {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 dark:bg-dark-gradient flex items-center justify-center p-4">
+    <div className="min-h-screen bg-light-gradient-blue dark:bg-dark-gradient flex items-center justify-center p-4">
       <div className="max-w-2xl w-full bg-white dark:bg-dark-card rounded-xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-6 py-8 text-white text-center relative">
@@ -376,7 +376,7 @@ const SetupWizard = ({ onComplete }) => {
           >
             Skip Setup
           </button>
-          <h1 className="text-3xl font-bold mb-2">☕ FreshRoast Assistant</h1>
+          <h1 className="text-3xl font-bold mb-2">☕ Roast Buddy</h1>
           <p className="opacity-90">Initial Setup</p>
         </div>
 

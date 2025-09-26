@@ -1,4 +1,4 @@
-# ☕ FreshRoast Assistant
+# ☕ Roast Buddy
 
 A professional coffee roasting logging and analysis application built with React and FastAPI. Track your roasting sessions, log temperature changes, and analyze your coffee roasting data.
 

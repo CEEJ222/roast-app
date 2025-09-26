@@ -1,6 +1,6 @@
 # Authentication Setup Guide
 
-This guide will help you set up Supabase Auth with Google, GitHub, and email/password sign-in for your FreshRoast Assistant application.
+This guide will help you set up Supabase Auth with Google, GitHub, and email/password sign-in for your Roast Buddy application.
 
 ## 1. Supabase Configuration
 
@@ -103,7 +103,7 @@ CREATE POLICY "Users can delete own roasts" ON roast_entries
 1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
 2. Click **New OAuth App**
 3. Fill in the details:
-   - **Application name**: "FreshRoast Assistant"
+   - **Application name**: "Roast Buddy"
    - **Homepage URL**: `https://roastbuddy.app` (or your domain)
    - **Authorization callback URL**: `https://your-project-id.supabase.co/auth/v1/callback`
 4. Click **Register application**
