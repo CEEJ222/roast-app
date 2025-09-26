@@ -136,7 +136,7 @@ const SetupWizard = ({ onComplete }) => {
         <div className="space-y-6">
           <div className="text-center mb-8">
             <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <span className="text-8xl">☕</span>
+              <span className="text-5xl">☕</span>
             </div>
             <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Welcome to Roast Buddy!</h2>
             <p className="text-gray-600 dark:text-dark-text-secondary">
@@ -268,7 +268,7 @@ const SetupWizard = ({ onComplete }) => {
         <div className="space-y-6">
           <div className="text-center mb-8">
             <div className="w-20 h-20 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <span className="text-4xl">📍</span>
+              <span className="text-5xl">📍</span>
             </div>
             <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Your Location</h2>
             <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
@@ -317,7 +317,7 @@ const SetupWizard = ({ onComplete }) => {
         <div className="space-y-6">
           <div className="text-center mb-8">
             <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <span className="text-7xl">🎉</span>
+              <span className="text-5xl">🎉</span>
             </div>
             <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary dark:text-dark-text-primary mb-2">Setup Complete!</h2>
             <p className="text-gray-600 dark:text-dark-text-secondary dark:text-dark-text-secondary">
@@ -385,14 +385,14 @@ const SetupWizard = ({ onComplete }) => {
           <div className="flex items-center justify-between">
             {steps.map((_, index) => (
               <div key={index} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg font-medium ${
                   index < currentStep || index === steps.length - 1
                     ? 'bg-transparent' 
                     : index === currentStep
                     ? 'bg-indigo-600 text-white'
                     : 'bg-gray-300 text-gray-600 dark:text-dark-text-secondary'
                 }`}>
-                  {index < currentStep ? '✅' : index === steps.length - 1 ? '🎉' : index + 1}
+                  {index < currentStep ? '✅' : index === steps.length - 1 ? '🎉' : index === 0 ? '👤' : index === 1 ? '⚙️' : index === 2 ? '📍' : index + 1}
                 </div>
                 {index < steps.length - 1 && (
                   <div className={`w-16 h-1 mx-2 ${
