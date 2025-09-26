@@ -136,10 +136,10 @@ const SetupWizard = ({ onComplete }) => {
         <div className="space-y-6">
           <div className="text-center mb-8">
             <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <span className="text-4xl">☕</span>
+              <span className="text-6xl">☕</span>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to Roast Buddy!</h2>
-            <p className="text-gray-600">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Welcome to Roast Buddy!</h2>
+            <p className="text-gray-600 dark:text-dark-text-secondary">
               We're excited to help you track and perfect your coffee roasting journey.
               Let's start by setting up your profile.
             </p>
@@ -172,8 +172,8 @@ const SetupWizard = ({ onComplete }) => {
             <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full mx-auto mb-4 flex items-center justify-center">
               <span className="text-4xl">⚙️</span>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Your Roasting Setup</h2>
-            <p className="text-gray-600">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Your Roasting Setup</h2>
+            <p className="text-gray-600 dark:text-dark-text-secondary">
               Add the roasting machines you use. You can add multiple machines if you have them.
             </p>
           </div>
@@ -234,10 +234,10 @@ const SetupWizard = ({ onComplete }) => {
               <h3 className="text-lg font-semibold text-gray-700 dark:text-dark-text-primary mb-4">Your Machines</h3>
               <div className="space-y-3">
                 {machines.map((machine, index) => (
-                  <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                  <div key={index} className="bg-white dark:bg-dark-bg-tertiary border border-gray-200 dark:border-dark-border-primary rounded-lg p-4 flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium text-gray-800">{machine.name}</h4>
-                      <p className="text-sm text-gray-600">
+                      <h4 className="font-medium text-gray-800 dark:text-dark-text-primary">{machine.name}</h4>
+                      <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
                         {machine.model}{machine.has_extension ? ' + Extension Tube' : ''}
                       </p>
                     </div>
@@ -270,8 +270,8 @@ const SetupWizard = ({ onComplete }) => {
             <div className="w-20 h-20 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full mx-auto mb-4 flex items-center justify-center">
               <span className="text-4xl">📍</span>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Your Location</h2>
-            <p className="text-gray-600 mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Your Location</h2>
+            <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
               Add your address to get personalized environmental data for each roast.
             </p>
             
@@ -317,29 +317,29 @@ const SetupWizard = ({ onComplete }) => {
         <div className="space-y-6">
           <div className="text-center mb-8">
             <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <span className="text-5xl">🎉</span>
+              <span className="text-7xl">🎉</span>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Setup Complete!</h2>
-            <p className="text-gray-600">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary dark:text-dark-text-primary mb-2">Setup Complete!</h2>
+            <p className="text-gray-600 dark:text-dark-text-secondary dark:text-dark-text-secondary">
               You're ready to start tracking your coffee roasting sessions.
             </p>
           </div>
 
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-green-800 mb-4">Your Profile</h3>
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-green-800 dark:text-green-300 mb-4">Your Profile</h3>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-green-700">Display Name:</span>
-                <span className="font-medium text-green-800">{displayName}</span>
+                <span className="text-green-700 dark:text-green-400">Display Name:</span>
+                <span className="font-medium text-green-800 dark:text-green-300">{displayName}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-green-700">Machines:</span>
-                <span className="font-medium text-green-800">{machines.length}</span>
+                <span className="text-green-700 dark:text-green-400">Machines:</span>
+                <span className="font-medium text-green-800 dark:text-green-300">{machines.length}</span>
               </div>
               {address && (
                 <div className="flex justify-between">
-                  <span className="text-green-700">Location:</span>
-                  <span className="font-medium text-green-800 text-sm">{address}</span>
+                  <span className="text-green-700 dark:text-green-400">Location:</span>
+                  <span className="font-medium text-green-800 dark:text-green-300 text-sm">{address}</span>
                 </div>
               )}
             </div>
@@ -390,7 +390,7 @@ const SetupWizard = ({ onComplete }) => {
                     ? 'bg-transparent' 
                     : index === currentStep
                     ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-300 text-gray-600'
+                    : 'bg-gray-300 text-gray-600 dark:text-dark-text-secondary'
                 }`}>
                   {index < currentStep ? '✅' : index === steps.length - 1 ? '🎉' : index + 1}
                 </div>
@@ -427,7 +427,7 @@ const SetupWizard = ({ onComplete }) => {
               {currentStep < steps.length - 1 && (
                 <button
                   onClick={handleSkip}
-                  className="px-6 py-3 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 font-medium transition border border-gray-300"
+                  className="px-6 py-3 bg-gray-100 dark:bg-dark-bg-tertiary text-gray-600 dark:text-dark-text-secondary rounded-lg hover:bg-gray-200 dark:hover:bg-dark-bg-quaternary font-medium transition border border-gray-300 dark:border-dark-border-primary"
                 >
                   Skip
                 </button>
