@@ -16,32 +16,33 @@ load_dotenv()
 
 app = FastAPI()
 
-# Enable CORS for frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",  # Local development
-        "http://localhost:5174", 
-        "http://localhost:3000",
-        "https://roast-app-production.up.railway.app",  # Railway frontend URL
-        "https://www.roastbuddy.app",  # Production frontend domain
-        "https://roastbuddy.app",  # Production frontend domain without www
-    ],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-)
+# Manual CORS handling
+from fastapi import Request, Response
+from fastapi.middleware.base import BaseHTTPMiddleware
 
-# Add explicit OPTIONS handler for CORS preflight requests
-@app.options("/{path:path}")
-async def options_handler(path: str):
-    from fastapi import Response
-    response = Response()
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    return response
+class CORSMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Handle preflight requests
+        if request.method == "OPTIONS":
+            response = Response()
+            response.headers["Access-Control-Allow-Origin"] = "https://www.roastbuddy.app"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            return response
+        
+        # Process the request
+        response = await call_next(request)
+        
+        # Add CORS headers to all responses
+        response.headers["Access-Control-Allow-Origin"] = "https://www.roastbuddy.app"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        
+        return response
+
+app.add_middleware(CORSMiddleware)
 
 # Supabase setup
 SUPABASE_URL = os.getenv("SUPABASE_URL")
