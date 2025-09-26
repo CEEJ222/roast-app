@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'
-  : 'https://roast-app-backend.vercel.app'
+  : 'https://roast-backend-production-8883.up.railway.app'
 
 const ProfilePage = ({ onClose }) => {
   const { user, getAuthToken } = useAuth()

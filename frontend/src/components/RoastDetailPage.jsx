@@ -5,7 +5,7 @@ import EnvironmentalConditions from './EnvironmentalConditions';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'  // Local development
-  : 'https://roast-app-backend.vercel.app';  // Production
+  : 'https://roast-backend-production-8883.up.railway.app';  // Production
 
 const RoastDetailPage = ({ roast, onClose, userProfile }) => {
   const { getAuthToken } = useAuth();
