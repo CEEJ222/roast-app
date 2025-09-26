@@ -70,7 +70,7 @@ export default {
         'dark-md': '0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.2)',
         'dark-lg': '0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3)',
         'dark-xl': '0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.4)',
-        'dark-glow': '0 0 40px rgba(79, 70, 229, 0.6)',
+        'dark-glow': '0 0 25px rgba(79, 70, 229, 0.6)',
         'accent-glow': '0 0 20px rgba(79, 70, 229, 0.5)',
         'purple-glow': '0 0 20px rgba(124, 58, 237, 0.5)',
         'vibrant-glow': '0 0 25px rgba(124, 58, 237, 0.6)',
