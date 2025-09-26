@@ -146,7 +146,7 @@ const SetupWizard = ({ onComplete }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
               Display Name
             </label>
             <input
@@ -154,9 +154,9 @@ const SetupWizard = ({ onComplete }) => {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Enter your display name"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             />
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 dark:text-dark-text-secondary mt-1">
               This is how your name will appear in the app
             </p>
           </div>
@@ -180,10 +180,10 @@ const SetupWizard = ({ onComplete }) => {
 
           {/* Add Machine Form */}
           <div className="bg-gray-50 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-700 mb-4">Add a Machine</h3>
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-dark-text-primary mb-4">Add a Machine</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-1">
                   Machine Name
                 </label>
                 <input
@@ -191,17 +191,17 @@ const SetupWizard = ({ onComplete }) => {
                   value={currentMachine.name}
                   onChange={(e) => setCurrentMachine({...currentMachine, name: e.target.value})}
                   placeholder="e.g., My SR800"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-1">
                   Model
                 </label>
                 <select
                   value={currentMachine.model}
                   onChange={(e) => setCurrentMachine({...currentMachine, model: e.target.value})}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 >
                   <option value="SR800">SR800</option>
                   <option value="SR540">SR540</option>
@@ -215,7 +215,7 @@ const SetupWizard = ({ onComplete }) => {
                     onChange={(e) => setCurrentMachine({...currentMachine, has_extension: e.target.checked})}
                     className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
                   />
-                  <span className="text-sm font-medium text-gray-700">Extension Tube</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-dark-text-primary">Extension Tube</span>
                 </label>
               </div>
             </div>
@@ -231,7 +231,7 @@ const SetupWizard = ({ onComplete }) => {
           {/* Machine List */}
           {machines.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold text-gray-700 mb-4">Your Machines</h3>
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-dark-text-primary mb-4">Your Machines</h3>
               <div className="space-y-3">
                 {machines.map((machine, index) => (
                   <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between">
@@ -255,7 +255,7 @@ const SetupWizard = ({ onComplete }) => {
 
           {machines.length === 0 && (
             <div className="text-center py-8">
-              <p className="text-gray-500">No machines added yet. Add at least one machine to continue.</p>
+              <p className="text-gray-500 dark:text-dark-text-secondary">No machines added yet. Add at least one machine to continue.</p>
             </div>
           )}
         </div>
@@ -291,7 +291,7 @@ const SetupWizard = ({ onComplete }) => {
           <div className="bg-gray-50 rounded-lg p-6">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
                   Address
                 </label>
                 <textarea
@@ -299,9 +299,9 @@ const SetupWizard = ({ onComplete }) => {
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="Enter your full address..."
                   rows={3}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
                   We'll fetch real-time elevation, temperature, humidity, and pressure data for your location.
                 </p>
               </div>
@@ -317,7 +317,7 @@ const SetupWizard = ({ onComplete }) => {
         <div className="space-y-6">
           <div className="text-center mb-8">
             <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <span className="text-3xl">🎉</span>
+              <span className="text-5xl">🎉</span>
             </div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Setup Complete!</h2>
             <p className="text-gray-600">
@@ -347,12 +347,12 @@ const SetupWizard = ({ onComplete }) => {
 
           {machines.length > 0 && (
             <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-700 mb-4">Your Machines</h3>
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-dark-text-primary mb-4">Your Machines</h3>
               <div className="space-y-2">
                 {machines.map((machine, index) => (
                   <div key={index} className="flex items-center justify-between py-2">
-                    <span className="text-gray-700">{machine.name}</span>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-gray-700 dark:text-dark-text-primary">{machine.name}</span>
+                    <span className="text-sm text-gray-500 dark:text-dark-text-secondary">
                       {machine.model}{machine.has_extension ? ' + ET' : ''}
                     </span>
                   </div>
@@ -420,7 +420,7 @@ const SetupWizard = ({ onComplete }) => {
               <button
                 onClick={handleBack}
                 disabled={currentStep === 0}
-                className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-3 bg-gray-300 text-gray-700 dark:text-dark-text-primary rounded-lg hover:bg-gray-400 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Back
               </button>
