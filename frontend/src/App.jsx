@@ -9,6 +9,7 @@ import EnvironmentalConditions from './components/EnvironmentalConditions';
 import RoastCurveGraph from './components/RoastCurveGraph';
 import HistoricalRoasts from './components/HistoricalRoasts';
 import { COFFEE_REGIONS } from './data/coffeeRegions';
+import CustomDropdown from './components/CustomDropdown';
 import DashboardHistoricalRoasts from './components/DashboardHistoricalRoasts';
 import RoastDetailPage from './components/RoastDetailPage';
 import ConfirmationModal from './components/ConfirmationModal';
@@ -1711,20 +1712,13 @@ function RoastAssistant() {
                       <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
                         Coffee Region <span className="text-red-500">*</span>
                       </label>
-                      <select
+                      <CustomDropdown
+                        options={COFFEE_REGIONS}
                         value={formData.coffeeType}
-                        onChange={(e) => handleInputChange('coffeeType', e.target.value)}
-                        className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary ${
-                          !formData.coffeeType ? 'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900/20' : 'border-gray-300 dark:border-dark-border-primary'
-                        }`}
-                      >
-                        <option value="">Select a region...</option>
-                        {COFFEE_REGIONS.map((region) => (
-                          <option key={region} value={region}>
-                            {region}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(value) => handleInputChange('coffeeType', value)}
+                        placeholder="Select a region..."
+                        error={!formData.coffeeType}
+                      />
                     </div>
 
                     <div>
