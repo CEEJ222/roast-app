@@ -7,7 +7,7 @@ import time
 import os
 import requests
 import datetime
-import jwt
+from jose import jwt
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
