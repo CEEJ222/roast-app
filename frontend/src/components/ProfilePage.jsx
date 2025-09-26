@@ -162,9 +162,9 @@ const ProfilePage = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+      <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl dark:shadow-dark-glow w-full max-w-4xl max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-amber-600 to-orange-600 px-6 py-4 text-white flex items-center justify-between">
+        <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-6 py-4 text-white flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Profile Settings</h1>
             <p className="opacity-90">Manage your profile and machines</p>
@@ -196,36 +196,36 @@ const ProfilePage = ({ onClose }) => {
             {/* Profile Section */}
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Profile Information</h2>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-dark-text-primary dark:text-dark-text-primary mb-4">Profile Information</h2>
                 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary dark:text-dark-text-primary mb-2">
                       Display Name
                     </label>
                     <input
                       type="text"
                       value={profile.display_name}
                       onChange={(e) => setProfile({...profile, display_name: e.target.value})}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 bg-white"
+                      className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-secondary"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
                       Email
                     </label>
                     <input
                       type="email"
                       value={profile.email}
                       disabled
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 text-gray-600"
+                      className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 bg-gray-100 dark:bg-dark-bg-tertiary text-gray-600 dark:text-dark-text-secondary"
                     />
                     <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
                       Address
                     </label>
                     <textarea
@@ -233,7 +233,7 @@ const ProfilePage = ({ onClose }) => {
                       onChange={(e) => setProfile({...profile, address: e.target.value})}
                       placeholder="Enter your full address..."
                       rows={3}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
+                      className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-secondary"
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Used to fetch elevation, temperature, humidity, and pressure data for each roast.
@@ -241,15 +241,15 @@ const ProfilePage = ({ onClose }) => {
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="text-sm font-semibold text-gray-700">Unit Preferences</h4>
+                    <h4 className="text-sm font-semibold text-gray-700 dark:text-dark-text-primary">Unit Preferences</h4>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Temperature</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">Temperature</label>
                         <select
                           value={profile.units?.temperature || 'fahrenheit'}
                           onChange={(e) => setProfile({...profile, units: {...profile.units, temperature: e.target.value}})}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white text-gray-900"
+                          className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
                         >
                           <option value="fahrenheit">Fahrenheit (°F)</option>
                           <option value="celsius">Celsius (°C)</option>
@@ -257,11 +257,11 @@ const ProfilePage = ({ onClose }) => {
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Elevation</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">Elevation</label>
                         <select
                           value={profile.units?.elevation || 'feet'}
                           onChange={(e) => setProfile({...profile, units: {...profile.units, elevation: e.target.value}})}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white text-gray-900"
+                          className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
                         >
                           <option value="feet">Feet (ft)</option>
                           <option value="meters">Meters (m)</option>
@@ -273,7 +273,7 @@ const ProfilePage = ({ onClose }) => {
                   <button
                     onClick={updateProfile}
                     disabled={loading}
-                    className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 font-medium transition disabled:opacity-50"
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 shadow-lg"
                   >
                     Update Profile
                   </button>
@@ -284,10 +284,10 @@ const ProfilePage = ({ onClose }) => {
             {/* Machines Section */}
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-800">Your Machines</h2>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-dark-text-primary dark:text-dark-text-primary">Your Machines</h2>
                 <button
                   onClick={() => setShowAddMachine(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium transition"
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition shadow-lg"
                 >
                   Add Machine
                 </button>
@@ -295,11 +295,11 @@ const ProfilePage = ({ onClose }) => {
 
               {/* Add Machine Form */}
               {showAddMachine && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-gray-700 mb-4">Add New Machine</h3>
+                <div className="bg-gray-50 dark:bg-dark-bg-tertiary rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-700 dark:text-dark-text-primary mb-4">Add New Machine</h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-1">
                         Machine Name
                       </label>
                       <input
@@ -307,18 +307,18 @@ const ProfilePage = ({ onClose }) => {
                         value={newMachine.name}
                         onChange={(e) => setNewMachine({...newMachine, name: e.target.value})}
                         placeholder="e.g., My SR800"
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 bg-white"
+                        className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-secondary"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-1">
                           Model
                         </label>
                         <select
                           value={newMachine.model}
                           onChange={(e) => setNewMachine({...newMachine, model: e.target.value})}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white text-gray-900"
+                          className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
                         >
                           <option value="">Select a model...</option>
                           <option value="SR800">SR800</option>
@@ -331,9 +331,9 @@ const ProfilePage = ({ onClose }) => {
                             type="checkbox"
                             checked={newMachine.has_extension}
                             onChange={(e) => setNewMachine({...newMachine, has_extension: e.target.checked})}
-                            className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
+                            className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
                           />
-                          <span className="text-sm font-medium text-gray-700">Extension Tube</span>
+                          <span className="text-sm font-medium text-gray-700 dark:text-dark-text-primary">Extension Tube</span>
                         </label>
                       </div>
                     </div>
@@ -341,7 +341,7 @@ const ProfilePage = ({ onClose }) => {
                       <button
                         onClick={addMachine}
                         disabled={!newMachine.name.trim() || loading}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium transition disabled:opacity-50"
+                        className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 shadow-lg"
                       >
                         Add Machine
                       </button>
@@ -350,7 +350,7 @@ const ProfilePage = ({ onClose }) => {
                           setShowAddMachine(false)
                           setNewMachine({ name: '', model: '', has_extension: false })
                         }}
-                        className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 font-medium transition"
+                        className="bg-gray-300 dark:bg-dark-bg-tertiary text-gray-700 dark:text-dark-text-primary px-4 py-2 rounded-lg hover:bg-gray-400 dark:hover:bg-dark-bg-quaternary font-medium transition"
                       >
                         Cancel
                       </button>
@@ -368,30 +368,30 @@ const ProfilePage = ({ onClose }) => {
                   </div>
                 ) : (
                   machines.map((machine) => (
-                    <div key={machine.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div key={machine.id} className="bg-white dark:bg-dark-bg-tertiary border border-gray-200 dark:border-dark-border-primary rounded-lg p-4">
                       {editingMachine?.id === machine.id ? (
                         // Edit Mode
                         <div className="space-y-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-1">
                               Machine Name
                             </label>
                             <input
                               type="text"
                               value={editingMachine.name}
                               onChange={(e) => setEditingMachine({...editingMachine, name: e.target.value})}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 bg-white"
+                              className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-secondary"
                             />
                           </div>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-1">
                                 Model
                               </label>
                               <select
                                 value={editingMachine.model}
                                 onChange={(e) => setEditingMachine({...editingMachine, model: e.target.value})}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white text-gray-900"
+                                className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
                               >
                                 <option value="">Select a model...</option>
                                 <option value="SR800">SR800</option>
@@ -404,9 +404,9 @@ const ProfilePage = ({ onClose }) => {
                                   type="checkbox"
                                   checked={editingMachine.has_extension}
                                   onChange={(e) => setEditingMachine({...editingMachine, has_extension: e.target.checked})}
-                                  className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
+                                  className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
                                 />
-                                <span className="text-sm font-medium text-gray-700">Extension Tube</span>
+                                <span className="text-sm font-medium text-gray-700 dark:text-dark-text-primary">Extension Tube</span>
                               </label>
                             </div>
                           </div>
@@ -414,13 +414,13 @@ const ProfilePage = ({ onClose }) => {
                             <button
                               onClick={() => updateMachine(machine.id, editingMachine)}
                               disabled={!editingMachine.name.trim() || loading}
-                              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium transition disabled:opacity-50"
+                              className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 shadow-lg"
                             >
                               Save
                             </button>
                             <button
                               onClick={() => setEditingMachine(null)}
-                              className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 font-medium transition"
+                              className="bg-gray-300 dark:bg-dark-bg-tertiary text-gray-700 dark:text-dark-text-primary px-4 py-2 rounded-lg hover:bg-gray-400 dark:hover:bg-dark-bg-quaternary font-medium transition"
                             >
                               Cancel
                             </button>
@@ -430,8 +430,8 @@ const ProfilePage = ({ onClose }) => {
                         // View Mode
                         <div className="flex items-center justify-between">
                           <div>
-                            <h4 className="font-medium text-gray-800">{machine.name}</h4>
-                            <p className="text-sm text-gray-600">
+                            <h4 className="font-medium text-gray-800 dark:text-dark-text-primary">{machine.name}</h4>
+                            <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
                               {machine.model}{machine.has_extension ? ' + Extension Tube' : ''}
                             </p>
                           </div>
@@ -447,7 +447,7 @@ const ProfilePage = ({ onClose }) => {
                               </button>
                               <button
                                 onClick={cancelDelete}
-                                className="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400 transition-colors"
+                                className="px-3 py-1 bg-gray-300 dark:bg-dark-bg-tertiary text-gray-700 dark:text-dark-text-primary text-sm rounded hover:bg-gray-400 dark:hover:bg-dark-bg-quaternary transition-colors"
                               >
                                 Cancel
                               </button>

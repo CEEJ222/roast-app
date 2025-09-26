@@ -105,28 +105,28 @@ const RoastCurveGraph = ({
   }, [filteredRoasts, mode, showRoastLabels]);
 
   return (
-    <div className={`bg-white rounded-lg shadow-lg ${compact ? 'p-4' : 'p-6'} ${className}`}>
+    <div className={`bg-white dark:bg-dark-bg-tertiary rounded-lg shadow-lg dark:shadow-dark-glow border-metallic border-gray-200 dark:border-gray-600 ${compact ? 'p-4' : 'p-6'} ${className}`}>
       <div className={`${compact ? 'mb-3' : 'mb-4'}`}>
-        <h3 className={`${compact ? 'text-base' : 'text-lg'} font-semibold text-gray-800`}>{title}</h3>
+        <h3 className={`${compact ? 'text-base' : 'text-lg'} font-semibold text-gray-800 dark:text-dark-text-primary`}>{title}</h3>
         {mode === 'live' && (
-          <p className="text-sm text-gray-600">Real-time temperature monitoring</p>
+          <p className="text-sm text-gray-600 dark:text-dark-text-secondary">Real-time temperature monitoring</p>
         )}
         {mode === 'historical' && (
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
               Compare multiple roast curves ({filteredRoasts.length} selected)
             </p>
             {onRoastToggle && (
               <div className="flex gap-2">
                 <button
                   onClick={() => onRoastToggle('all')}
-                  className="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition"
+                  className="text-xs bg-gray-100 dark:bg-dark-bg-quaternary hover:bg-gray-200 dark:hover:bg-dark-border-primary px-2 py-1 rounded transition text-gray-700 dark:text-dark-text-primary"
                 >
                   Select All
                 </button>
                 <button
                   onClick={() => onRoastToggle('none')}
-                  className="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition"
+                  className="text-xs bg-gray-100 dark:bg-dark-bg-quaternary hover:bg-gray-200 dark:hover:bg-dark-border-primary px-2 py-1 rounded transition text-gray-700 dark:text-dark-text-primary"
                 >
                   Clear All
                 </button>
@@ -144,7 +144,7 @@ const RoastCurveGraph = ({
             {...(enableZoom && { zoom: { enabled: true } })}
             {...(enablePan && { pan: { enabled: true } })}
           >
-            {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />}
+            {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-dark-border-primary" />}
             <XAxis 
               dataKey="time" 
               type="number"
@@ -152,6 +152,7 @@ const RoastCurveGraph = ({
               domain={['dataMin', 'dataMax']}
               tickFormatter={(value) => `${value.toFixed(1)}m`}
               stroke="#6b7280"
+              className="dark:stroke-dark-text-tertiary"
               xAxisId="time"
             />
             <YAxis 
@@ -159,6 +160,7 @@ const RoastCurveGraph = ({
               orientation="left"
               tickFormatter={(value) => `${value}°${units.temperature}`}
               stroke="#6b7280"
+              className="dark:stroke-dark-text-tertiary"
             />
             {showROR && mode === 'live' && (
               <YAxis 
@@ -166,6 +168,7 @@ const RoastCurveGraph = ({
                 orientation="right"
                 tickFormatter={(value) => `${value.toFixed(1)}°/m`}
                 stroke="#6b7280"
+                className="dark:stroke-dark-text-tertiary"
               />
             )}
             {showTooltip && (
@@ -181,7 +184,7 @@ const RoastCurveGraph = ({
                 yAxisId="temp"
                 type="monotone"
                 dataKey="temperature"
-                stroke="#f97316"
+                stroke="#4f46e5"
                 strokeWidth={3}
                 dot={(props) => {
                   const { payload, cx, cy } = props;
@@ -212,12 +215,12 @@ const RoastCurveGraph = ({
                       cx={cx}
                       cy={cy}
                       r={4}
-                      fill="#f97316"
+                      fill="#4f46e5"
                       strokeWidth={2}
                     />
                   );
                 }}
-                activeDot={{ r: 6, stroke: '#f97316', strokeWidth: 2 }}
+                activeDot={{ r: 6, stroke: '#4f46e5', strokeWidth: 2 }}
                 name={`Temperature (°${units.temperature})`}
                 isAnimationActive={false}
               />
@@ -269,10 +272,10 @@ const RoastCurveGraph = ({
           {milestones.map((milestone, index) => (
             <div key={index} className="flex items-center gap-2">
               <div 
-                className="w-4 h-4 rounded-full border-2 border-white"
+                className="w-4 h-4 rounded-full border-2 border-white dark:border-dark-bg-primary"
                 style={{ backgroundColor: getMilestoneColor(milestone.kind) }}
               />
-              <span className="text-gray-600">{milestone.label}</span>
+              <span className="text-gray-600 dark:text-dark-text-secondary">{milestone.label}</span>
             </div>
           ))}
         </div>
@@ -366,18 +369,18 @@ const CustomTooltip = ({ active, payload, label, data }) => {
     
     
     return (
-      <div className="bg-white p-3 border border-gray-300 rounded-lg shadow-lg">
-        <p className="font-medium text-gray-900">
+      <div className="bg-white dark:bg-dark-bg-tertiary p-3 border border-gray-300 dark:border-dark-border-primary rounded-lg shadow-lg dark:shadow-dark-lg">
+        <p className="font-medium text-gray-900 dark:text-dark-text-primary">
           Time: {timeMinutes.toFixed(1)}m
         </p>
         {payload.map((entry, index) => (
-          <p key={index} style={{ color: entry.color }}>
+          <p key={index} style={{ color: entry.color }} className="dark:text-dark-text-secondary">
             {entry.name}: {entry.value?.toFixed(1)}{entry.unit || ''}
           </p>
         ))}
         {milestoneEvents.length > 0 && (
-          <div className="mt-2 pt-2 border-t border-gray-200">
-            <p className="font-medium text-gray-700">Milestones:</p>
+          <div className="mt-2 pt-2 border-t border-gray-200 dark:border-dark-border-primary">
+            <p className="font-medium text-gray-700 dark:text-dark-text-secondary">Milestones:</p>
             {milestoneEvents.map((event, index) => (
               <p key={index} className="text-sm" style={{ color: getMilestoneColor(event.kind) }}>
                 {getMilestoneLabel(event.kind)} {event.temp_f ? `at ${event.temp_f}°F` : ''}
@@ -423,12 +426,12 @@ function getMilestoneColor(kind) {
 
 function getRoastColor(index) {
   const colors = [
-    '#f97316', // orange
+    '#4f46e5', // deep indigo
+    '#7c3aed', // vibrant purple
     '#3b82f6', // blue
     '#10b981', // emerald
-    '#f59e0b', // amber
     '#ef4444', // red
-    '#8b5cf6', // purple
+    '#a855f7', // bright purple
     '#06b6d4', // cyan
     '#84cc16'  // lime
   ];

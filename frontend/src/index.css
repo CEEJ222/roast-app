@@ -1,3 +1,32 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom styles for number input spinner arrows in dark mode */
+.dark input[type="number"]::-webkit-outer-spin-button,
+.dark input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+  background: transparent;
+  color: white;
+}
+
+.dark input[type="number"]::-webkit-outer-spin-button {
+  background: transparent;
+  color: white;
+}
+
+.dark input[type="number"]::-webkit-inner-spin-button {
+  background: transparent;
+  color: white;
+}
+
+/* Firefox spinner arrows in dark mode */
+.dark input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.dark input[type="number"]::-moz-number-spin-box {
+  background: transparent;
+  color: white;
+}

@@ -53,10 +53,10 @@ const LoginForm = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-2xl overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 dark:bg-dark-gradient flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white dark:bg-dark-bg-secondary rounded-xl shadow-2xl dark:shadow-dark-xl overflow-hidden border dark:border-dark-border-primary">
         {/* Header */}
-        <div className="bg-gradient-to-r from-amber-600 to-orange-600 px-6 py-8 text-white text-center">
+        <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-6 py-8 text-white text-center">
           <h1 className="text-3xl font-bold mb-2">☕ FreshRoast Assistant</h1>
           <p className="opacity-90">Professional roast logging and analysis</p>
         </div>
@@ -64,20 +64,20 @@ const LoginForm = () => {
         {/* Login Form */}
         <div className="p-8">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome Back</h2>
-            <p className="text-gray-600">Sign in to access your roast logs and continue your coffee journey</p>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Welcome Back</h2>
+            <p className="text-gray-600 dark:text-dark-text-secondary">Sign in to access your roast logs and continue your coffee journey</p>
           </div>
 
           {error && (
             <div className={`mb-6 p-4 border rounded-lg ${
               error.includes('Account created successfully') 
-                ? 'bg-green-50 border-green-200' 
-                : 'bg-red-50 border-red-200'
+                ? 'bg-green-50 dark:bg-dark-bg-tertiary border-green-200 dark:border-dark-accent-success' 
+                : 'bg-red-50 dark:bg-dark-bg-tertiary border-red-200 dark:border-dark-accent-error'
             }`}>
               <p className={`text-sm ${
                 error.includes('Account created successfully') 
-                  ? 'text-green-700' 
-                  : 'text-red-700'
+                  ? 'text-green-700 dark:text-dark-accent-success' 
+                  : 'text-red-700 dark:text-dark-accent-error'
               }`}>{error}</p>
             </div>
           )}
@@ -86,7 +86,7 @@ const LoginForm = () => {
           <form onSubmit={handleEmailAuth} className="mb-6">
             <div className="space-y-4">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
                   Email
                 </label>
                 <input
@@ -95,13 +95,13 @@ const LoginForm = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent-primary focus:border-transparent dark:bg-dark-bg-tertiary dark:text-dark-text-primary"
                   placeholder="Enter your email"
                 />
               </div>
               
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
                   Password
                 </label>
                 <input
@@ -110,7 +110,7 @@ const LoginForm = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent-primary focus:border-transparent dark:bg-dark-bg-tertiary dark:text-dark-text-primary"
                   placeholder="Enter your password"
                 />
               </div>
@@ -118,7 +118,7 @@ const LoginForm = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white py-2 px-4 rounded-lg hover:from-orange-700 hover:to-red-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant text-white py-2 px-4 rounded-lg hover:from-indigo-800 hover:via-purple-700 hover:to-purple-800 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg dark:shadow-vibrant-glow"
               >
                 {loading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Sign In')}
               </button>
@@ -127,7 +127,7 @@ const LoginForm = () => {
                 <button
                   type="button"
                   onClick={() => setIsSignUp(!isSignUp)}
-                  className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                  className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
                 >
                   {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
                 </button>
@@ -138,10 +138,10 @@ const LoginForm = () => {
           {/* Divider */}
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
+              <div className="w-full border-t border-gray-300 dark:border-dark-border-primary" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              <span className="px-2 bg-white dark:bg-dark-bg-secondary text-gray-500 dark:text-dark-text-tertiary">Or continue with</span>
             </div>
           </div>
 
@@ -149,11 +149,11 @@ const LoginForm = () => {
             <button
               onClick={handleGoogleSignIn}
               disabled={loading}
-              className="w-full flex items-center justify-center px-6 py-4 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-700 font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex items-center justify-center px-6 py-4 border border-gray-300 dark:border-dark-border-primary rounded-lg shadow-sm bg-white dark:bg-dark-bg-tertiary text-gray-700 dark:text-dark-text-primary font-medium hover:bg-gray-50 dark:hover:bg-dark-bg-quaternary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-dark-accent-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? (
                 <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-orange-600 mr-3"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-orange-600 dark:border-dark-accent-primary mr-3"></div>
                   Signing in...
                 </div>
               ) : (
@@ -184,7 +184,7 @@ const LoginForm = () => {
             <button
               onClick={handleGitHubSignIn}
               disabled={loading}
-              className="w-full flex items-center justify-center px-6 py-4 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-700 font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex items-center justify-center px-6 py-4 border border-gray-300 dark:border-dark-border-primary rounded-lg shadow-sm bg-white dark:bg-dark-bg-tertiary text-gray-700 dark:text-dark-text-primary font-medium hover:bg-gray-50 dark:hover:bg-dark-bg-quaternary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-dark-accent-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <div className="flex items-center">
                 <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 24 24">
@@ -196,7 +196,7 @@ const LoginForm = () => {
           </div>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-dark-text-tertiary">
               By signing in, you agree to our Terms of Service and Privacy Policy
             </p>
           </div>

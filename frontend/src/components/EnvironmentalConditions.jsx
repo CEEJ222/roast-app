@@ -1,6 +1,8 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 const EnvironmentalConditions = ({ conditions, units }) => {
+  const [isMinimized, setIsMinimized] = useState(false)
+  
   if (!conditions) return null
 
   const formatTemperature = (tempCelsius) => {
@@ -44,44 +46,206 @@ const EnvironmentalConditions = ({ conditions, units }) => {
     }
   }
 
+  // Determine weather condition based on temperature and humidity
+  const getWeatherCondition = () => {
+    const temp = conditions.temperature_c
+    const humidity = conditions.humidity_pct
+    
+    if (temp < 0) return 'snow'
+    if (temp < 10 && humidity > 80) return 'fog'
+    if (temp < 15 && humidity > 70) return 'cloudy'
+    if (temp < 25 && humidity > 60) return 'partly-cloudy'
+    if (temp >= 25 && humidity < 40) return 'sunny'
+    return 'clear'
+  }
+
+  const weatherCondition = getWeatherCondition()
+
+  // Weather-specific backgrounds and effects
+  const getWeatherStyles = () => {
+    switch (weatherCondition) {
+      case 'sunny':
+        return {
+          background: 'linear-gradient(135deg, #e67e22 0%, #f39c12 25%, #f1c40f 50%, #f4d03f 75%, #f7dc6f 100%)',
+          overlay: 'radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
+          icon: '☀️',
+          glow: 'rgba(230, 126, 34, 0.6)',
+          textColor: 'text-white',
+          labelColor: 'text-white'
+        }
+      case 'clear':
+        return {
+          background: 'linear-gradient(135deg, #2980b9 0%, #3498db 25%, #5dade2 50%, #85c1e9 75%, #aed6f1 100%)',
+          overlay: 'radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.2) 0%, transparent 60%)',
+          icon: '🌤️',
+          glow: 'rgba(41, 128, 185, 0.6)',
+          textColor: 'text-white',
+          labelColor: 'text-white'
+        }
+      case 'partly-cloudy':
+        return {
+          background: 'linear-gradient(135deg, #5d6d7e 0%, #7f8c8d 25%, #a6acaf 50%, #bdc3c7 75%, #d5dbdb 100%)',
+          overlay: 'radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.3) 0%, transparent 70%)',
+          icon: '⛅',
+          glow: 'rgba(93, 109, 126, 0.6)',
+          textColor: 'text-white',
+          labelColor: 'text-white'
+        }
+      case 'cloudy':
+        return {
+          background: 'linear-gradient(135deg, #34495e 0%, #566573 25%, #7f8c8d 50%, #a6acaf 75%, #bdc3c7 100%)',
+          overlay: 'radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.2) 0%, transparent 80%)',
+          icon: '☁️',
+          glow: 'rgba(52, 73, 94, 0.6)',
+          textColor: 'text-white',
+          labelColor: 'text-white'
+        }
+      case 'fog':
+        return {
+          background: 'linear-gradient(135deg, #7f8c8d 0%, #a6acaf 25%, #bdc3c7 50%, #d5dbdb 75%, #e8f4f8 100%)',
+          overlay: 'radial-gradient(circle at 60% 40%, rgba(255, 255, 255, 0.4) 0%, transparent 90%)',
+          icon: '🌫️',
+          glow: 'rgba(127, 140, 141, 0.6)',
+          textColor: 'text-gray-900',
+          labelColor: 'text-gray-800'
+        }
+      case 'snow':
+        return {
+          background: 'linear-gradient(135deg, #aed6f1 0%, #d5dbdb 25%, #e8f4f8 50%, #f4f6f7 75%, #f8f9fa 100%)',
+          overlay: 'radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.5) 0%, transparent 100%)',
+          icon: '❄️',
+          glow: 'rgba(174, 214, 241, 0.6)',
+          textColor: 'text-gray-900',
+          labelColor: 'text-gray-800'
+        }
+      default:
+        return {
+          background: 'linear-gradient(135deg, #2980b9 0%, #3498db 25%, #5dade2 50%, #85c1e9 75%, #aed6f1 100%)',
+          overlay: 'radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.2) 0%, transparent 60%)',
+          icon: '🌤️',
+          glow: 'rgba(41, 128, 185, 0.6)',
+          textColor: 'text-white',
+          labelColor: 'text-white'
+        }
+    }
+  }
+
+  const weatherStyles = getWeatherStyles()
+
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3 shadow-sm">
-      <div className="flex items-center mb-2">
-        <svg className="w-4 h-4 text-blue-600 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-        </svg>
-        <h3 className="text-xs font-semibold text-blue-800">Environmental</h3>
+    <div 
+      className="relative overflow-hidden rounded-2xl backdrop-blur-xl border border-white/20 shadow-2xl"
+      style={{
+        background: weatherStyles.background,
+        boxShadow: `0 8px 32px ${weatherStyles.glow}, 0 0 0 1px rgba(255, 255, 255, 0.1)`
+      }}
+    >
+      {/* Photo-realistic overlay */}
+      <div 
+        className="absolute inset-0 opacity-60"
+        style={{
+          background: weatherStyles.overlay
+        }}
+      />
+      
+      {/* Glassmorphism content */}
+      <div className="relative z-10 p-2.5">
+        {/* Header with weather icon and minimize button */}
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center space-x-1.5">
+            <div className="text-lg">{weatherStyles.icon}</div>
+            <div>
+              <h3 className={`text-xs font-semibold ${weatherStyles.labelColor}`}>Environmental</h3>
+              {conditions.as_of && !isMinimized && (
+                <p className={`text-xs ${weatherStyles.labelColor}`}>
+                  {formatTimestamp(conditions.as_of)}
+                </p>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={() => setIsMinimized(!isMinimized)}
+            className={`p-1 rounded-full hover:bg-white/10 transition-colors ${weatherStyles.labelColor}`}
+            title={isMinimized ? "Expand" : "Minimize"}
+          >
+            {isMinimized ? (
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            ) : (
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              </svg>
+            )}
+          </button>
+        </div>
+        
+        {isMinimized ? (
+          /* Minimized version - just temperature and humidity */
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-1">
+                <span className="text-sm">🌡️</span>
+                <span className={`text-sm font-bold ${weatherStyles.textColor}`}>
+                  {formatTemperature(conditions.temperature_c)}
+                </span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <span className="text-sm">💧</span>
+                <span className={`text-sm font-bold ${weatherStyles.textColor}`}>
+                  {conditions.humidity_pct && !isNaN(conditions.humidity_pct) ? `${Math.round(conditions.humidity_pct)}%` : 'N/A'}
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Full version - all weather data */
+          <div className="grid grid-cols-2 gap-1.5">
+            {/* Temperature - Large display */}
+            <div className="col-span-2 bg-black/20 backdrop-blur-sm rounded-lg p-1.5 border border-white/40">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={`text-xs font-semibold ${weatherStyles.labelColor} mb-0.5`}>Temperature</p>
+                  <p className={`text-lg font-bold ${weatherStyles.textColor}`}>{formatTemperature(conditions.temperature_c)}</p>
+                </div>
+                <div className="text-xl">🌡️</div>
+              </div>
+            </div>
+            
+            {/* Humidity */}
+            <div className="bg-black/20 backdrop-blur-sm rounded-lg p-1.5 border border-white/40">
+              <div className="text-center">
+                <div className="text-sm mb-0.5">💧</div>
+                <p className={`text-xs font-semibold ${weatherStyles.labelColor} mb-0.5`}>Humidity</p>
+                <p className={`text-xs font-bold ${weatherStyles.textColor}`}>
+                  {conditions.humidity_pct && !isNaN(conditions.humidity_pct) ? `${Math.round(conditions.humidity_pct)}%` : 'N/A'}
+                </p>
+              </div>
+            </div>
+            
+            {/* Elevation */}
+            <div className="bg-black/20 backdrop-blur-sm rounded-lg p-1.5 border border-white/40">
+              <div className="text-center">
+                <div className="text-sm mb-0.5">⛰️</div>
+                <p className={`text-xs font-semibold ${weatherStyles.labelColor} mb-0.5`}>Elevation</p>
+                <p className={`text-xs font-bold ${weatherStyles.textColor}`}>{formatElevation(conditions.elevation_m)}</p>
+              </div>
+            </div>
+            
+            {/* Pressure */}
+            <div className="bg-black/20 backdrop-blur-sm rounded-lg p-1.5 border border-white/40">
+              <div className="text-center">
+                <div className="text-sm mb-0.5">🌬️</div>
+                <p className={`text-xs font-semibold ${weatherStyles.labelColor} mb-0.5`}>Pressure</p>
+                <p className={`text-xs font-bold ${weatherStyles.textColor}`}>{formatPressure(conditions.pressure_hpa)}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       
-      {conditions.as_of && (
-        <div className="text-xs text-blue-600 mb-2">
-          Updated: {formatTimestamp(conditions.as_of)}
-        </div>
-      )}
-      
-      <div className="grid grid-cols-2 gap-2 text-xs">
-        <div className="flex justify-between">
-          <span className="text-blue-700">Temp:</span>
-          <span className="font-medium text-blue-800">{formatTemperature(conditions.temperature_c)}</span>
-        </div>
-        
-        <div className="flex justify-between">
-          <span className="text-blue-700">Humidity:</span>
-          <span className="font-medium text-blue-800">
-            {conditions.humidity_pct && !isNaN(conditions.humidity_pct) ? `${Math.round(conditions.humidity_pct)}%` : 'N/A'}
-          </span>
-        </div>
-        
-        <div className="flex justify-between">
-          <span className="text-blue-700">Elevation:</span>
-          <span className="font-medium text-blue-800">{formatElevation(conditions.elevation_m)}</span>
-        </div>
-        
-        <div className="flex justify-between">
-          <span className="text-blue-700">Pressure:</span>
-          <span className="font-medium text-blue-800">{formatPressure(conditions.pressure_hpa)}</span>
-        </div>
-      </div>
+      {/* Subtle animation overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
     </div>
   )
 }

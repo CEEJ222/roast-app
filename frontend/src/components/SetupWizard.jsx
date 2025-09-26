@@ -135,7 +135,7 @@ const SetupWizard = ({ onComplete }) => {
       content: (
         <div className="space-y-6">
           <div className="text-center mb-8">
-            <div className="w-24 h-24 bg-gradient-to-br from-orange-400 to-red-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+            <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
               <span className="text-4xl">☕</span>
             </div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to FreshRoast Assistant!</h2>
@@ -154,7 +154,7 @@ const SetupWizard = ({ onComplete }) => {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Enter your display name"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg"
             />
             <p className="text-sm text-gray-500 mt-1">
               This is how your name will appear in the app
@@ -191,7 +191,7 @@ const SetupWizard = ({ onComplete }) => {
                   value={currentMachine.name}
                   onChange={(e) => setCurrentMachine({...currentMachine, name: e.target.value})}
                   placeholder="e.g., My SR800"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -201,7 +201,7 @@ const SetupWizard = ({ onComplete }) => {
                 <select
                   value={currentMachine.model}
                   onChange={(e) => setCurrentMachine({...currentMachine, model: e.target.value})}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 >
                   <option value="SR800">SR800</option>
                   <option value="SR540">SR540</option>
@@ -213,7 +213,7 @@ const SetupWizard = ({ onComplete }) => {
                     type="checkbox"
                     checked={currentMachine.has_extension}
                     onChange={(e) => setCurrentMachine({...currentMachine, has_extension: e.target.checked})}
-                    className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
+                    className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
                   />
                   <span className="text-sm font-medium text-gray-700">Extension Tube</span>
                 </label>
@@ -222,7 +222,7 @@ const SetupWizard = ({ onComplete }) => {
             <button
               onClick={addMachine}
               disabled={!currentMachine.name.trim()}
-              className="mt-4 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
               Add Machine
             </button>
@@ -366,10 +366,10 @@ const SetupWizard = ({ onComplete }) => {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full bg-white rounded-xl shadow-2xl overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 dark:bg-dark-gradient flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full bg-white dark:bg-dark-card rounded-xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-amber-600 to-orange-600 px-6 py-8 text-white text-center relative">
+        <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-6 py-8 text-white text-center relative">
           <button
             onClick={handleSkipAll}
             className="absolute top-4 right-4 text-sm text-amber-200 hover:text-white underline"
@@ -389,7 +389,7 @@ const SetupWizard = ({ onComplete }) => {
                   index < currentStep || index === steps.length - 1
                     ? 'bg-transparent' 
                     : index === currentStep
-                    ? 'bg-orange-600 text-white'
+                    ? 'bg-indigo-600 text-white'
                     : 'bg-gray-300 text-gray-600'
                 }`}>
                   {index < currentStep ? '✅' : index === steps.length - 1 ? '🎉' : index + 1}
@@ -442,7 +442,7 @@ const SetupWizard = ({ onComplete }) => {
                   (currentStep === 1 && machines.length === 0) ||
                   loading
                 }
-                className="px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-lg hover:from-orange-700 hover:to-red-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               >
                 {loading ? 'Processing...' : 'Next'}
               </button>

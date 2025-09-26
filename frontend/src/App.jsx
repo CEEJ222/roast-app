@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import LoginForm from './components/LoginForm';
 import UserProfile from './components/UserProfile';
 import SetupWizard from './components/SetupWizard';
@@ -11,6 +12,7 @@ import DashboardHistoricalRoasts from './components/DashboardHistoricalRoasts';
 import RoastDetailPage from './components/RoastDetailPage';
 import ConfirmationModal from './components/ConfirmationModal';
 import TemperatureInputModal from './components/TemperatureInputModal';
+import ThemeToggle from './components/ThemeToggle';
 import { Analytics } from '@vercel/analytics/react';
 
 const API_BASE = import.meta.env.DEV 
@@ -669,26 +671,27 @@ function RoastAssistant() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 p-4">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 dark:bg-dark-gradient p-4">
+      <div className="max-w-4xl mx-auto bg-white dark:bg-dark-bg-secondary rounded-xl shadow-2xl dark:shadow-dark-xl overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-amber-600 to-orange-600 px-6 py-4 text-white">
+        <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-6 py-4 text-white">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold">☕ FreshRoast Assistant</h1>
               <p className="opacity-90">Professional roast logging and analysis</p>
             </div>
             <div className="flex items-center gap-4">
+              <ThemeToggle />
               <UserProfile />
             </div>
           </div>
         </div>
 
 
-        <div className="p-6">
+        <div className="p-6 dark:bg-dark-bg-secondary">
           {/* Loading indicator */}
           {loading && (
-            <div className="mb-4 p-3 bg-blue-50 border-l-4 border-blue-400 text-blue-700">
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-dark-bg-tertiary border-l-4 border-blue-400 dark:border-dark-accent-info text-blue-700 dark:text-dark-accent-info">
               Processing...
             </div>
           )}
@@ -698,12 +701,12 @@ function RoastAssistant() {
             <div className="space-y-6">
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">Roast Dashboard</h2>
-                  <p className="text-gray-600">Your roasting history and quick actions</p>
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Roast Dashboard</h2>
+                  <p className="text-gray-600 dark:text-dark-text-secondary">Your roasting history and quick actions</p>
                 </div>
                 <button
                   onClick={() => setShowStartRoastWizard(true)}
-                  className="bg-gradient-to-r from-orange-600 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-700 hover:to-red-700 font-bold shadow-lg transform transition hover:scale-105 flex items-center gap-2"
+                  className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant text-white px-6 py-3 rounded-lg hover:from-indigo-800 hover:via-purple-700 hover:to-purple-800 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-bold shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105 flex items-center gap-2"
                 >
                   🚦 Start New Roast
                 </button>
@@ -712,20 +715,19 @@ function RoastAssistant() {
 
               {/* Roast Curve Visualization */}
               {historicalRoasts?.length > 0 && (
-                <div className="bg-white rounded-lg shadow">
-                  <div className="px-6 py-4 border-b border-gray-200">
+                <div className="bg-white dark:bg-dark-bg-tertiary rounded-lg shadow dark:shadow-dark-lg border dark:border-dark-border-primary">
+                  <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-border-primary">
                     <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-semibold text-gray-800">All Roast Curves</h3>
+                      <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">All Roast Curves</h3>
                       <button
-                        onClick={() => setShowFullHistoricalRoasts(!showFullHistoricalRoasts)}
-                        className="text-orange-600 hover:text-orange-700 font-medium"
+                        onClick={() => setShowHistoricalRoasts(true)}
+                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
                       >
-                        {showFullHistoricalRoasts ? 'Show Recent Only →' : 'View All Roasts →'}
+                        View All Roasts →
                       </button>
                     </div>
                   </div>
-                  <div className="p-6">
-                    <RoastCurveGraph
+                  <RoastCurveGraph
                       data={historicalRoasts.map(roast => ({
                         id: roast.id,
                         name: roast.coffee_type || 'Unknown',
@@ -735,10 +737,10 @@ function RoastAssistant() {
                       mode="historical"
                       showROR={true}
                       showMilestones={true}
-                      height={400}
-                      title="All Roast Curves"
+                      height={500}
+                      title=""
                       units={{ temperature: userProfile?.units?.temperature === 'celsius' ? 'C' : 'F', time: 'min' }}
-                      className="mb-6"
+                      className=""
                       showLegend={true}
                       showGrid={true}
                       showTooltip={true}
@@ -748,26 +750,22 @@ function RoastAssistant() {
                       interactive={true}
                       showRoastLabels={true}
                     />
-                    <p className="text-sm text-gray-500 text-center">
-                      Showing all your roast curves. Use zoom and pan to explore, or click "View All Roasts" for detailed analysis.
-                    </p>
-                  </div>
                 </div>
               )}
 
               {/* Historical Roasts Table */}
-              <div className="bg-white rounded-lg shadow">
-                <div className="px-6 py-4 border-b border-gray-200">
+              <div className="bg-white dark:bg-dark-bg-tertiary rounded-lg shadow dark:shadow-dark-lg border dark:border-dark-border-primary">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-border-primary">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-gray-800">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">
                       {showFullHistoricalRoasts ? 'All Roasts' : 'Recent Roasts'}
                     </h3>
                     {historicalRoasts?.length > 0 && (
                       <button
                         onClick={() => setShowFullHistoricalRoasts(!showFullHistoricalRoasts)}
-                        className="text-orange-600 hover:text-orange-700 font-medium"
+                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
                       >
-                        {showFullHistoricalRoasts ? 'Show Recent Only →' : 'View All →'}
+                        {showFullHistoricalRoasts ? 'Show Recent Only →' : 'View All Roasts →'}
                       </button>
                     )}
                   </div>
@@ -787,17 +785,17 @@ function RoastAssistant() {
                   <div className="p-6">
                     {loadingHistoricalRoasts ? (
                       <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
-                        <p className="text-gray-600">Loading roast history...</p>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 dark:border-dark-accent-primary mx-auto mb-4"></div>
+                        <p className="text-gray-600 dark:text-dark-text-secondary">Loading roast history...</p>
                       </div>
                     ) : historicalRoasts?.length === 0 ? (
-                      <div className="text-center py-12 text-gray-500">
+                      <div className="text-center py-12 text-gray-500 dark:text-dark-text-tertiary">
                         <div className="text-6xl mb-4">☕</div>
-                        <p className="text-lg font-semibold mb-2">Ready to start your roasting journey?</p>
-                        <p className="text-sm mb-6">Begin with your first roast to see your progress and curves here!</p>
+                        <p className="text-lg font-semibold mb-2 dark:text-dark-text-primary">Ready to start your roasting journey?</p>
+                        <p className="text-sm mb-6 dark:text-dark-text-secondary">Begin with your first roast to see your progress and curves here!</p>
                         <button
                           onClick={() => setShowStartRoastWizard(true)}
-                          className="bg-gradient-to-r from-orange-600 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-700 hover:to-red-700 font-bold shadow-lg transform transition hover:scale-105"
+                          className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-dark-accent-primary dark:to-dark-accent-secondary text-white px-6 py-3 rounded-lg hover:from-indigo-700 hover:to-purple-700 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-bold shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105"
                         >
                           🚦 Start Your First Roast
                         </button>
@@ -805,30 +803,30 @@ function RoastAssistant() {
                     ) : (
                       <div className="space-y-4">
                         {historicalRoasts.slice(0, 5).map((roast) => (
-                          <div key={roast.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                          <div key={roast.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary">
                             <div className="flex items-center space-x-4">
-                              <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                                <span className="text-orange-600 font-bold">☕</span>
+                              <div className="w-10 h-10 bg-orange-100 dark:bg-dark-bg-tertiary rounded-full flex items-center justify-center border dark:border-dark-border-primary">
+                                <span className="text-orange-600 dark:text-dark-accent-primary font-bold">☕</span>
                               </div>
                               <div>
-                                <p className="font-medium text-gray-900">{roast.coffee_type}</p>
-                                <p className="text-sm text-gray-500">
+                                <p className="font-medium text-gray-900 dark:text-dark-text-primary">{roast.coffee_type}</p>
+                                <p className="text-sm text-gray-500 dark:text-dark-text-tertiary">
                                   {new Date(roast.created_at).toLocaleDateString()} • {roast.machine_label || 'Unknown Machine'}
                                 </p>
                               </div>
                             </div>
                             <div className="flex items-center space-x-4 text-sm">
-                              <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-medium">
+                              <span className="px-2 py-1 bg-amber-100 dark:bg-dark-bg-tertiary text-amber-800 dark:text-dark-accent-warning rounded-full text-xs font-medium border dark:border-dark-border-primary">
                                 {roast.desired_roast_level}
                               </span>
                               {roast.weight_loss_pct && (
-                                <span className="text-gray-600">
+                                <span className="text-gray-600 dark:text-dark-text-secondary">
                                   {roast.weight_loss_pct.toFixed(1)}% loss
                                 </span>
                               )}
                               <button
                                 onClick={() => handleRoastResume(roast)}
-                                className="text-orange-600 hover:text-orange-700 font-medium"
+                                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
                               >
                                 {(() => {
                                   if (roast.id === roastId) return 'Currently Active →';
@@ -871,7 +869,7 @@ function RoastAssistant() {
                         max="9"
                         value={initialSettings.fan_level}
                         onChange={(e) => setInitialSettings(prev => ({ ...prev, fan_level: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       />
                     </div>
                     <div>
@@ -882,7 +880,7 @@ function RoastAssistant() {
                         max="9"
                         value={initialSettings.heat_level}
                         onChange={(e) => setInitialSettings(prev => ({ ...prev, heat_level: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       />
                     </div>
                   </div>
@@ -892,7 +890,7 @@ function RoastAssistant() {
                 <div className="flex space-x-3 pt-6">
                   <button
                     onClick={startRoast}
-                    className="flex-1 bg-gradient-to-r from-orange-600 to-red-600 text-white py-2 px-4 rounded-lg hover:from-orange-700 hover:to-red-700 font-medium transition"
+                    className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition shadow-lg"
                   >
                     🔥 Start Roast
                   </button>
@@ -929,64 +927,113 @@ function RoastAssistant() {
                   ← Back to Dashboard
                 </button>
                 <div className="text-center flex-1">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">Active Roast Session</h2>
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Active Roast Session</h2>
                 </div>
                 <div className="w-32"></div> {/* Spacer for centering */}
               </div>
 
-              <div className="text-center mb-6 relative">
-                <div className="text-5xl font-mono font-bold text-orange-600 bg-gray-100 rounded-lg py-4">
-                  ⏱️ {formatTime(elapsedTime)}
-                </div>
-                
-                {/* Phase Indicators */}
-                <div className="flex justify-center gap-4 mt-4">
-                  <div className={`px-4 py-2 rounded-lg font-medium transition ${
-                    currentPhase === 'drying' 
-                      ? 'bg-yellow-100 text-yellow-800 border-2 border-yellow-300' 
-                      : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    🌱 Drying Phase
+              {/* Clean Header Layout */}
+              <div className="mb-8">
+                {/* Top Row - Timer and Key Metrics */}
+                <div className="flex items-center justify-between mb-6">
+                  {/* Timer - Large and prominent */}
+                  <div className="text-center">
+                    <div className="text-6xl font-mono font-bold text-indigo-600 dark:text-indigo-400 mb-2">
+                      {formatTime(elapsedTime)}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                      Total Roast Time
+                    </div>
                   </div>
-                  <div className={`px-4 py-2 rounded-lg font-medium transition ${
-                    currentPhase === 'development' 
-                      ? 'bg-orange-100 text-orange-800 border-2 border-orange-300' 
-                      : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    🔥 Development Phase
+                  
+                  {/* Key Metrics Row */}
+                  <div className="flex gap-6">
+                    {/* Current Temperature */}
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-red-500 dark:text-red-400">
+                        {formData.tempF ? `${formData.tempF}°F` : '—'}
+                      </div>
+                      <div className="text-xs text-gray-600 dark:text-dark-text-secondary">Current Temp</div>
+                    </div>
+                    
+                    {/* Development Time */}
                     {currentPhase === 'development' && (
-                      <div className="text-sm font-bold mt-1">
-                        {formatTime(developmentTime)}
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-orange-500 dark:text-orange-400">
+                          {formatTime(developmentTime)}
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-dark-text-secondary">Development</div>
+                      </div>
+                    )}
+                    
+                    {/* Environmental Conditions - Compact */}
+                    {environmentalConditions && (
+                      <div className="min-w-[200px]">
+                        <EnvironmentalConditions 
+                          conditions={environmentalConditions} 
+                          units={userProfile?.units}
+                        />
                       </div>
                     )}
                   </div>
-                  <div className={`px-4 py-2 rounded-lg font-medium transition ${
-                    currentPhase === 'cooling' 
-                      ? 'bg-cyan-100 text-cyan-800 border-2 border-cyan-300' 
-                      : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    🧊 Cooling Phase
+                </div>
+                
+                {/* Phase Progress Bar */}
+                <div className="bg-gray-200 dark:bg-dark-bg-tertiary rounded-full h-2 mb-4">
+                  <div className={`h-2 rounded-full transition-all duration-500 ${
+                    currentPhase === 'drying' 
+                      ? 'bg-gradient-to-r from-green-500 to-green-400' 
+                      : currentPhase === 'development' 
+                      ? 'bg-gradient-to-r from-orange-500 to-orange-400' 
+                      : currentPhase === 'cooling' 
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-500' 
+                      : 'bg-gradient-to-r from-gray-400 to-gray-300'
+                  }`}
+                       style={{
+                         width: currentPhase === 'drying' ? '33%' : 
+                                currentPhase === 'development' ? '66%' : 
+                                currentPhase === 'cooling' ? '100%' : '0%'
+                       }}>
                   </div>
                 </div>
                 
-                {/* Environmental Conditions - Upper Right */}
-                {environmentalConditions && (
-                  <div className="absolute top-0 right-0 max-w-xs">
-                    <EnvironmentalConditions 
-                      conditions={environmentalConditions} 
-                      units={userProfile?.units}
-                    />
+                {/* Phase Indicators - Cleaner Design */}
+                <div className="flex justify-center gap-8">
+                  <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${
+                    currentPhase === 'drying' 
+                      ? 'bg-indigo-100 dark:bg-dark-accent-primary/20 text-indigo-800 dark:text-dark-accent-primary' 
+                      : 'text-gray-500 dark:text-dark-text-tertiary'
+                  }`}>
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span className="font-medium">Drying Phase</span>
                   </div>
-                )}
-                
+                  
+                  <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${
+                    currentPhase === 'development' 
+                      ? 'bg-indigo-100 dark:bg-dark-accent-primary/20 text-indigo-800 dark:text-dark-accent-primary' 
+                      : 'text-gray-500 dark:text-dark-text-tertiary'
+                  }`}>
+                    <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                    <span className="font-medium">Development Phase</span>
+                  </div>
+                  
+                  <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${
+                    currentPhase === 'cooling' 
+                      ? 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-400' 
+                      : 'text-gray-500 dark:text-dark-text-tertiary'
+                  }`}>
+                    <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
+                    <span className="font-medium">Cooling Phase</span>
+                  </div>
+                </div>
               </div>
 
               {/* Controls */}
-              <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-700 mb-4">Roaster Controls</h3>
+              <div className="bg-gray-50 dark:bg-dark-bg-tertiary rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-700 dark:text-dark-text-primary mb-4">Roaster Controls</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
                       Fan: {formData.fan}
                     </label>
                     <input
@@ -1004,7 +1051,7 @@ function RoastAssistant() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
                       Heat: {formData.heat}
                     </label>
                     <input
@@ -1022,7 +1069,7 @@ function RoastAssistant() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">BT/ET Temp (°F)</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">BT/ET Temp (°F)</label>
                     <div className="flex gap-2">
                       <input
                         type="number"
@@ -1044,12 +1091,12 @@ function RoastAssistant() {
                           }
                         }}
                         placeholder="Optional"
-                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="flex-1 border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
                       />
                       <button
                         onClick={logChange}
                         disabled={loading}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium transition disabled:opacity-50 flex items-center gap-2"
+                        className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 flex items-center gap-2 shadow-lg"
                       >
                         ⚙️ Log
                       </button>
@@ -1066,7 +1113,7 @@ function RoastAssistant() {
                   className={`px-4 py-3 rounded-lg font-medium transition ${
                     milestonesMarked.firstCrack 
                       ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
-                      : 'bg-amber-600 text-white hover:bg-amber-700'
+                      : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg'
                   } ${loading ? 'opacity-50' : ''}`}
                 >
                   {milestonesMarked.firstCrack ? '✅ First Crack' : '🔥 First Crack'}
@@ -1077,7 +1124,7 @@ function RoastAssistant() {
                   className={`px-4 py-3 rounded-lg font-medium transition ${
                     milestonesMarked.secondCrack 
                       ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
-                      : 'bg-red-600 text-white hover:bg-red-700'
+                      : 'bg-gradient-to-r from-red-600 to-pink-600 text-white hover:from-red-700 hover:to-pink-700 shadow-lg'
                   } ${loading ? 'opacity-50' : ''}`}
                 >
                   {milestonesMarked.secondCrack ? '✅ Second Crack' : '🔥🔥 Second Crack'}
@@ -1088,7 +1135,7 @@ function RoastAssistant() {
                   className={`px-4 py-3 rounded-lg font-medium transition ${
                     milestonesMarked.cool 
                       ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
-                      : 'bg-cyan-600 text-white hover:bg-cyan-700'
+                      : 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-700 hover:to-blue-700 shadow-lg'
                   } ${loading ? 'opacity-50' : ''}`}
                 >
                   {milestonesMarked.cool ? '✅ Drop/Cool' : '🧊 Drop/Cool'}
@@ -1122,40 +1169,40 @@ function RoastAssistant() {
               />
 
               {/* Events Table */}
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="px-4 py-3 bg-gray-50 border-b">
-                  <h3 className="text-lg font-medium text-gray-800">Roast Event Log</h3>
+              <div className="bg-white dark:bg-dark-card rounded-lg shadow dark:shadow-dark-glow overflow-hidden">
+                <div className="px-4 py-3 bg-gray-50 dark:bg-dark-bg-tertiary border-b dark:border-dark-border-primary">
+                  <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text-primary">Roast Event Log</h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-gray-50 dark:bg-dark-bg-tertiary">
                       <tr>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Time</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Event</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Fan</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Heat</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Temp °F</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Note</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Actions</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-dark-text-primary">Time</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-dark-text-primary">Event</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-dark-text-primary">Fan</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-dark-text-primary">Heat</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-dark-text-primary">Temp °F</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-dark-text-primary">Note</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-dark-text-primary">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white dark:bg-dark-bg-secondary divide-y divide-gray-200 dark:divide-dark-border-primary">
                       {events.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                          <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-dark-text-tertiary">
                             No events logged yet. Start making adjustments!
                           </td>
                         </tr>
                       ) : (
                         events.map((event, index) => (
-                          <tr key={event.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                            <td className="px-4 py-2 text-sm font-mono">{formatTime(event.t_offset_sec)}</td>
+                          <tr key={event.id} className={index % 2 === 0 ? 'bg-white dark:bg-dark-bg-secondary' : 'bg-gray-50 dark:bg-dark-bg-tertiary'}>
+                            <td className="px-4 py-2 text-sm font-mono text-gray-900 dark:text-dark-text-primary">{formatTime(event.t_offset_sec)}</td>
                             <td className="px-4 py-2 text-sm">
                               {editingEventId === event.id ? (
                                 <select
                                   value={editingFormData.kind}
                                   onChange={(e) => setEditingFormData(prev => ({ ...prev, kind: e.target.value }))}
-                                  className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                                  className="w-full text-xs border border-gray-300 dark:border-dark-border-primary rounded px-2 py-1 bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
                                 >
                                   <option value="SET">Settings Change</option>
                                   <option value="FIRST_CRACK">First Crack</option>
@@ -1165,18 +1212,18 @@ function RoastAssistant() {
                                 </select>
                               ) : (
                                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  event.kind === 'SET' ? 'bg-blue-100 text-blue-800' :
-                                  event.kind === 'FIRST_CRACK' ? 'bg-amber-100 text-amber-800' :
-                                  event.kind === 'SECOND_CRACK' ? 'bg-red-100 text-red-800' :
-                                  event.kind === 'COOL' ? 'bg-cyan-100 text-cyan-800' :
-                                  event.kind === 'END' ? 'bg-purple-100 text-purple-800' :
-                                  'bg-gray-100 text-gray-800'
+                                  event.kind === 'SET' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
+                                  event.kind === 'FIRST_CRACK' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
+                                  event.kind === 'SECOND_CRACK' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
+                                  event.kind === 'COOL' ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300' :
+                                  event.kind === 'END' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
+                                  'bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-300'
                                 }`}>
                                   {event.kind.replace('_', ' ')}
                                 </span>
                               )}
                             </td>
-                            <td className="px-4 py-2 text-sm">
+                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-dark-text-primary">
                               {editingEventId === event.id ? (
                                 <input
                                   type="number"
@@ -1184,13 +1231,13 @@ function RoastAssistant() {
                                   max="9"
                                   value={editingFormData.fan_level}
                                   onChange={(e) => setEditingFormData(prev => ({ ...prev, fan_level: e.target.value }))}
-                                  className="w-16 text-xs border border-gray-300 rounded px-2 py-1"
+                                  className="w-16 text-xs border border-gray-300 dark:border-dark-border-primary rounded px-2 py-1 bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
                                 />
                               ) : (
                                 event.fan_level ?? '—'
                               )}
                             </td>
-                            <td className="px-4 py-2 text-sm">
+                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-dark-text-primary">
                               {editingEventId === event.id ? (
                                 <input
                                   type="number"
@@ -1198,32 +1245,32 @@ function RoastAssistant() {
                                   max="9"
                                   value={editingFormData.heat_level}
                                   onChange={(e) => setEditingFormData(prev => ({ ...prev, heat_level: e.target.value }))}
-                                  className="w-16 text-xs border border-gray-300 rounded px-2 py-1"
+                                  className="w-16 text-xs border border-gray-300 dark:border-dark-border-primary rounded px-2 py-1 bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
                                 />
                               ) : (
                                 event.heat_level ?? '—'
                               )}
                             </td>
-                            <td className="px-4 py-2 text-sm">
+                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-dark-text-primary">
                               {editingEventId === event.id ? (
                                 <input
                                   type="number"
                                   step="0.1"
                                   value={editingFormData.temp_f}
                                   onChange={(e) => setEditingFormData(prev => ({ ...prev, temp_f: e.target.value }))}
-                                  className="w-20 text-xs border border-gray-300 rounded px-2 py-1"
+                                  className="w-20 text-xs border border-gray-300 dark:border-dark-border-primary rounded px-2 py-1 bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
                                 />
                               ) : (
                                 event.temp_f ?? '—'
                               )}
                             </td>
-                            <td className="px-4 py-2 text-sm">
+                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-dark-text-primary">
                               {editingEventId === event.id ? (
                                 <input
                                   type="text"
                                   value={editingFormData.note}
                                   onChange={(e) => setEditingFormData(prev => ({ ...prev, note: e.target.value }))}
-                                  className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                                  className="w-full text-xs border border-gray-300 dark:border-dark-border-primary rounded px-2 py-1 bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
                                   placeholder="Note"
                                 />
                               ) : (
@@ -1235,13 +1282,13 @@ function RoastAssistant() {
                                 <div className="flex space-x-1">
                                   <button
                                     onClick={() => saveEditedEvent(event.id)}
-                                    className="text-green-600 hover:text-green-800 text-xs font-medium"
+                                    className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-xs font-medium"
                                   >
                                     ✅ Save
                                   </button>
                                   <button
                                     onClick={cancelEdit}
-                                    className="text-gray-600 hover:text-gray-800 text-xs font-medium"
+                                    className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 text-xs font-medium"
                                   >
                                     ❌ Cancel
                                   </button>
@@ -1250,13 +1297,13 @@ function RoastAssistant() {
                                 <div className="flex space-x-2">
                                   <button
                                     onClick={() => startEditEvent(event)}
-                                    className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-xs font-medium"
                                   >
                                     ✏️ Edit
                                   </button>
                                   <button
                                     onClick={() => deleteEvent(event.id)}
-                                    className="text-red-600 hover:text-red-800 text-xs font-medium"
+                                    className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-xs font-medium"
                                   >
                                     🗑️ Delete
                                   </button>
@@ -1296,8 +1343,8 @@ function RoastAssistant() {
                   ← Back to Dashboard
                 </button>
                 <div className="text-center flex-1">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">Complete Your Roast</h2>
-                  <p className="text-gray-600">Record final measurements and notes</p>
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Complete Your Roast</h2>
+                  <p className="text-gray-600 dark:text-dark-text-secondary">Record final measurements and notes</p>
                 </div>
                 <div className="w-32"></div> {/* Spacer for centering */}
               </div>
@@ -1330,31 +1377,36 @@ function RoastAssistant() {
               
               <div className="max-w-md mx-auto space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Weight After Roast (g)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">Weight After Roast (g)</label>
                   <input
                     type="number"
                     step="0.1"
                     value={formData.weightAfter}
                     onChange={(e) => handleInputChange('weightAfter', e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center text-lg"
+                    className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent-primary focus:border-transparent text-center text-lg bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
+                    style={{
+                      '--tw-ring-color': 'rgb(99 102 241)',
+                      '--tw-ring-offset-shadow': 'var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color)',
+                      '--tw-ring-shadow': 'var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color)',
+                    }}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Notes (optional)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">Notes (optional)</label>
                   <textarea
                     value={formData.notes}
                     onChange={(e) => handleInputChange('notes', e.target.value)}
                     rows={3}
                     placeholder="Any special notes about this roast..."
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent-primary focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary placeholder-gray-500 dark:placeholder-dark-text-tertiary"
                   />
                 </div>
 
                 <button
                   onClick={finishRoast}
                   disabled={loading || !formData.weightAfter}
-                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-lg hover:from-green-700 hover:to-emerald-700 font-bold text-lg shadow-lg transform transition hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-bold text-lg shadow-lg transform transition hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   ✅ Complete Roast Session
                 </button>
@@ -1382,49 +1434,49 @@ function RoastAssistant() {
               )}
 
               {/* Events Log - Show complete event history */}
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="px-4 py-3 bg-gray-50 border-b">
-                  <h3 className="text-lg font-medium text-gray-800">Complete Roast Event Log</h3>
+              <div className="bg-white dark:bg-dark-card rounded-lg shadow overflow-hidden">
+                <div className="px-4 py-3 bg-gray-50 dark:bg-dark-bg-tertiary border-b dark:border-dark-border-primary">
+                  <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text-primary">Complete Roast Event Log</h3>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-dark-border-primary">
+                    <thead className="bg-gray-50 dark:bg-dark-bg-tertiary">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fan</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Heat</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Temp °F</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">Time</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">Event</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">Fan</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">Heat</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">Temp °F</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">Note</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white dark:bg-dark-bg-secondary divide-y divide-gray-200 dark:divide-dark-border-primary">
                       {events.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                          <td colSpan={6} className="px-4 py-8 text-center text-gray-500 dark:text-dark-text-tertiary">
                             No events logged yet.
                           </td>
                         </tr>
                       ) : (
                         events.map((event, index) => (
-                          <tr key={event.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                            <td className="px-4 py-2 text-sm font-mono">{formatTime(event.t_offset_sec)}</td>
+                          <tr key={event.id} className={index % 2 === 0 ? 'bg-white dark:bg-dark-bg-secondary' : 'bg-gray-50 dark:bg-dark-bg-tertiary'}>
+                            <td className="px-4 py-2 text-sm font-mono text-gray-900 dark:text-dark-text-primary">{formatTime(event.t_offset_sec)}</td>
                             <td className="px-4 py-2 text-sm">
                               <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                event.kind === 'SET' ? 'bg-blue-100 text-blue-800' :
-                                event.kind === 'FIRST_CRACK' ? 'bg-amber-100 text-amber-800' :
-                                event.kind === 'SECOND_CRACK' ? 'bg-red-100 text-red-800' :
-                                event.kind === 'COOL' ? 'bg-cyan-100 text-cyan-800' :
-                                event.kind === 'END' ? 'bg-purple-100 text-purple-800' :
-                                'bg-gray-100 text-gray-800'
+                                event.kind === 'SET' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
+                                event.kind === 'FIRST_CRACK' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
+                                event.kind === 'SECOND_CRACK' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
+                                event.kind === 'COOL' ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300' :
+                                event.kind === 'END' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
+                                'bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-300'
                               }`}>
                                 {event.kind.replace('_', ' ')}
                               </span>
                             </td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{event.fan_level || '—'}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{event.heat_level || '—'}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{event.temp_f || '—'}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{event.note || '—'}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-dark-text-primary">{event.fan_level || '—'}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-dark-text-primary">{event.heat_level || '—'}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-dark-text-primary">{event.temp_f || '—'}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-dark-text-primary">{event.note || '—'}</td>
                           </tr>
                         ))
                       )}
@@ -1501,7 +1553,7 @@ function RoastAssistant() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
             {/* Header */}
-            <div className="bg-gradient-to-r from-amber-600 to-orange-600 px-6 py-4 text-white">
+            <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-6 py-4 text-white">
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold">🚦 Start New Roast</h2>
@@ -1509,7 +1561,7 @@ function RoastAssistant() {
                 </div>
                 <button
                   onClick={handleStartRoastWizardCancel}
-                  className="text-white hover:text-amber-200 text-2xl font-bold"
+                  className="text-white hover:text-indigo-200 text-2xl font-bold"
                 >
                   ×
                 </button>
@@ -1527,7 +1579,7 @@ function RoastAssistant() {
                   <div key={step.key} className="flex items-center">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
                       roastSetupStep === step.key
-                        ? 'bg-orange-600 text-white'
+                        ? 'bg-indigo-600 text-white'
                         : ['machine', 'coffee', 'review'].indexOf(roastSetupStep) > index
                         ? 'bg-green-600 text-white'
                         : 'bg-gray-300 text-gray-600'
@@ -1535,7 +1587,7 @@ function RoastAssistant() {
                       {['machine', 'coffee', 'review'].indexOf(roastSetupStep) > index ? '✓' : step.icon}
                     </div>
                     <span className={`ml-2 text-sm font-medium ${
-                      roastSetupStep === step.key ? 'text-orange-600' : 'text-gray-600'
+                      roastSetupStep === step.key ? 'text-indigo-600' : 'text-gray-600'
                     }`}>
                       {step.label}
                     </span>
@@ -1604,7 +1656,7 @@ function RoastAssistant() {
                                 hasExtension: selectedMachine?.has_extension || false
                               }));
                             }}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white text-gray-900"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-gray-900"
                           >
                             {userMachines.map((machine) => (
                               <option key={machine.id} value={machine.id}>
@@ -1668,7 +1720,7 @@ function RoastAssistant() {
                         value={formData.coffeeType}
                         onChange={(e) => handleInputChange('coffeeType', e.target.value)}
                         placeholder="Ethiopia"
-                        className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                        className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                           !formData.coffeeType ? 'border-red-300 bg-red-50' : 'border-gray-300'
                         }`}
                       />
@@ -1681,7 +1733,7 @@ function RoastAssistant() {
                         value={formData.coffeeRegion}
                         onChange={(e) => handleInputChange('coffeeRegion', e.target.value)}
                         placeholder="Yirgacheffe, Sidama, etc."
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       />
                     </div>
 
@@ -1692,7 +1744,7 @@ function RoastAssistant() {
                       <select
                         value={formData.coffeeProcess}
                         onChange={(e) => handleInputChange('coffeeProcess', e.target.value)}
-                        className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                        className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                           !formData.coffeeProcess ? 'border-red-300 bg-red-50' : 'border-gray-300'
                         }`}
                       >
@@ -1709,7 +1761,7 @@ function RoastAssistant() {
                       <select
                         value={formData.roastLevel}
                         onChange={(e) => handleInputChange('roastLevel', e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       >
                         <option value="City">City</option>
                         <option value="City Plus">City Plus</option>
@@ -1725,7 +1777,7 @@ function RoastAssistant() {
                         step="0.1"
                         value={formData.weightBefore}
                         onChange={(e) => handleInputChange('weightBefore', e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                         placeholder="e.g., 250"
                       />
                     </div>
@@ -1791,7 +1843,7 @@ function RoastAssistant() {
                   <button
                     onClick={() => setRoastSetupStep('coffee')}
                     disabled={userMachines.length === 0}
-                    className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                   >
                     Next: Coffee Details
                   </button>
@@ -1801,7 +1853,7 @@ function RoastAssistant() {
                   <button
                     onClick={() => setRoastSetupStep('review')}
                     disabled={!formData.coffeeType || !formData.coffeeProcess}
-                    className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                   >
                     Next: Review
                   </button>
@@ -1815,7 +1867,7 @@ function RoastAssistant() {
                       showInitialSettingsForm();
                     }}
                     disabled={!formData.coffeeType || !formData.coffeeProcess || userMachines.length === 0}
-                    className="px-6 py-2 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-lg hover:from-orange-700 hover:to-red-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                   >
                     🚦 Start Roast Session
                   </button>
@@ -1831,10 +1883,12 @@ function RoastAssistant() {
 
 function App() {
   return (
-    <AuthProvider>
-      <RoastAssistant />
-      <Analytics />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <RoastAssistant />
+        <Analytics />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
