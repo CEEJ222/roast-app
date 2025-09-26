@@ -14,6 +14,9 @@ const HistoricalRoasts = ({ onClose }) => {
   const [roastDetails, setRoastDetails] = useState({});
   const [showGraph, setShowGraph] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [deletingRoast, setDeletingRoast] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
   useEffect(() => {
     loadHistoricalRoasts();
@@ -120,6 +123,86 @@ const HistoricalRoasts = ({ onClose }) => {
     });
     console.log('Selected roasts data:', result);
     return result;
+  };
+
+  const deleteRoast = async (roastId) => {
+    try {
+      setDeletingRoast(roastId);
+      const token = await getAuthToken();
+      const response = await fetch(`${API_BASE}/roasts/${roastId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        // Remove from local state
+        setRoasts(prev => prev.filter(r => r.id !== roastId));
+        setSelectedRoasts(prev => prev.filter(id => id !== roastId));
+        setRoastDetails(prev => {
+          const newDetails = { ...prev };
+          delete newDetails[roastId];
+          return newDetails;
+        });
+        setShowDeleteConfirm(null);
+      } else {
+        const errorData = await response.json();
+        console.error('Error deleting roast:', errorData);
+        alert('Failed to delete roast. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error deleting roast:', error);
+      alert('Failed to delete roast. Please try again.');
+    } finally {
+      setDeletingRoast(null);
+    }
+  };
+
+  const deleteSelectedRoasts = async () => {
+    if (selectedRoasts.length === 0) return;
+    
+    setShowBulkDeleteConfirm(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    try {
+      setDeletingRoast('bulk');
+      const token = await getAuthToken();
+      
+      // Delete all selected roasts
+      const deletePromises = selectedRoasts.map(roastId => 
+        fetch(`${API_BASE}/roasts/${roastId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+      );
+
+      const responses = await Promise.all(deletePromises);
+      const failedDeletes = responses.filter(r => !r.ok);
+      
+      if (failedDeletes.length > 0) {
+        console.error('Some roasts failed to delete');
+        alert(`Failed to delete ${failedDeletes.length} roast(s). Please try again.`);
+      } else {
+        // Remove all selected roasts from local state
+        setRoasts(prev => prev.filter(r => !selectedRoasts.includes(r.id)));
+        setSelectedRoasts([]);
+        setRoastDetails(prev => {
+          const newDetails = { ...prev };
+          selectedRoasts.forEach(id => delete newDetails[id]);
+          return newDetails;
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting roasts:', error);
+      alert('Failed to delete roasts. Please try again.');
+    } finally {
+      setDeletingRoast(null);
+      setShowBulkDeleteConfirm(false);
+    }
   };
 
   if (loading) {
@@ -232,6 +315,13 @@ const HistoricalRoasts = ({ onClose }) => {
                     📊 Compare Selected ({selectedRoasts.length})
                   </button>
                   <button
+                    onClick={deleteSelectedRoasts}
+                    disabled={selectedRoasts.length === 0 || deletingRoast === 'bulk'}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {deletingRoast === 'bulk' ? '🗑️ Deleting...' : `🗑️ Delete Selected (${selectedRoasts.length})`}
+                  </button>
+                  <button
                     onClick={() => setSelectedRoasts([])}
                     className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition"
                   >
@@ -272,6 +362,9 @@ const HistoricalRoasts = ({ onClose }) => {
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Roast Level
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
                           </th>
                         </tr>
                       </thead>
@@ -317,6 +410,19 @@ const HistoricalRoasts = ({ onClose }) => {
                                 {roast.desired_roast_level}
                               </span>
                             </td>
+                            <td className="px-4 py-3 text-sm text-gray-900">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowDeleteConfirm(roast.id);
+                                }}
+                                disabled={deletingRoast === roast.id}
+                                className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Delete roast"
+                              >
+                                {deletingRoast === roast.id ? '🗑️' : '🗑️'}
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -328,6 +434,70 @@ const HistoricalRoasts = ({ onClose }) => {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <div className="text-center">
+              <div className="text-6xl mb-4">⚠️</div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Delete Roast
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete this roast? This action cannot be undone and will also delete all associated temperature readings and events.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => setShowDeleteConfirm(null)}
+                  className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deleteRoast(showDeleteConfirm)}
+                  disabled={deletingRoast === showDeleteConfirm}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deletingRoast === showDeleteConfirm ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {showBulkDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <div className="text-center">
+              <div className="text-6xl mb-4">⚠️</div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Delete Multiple Roasts
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete <strong>{selectedRoasts.length}</strong> roast(s)? This action cannot be undone and will also delete all associated temperature readings and events for each roast.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => setShowBulkDeleteConfirm(false)}
+                  className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmBulkDelete}
+                  disabled={deletingRoast === 'bulk'}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deletingRoast === 'bulk' ? 'Deleting...' : `Delete ${selectedRoasts.length} Roasts`}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

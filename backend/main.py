@@ -426,9 +426,46 @@ async def update_roast(roast_id: int, request: UpdateRoastRequest, user_id: str 
 async def get_roasts(limit: int = 25, user_id: str = Depends(verify_jwt_token)):
     try:
         sb = get_supabase()
-        result = sb.table("roast_entries").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(limit).execute()
-        return result.data
+        # Join with machines table to get machine name
+        result = sb.table("roast_entries").select("*, machines(name)").eq("user_id", user_id).order("created_at", desc=True).limit(limit).execute()
         
+        # Flatten the machine name into the roast data
+        roasts = []
+        for roast in result.data:
+            roast_data = roast.copy()
+            if roast.get('machines') and roast['machines'].get('name'):
+                roast_data['machine_label'] = roast['machines']['name']
+            else:
+                roast_data['machine_label'] = None
+            # Remove the nested machines object
+            roast_data.pop('machines', None)
+            roasts.append(roast_data)
+        
+        return roasts
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/roasts/{roast_id}")
+async def delete_roast(roast_id: int, user_id: str = Depends(verify_jwt_token)):
+    try:
+        sb = get_supabase()
+        
+        # Verify roast ownership first
+        roast_result = sb.table("roast_entries").select("id").eq("id", roast_id).eq("user_id", user_id).execute()
+        if not roast_result.data:
+            raise HTTPException(status_code=404, detail="Roast not found")
+        
+        # Delete all events associated with this roast first (cascade delete)
+        sb.table("roast_events").delete().eq("roast_id", roast_id).execute()
+        
+        # Delete the roast entry
+        sb.table("roast_entries").delete().eq("id", roast_id).execute()
+        
+        return {"success": True, "message": "Roast and all associated events deleted"}
+        
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
