@@ -12,6 +12,14 @@ A professional coffee roasting logging and analysis application built with React
 **Frontend:** [roastbuddy.app](https://www.roastbuddy.app)  
 **Backend API:** [Railway](https://roast-backend-production-8883.up.railway.app)
 
+## 🛠️ Troubleshooting
+
+See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues and solutions, including:
+- CORS issues on Railway
+- JWT authentication problems  
+- Environment variable configuration
+- Deployment mistakes to avoid
+
 ## 🆕 Latest Updates
 
 ### Recent Fixes & Improvements
