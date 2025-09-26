@@ -16,23 +16,40 @@ load_dotenv()
 
 app = FastAPI()
 
-# Railway-compatible CORS setup
+# Railway-specific CORS solution based on community findings
+# Handle OPTIONS requests FIRST before any other middleware
+@app.middleware("http")
+async def handle_options_requests(request: Request, call_next):
+    # Handle OPTIONS requests directly - this is the key fix for Railway
+    if request.method == "OPTIONS":
+        return Response(
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, Accept, Origin",
+                "Access-Control-Max-Age": "86400",
+            }
+        )
+    
+    # Process other requests
+    response = await call_next(request)
+    
+    # Add CORS headers to all responses
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+    
+    return response
+
+# Add CORSMiddleware as backup (but OPTIONS should be handled above)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
 )
-
-# Additional middleware for Railway-specific CORS issues
-@app.middleware("http")
-async def add_cors_headers(request: Request, call_next):
-    response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    return response
 
 # Supabase setup
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -250,6 +267,27 @@ def get_environmental_conditions(address: str, unit: str = "C") -> Dict[str, Any
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "timestamp": time.time()}
+
+# Explicit OPTIONS handlers for Railway - these are critical for CORS
+@app.options("/roasts")
+async def options_roasts():
+    return Response(status_code=200)
+
+@app.options("/user/profile")
+async def options_user_profile():
+    return Response(status_code=200)
+
+@app.options("/user/machines")
+async def options_user_machines():
+    return Response(status_code=200)
+
+@app.options("/roasts/{roast_id}/events")
+async def options_roast_events(roast_id: int):
+    return Response(status_code=200)
+
+@app.options("/roasts/{roast_id}")
+async def options_roast_detail(roast_id: int):
+    return Response(status_code=200)
 
 
 # API endpoints
