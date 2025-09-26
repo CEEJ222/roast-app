@@ -224,7 +224,7 @@ const SetupWizard = ({ onComplete }) => {
               disabled={!currentMachine.name.trim()}
               className="mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
-              Add Machine
+              Done
             </button>
           </div>
 
@@ -346,7 +346,7 @@ const SetupWizard = ({ onComplete }) => {
           </div>
 
           {machines.length > 0 && (
-            <div className="bg-gray-50 rounded-lg p-6">
+            <div className="bg-gray-50 dark:bg-dark-bg-tertiary rounded-lg p-6">
               <h3 className="text-lg font-semibold text-gray-700 dark:text-dark-text-primary mb-4">Your Machines</h3>
               <div className="space-y-2">
                 {machines.map((machine, index) => (
@@ -376,7 +376,7 @@ const SetupWizard = ({ onComplete }) => {
           >
             Skip Setup
           </button>
-          <h1 className="text-3xl font-bold mb-2">☕ Roast Buddy</h1>
+          <h1 className="text-3xl font-bold mb-2"><span className="text-5xl">☕</span> Roast Buddy</h1>
           <p className="opacity-90">Initial Setup</p>
         </div>
 
