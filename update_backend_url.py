@@ -19,7 +19,7 @@ FRONTEND_FILES = [
 RAILWAY_URL = 'https://roast-backend-production-8883.up.railway.app'
 
 # New Vercel URL (update this after deploying to Vercel)
-VERCEL_URL = 'https://roast-app-backend.vercel.app'  # Update this with actual Vercel URL
+VERCEL_URL = 'https://roast-app-backend.vercel.app'  # Production Vercel URL
 
 def update_file(file_path):
     """Update API_BASE URL in a file"""
