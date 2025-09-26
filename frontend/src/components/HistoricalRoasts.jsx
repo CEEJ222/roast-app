@@ -4,7 +4,7 @@ import RoastCurveGraph from './RoastCurveGraph';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'  // Local development
-  : 'https://roast-backend-production-8883.up.railway.app';  // Production
+  : 'https://roast-app-backend.vercel.app';  // Production
 
 const HistoricalRoasts = ({ onClose }) => {
   const { getAuthToken } = useAuth();

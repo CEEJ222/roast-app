@@ -15,7 +15,7 @@ import { Analytics } from '@vercel/analytics/react';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'  // Local development
-  : 'https://roast-backend-production-8883.up.railway.app';  // Production
+  : 'https://roast-app-backend.vercel.app';  // Production
 
 // Using inline editing instead of modal
 
