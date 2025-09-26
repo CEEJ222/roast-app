@@ -105,7 +105,7 @@ const RoastCurveGraph = ({
   }, [filteredRoasts, mode, showRoastLabels]);
 
   return (
-    <div className={`bg-white dark:bg-dark-bg-tertiary rounded-lg shadow-lg dark:shadow-dark-glow border-metallic border-gray-200 dark:border-gray-600 ${compact ? 'p-4' : 'p-6'} ${className}`}>
+    <div className={`bg-white dark:bg-dark-bg-tertiary rounded-lg shadow-lg dark:shadow-dark-lg border-metallic border-gray-200 dark:border-gray-600 ${compact ? 'p-4' : 'p-6'} ${className}`}>
       <div className={`${compact ? 'mb-3' : 'mb-4'}`}>
         <h3 className={`${compact ? 'text-base' : 'text-lg'} font-semibold text-gray-800 dark:text-dark-text-primary`}>{title}</h3>
         {mode === 'live' && (
