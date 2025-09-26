@@ -7,7 +7,7 @@ import time
 import os
 import requests
 import datetime
-from jose import jwt
+from jose import jwt, JWTError
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
@@ -76,7 +76,7 @@ def verify_jwt_token(credentials: HTTPAuthorizationCredentials = Depends(securit
         return user_id
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
+    except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Token verification failed: {str(e)}")
