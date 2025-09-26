@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, Header
+from fastapi import FastAPI, HTTPException, Depends, Header, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
@@ -16,21 +16,45 @@ load_dotenv()
 
 app = FastAPI()
 
-# Enable CORS for frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",  # Local development
-        "http://localhost:5174", 
-        "http://localhost:3000",
-        "https://roast-app-production.up.railway.app",  # Railway frontend URL
-        "https://www.roastbuddy.app",  # Production frontend domain
-        "https://roastbuddy.app",  # Production frontend domain without www
-    ],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-)
+# CORS origins
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Local development
+    "http://localhost:5174", 
+    "http://localhost:3000",
+    "https://roast-app-production.up.railway.app",  # Railway frontend URL
+    "https://www.roastbuddy.app",  # Production frontend domain
+    "https://roastbuddy.app",  # Production frontend domain without www
+]
+
+# Add CORS headers to all responses
+@app.middleware("http")
+async def add_cors_headers(request, call_next):
+    origin = request.headers.get("origin")
+    if origin in ALLOWED_ORIGINS:
+        response = await call_next(request)
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return response
+    else:
+        return await call_next(request)
+
+# Handle OPTIONS requests explicitly
+@app.options("/{path:path}")
+async def options_handler(path: str, request):
+    origin = request.headers.get("origin")
+    if origin in ALLOWED_ORIGINS:
+        return Response(
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+            }
+        )
+    return Response(status_code=403)
 
 # Supabase setup
 SUPABASE_URL = os.getenv("SUPABASE_URL")
