@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
-import CustomDropdown from './CustomDropdown'
+import { useAuth } from '../../contexts/AuthContext'
+import CustomDropdown from '../shared_ui/CustomDropdown'
 import ThemeToggle from './ThemeToggle'
 
 const API_BASE = import.meta.env.DEV 

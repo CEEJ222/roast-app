@@ -114,6 +114,7 @@ class CreateRoastRequest(BaseModel):
     machine_label: str
     address: str
     coffee_region: str
+    coffee_subregion: Optional[str] = None
     coffee_type: str
     coffee_process: str
     desired_roast_level: str
@@ -368,6 +369,7 @@ async def create_roast(request: CreateRoastRequest, user_id: str = Depends(verif
             "timezone": env.get("timezone"),
             "timezone_abbreviation": env.get("timezone_abbreviation"),
             "coffee_region": request.coffee_region,
+            "coffee_subregion": request.coffee_subregion,
             "coffee_type": request.coffee_type,
             "coffee_process": request.coffee_process,
             "desired_roast_level": request.desired_roast_level,
@@ -382,11 +384,14 @@ async def create_roast(request: CreateRoastRequest, user_id: str = Depends(verif
         roast_id = result.data[0]["id"]
         start_ts = time.time()
         
-        return {
+        response_data = {
             "roast_id": roast_id,
             "start_ts": start_ts,
-            "env": env
+            "env": env,
+            "weight_before_g": request.weight_before_g
         }
+        print(f"DEBUG: Returning response with weight_before_g: {request.weight_before_g}")
+        return response_data
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

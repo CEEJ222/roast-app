@@ -1,21 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-import LoginForm from './components/LoginForm';
-import UserProfile from './components/UserProfile';
-import SetupWizard from './components/SetupWizard';
-import ProfilePage from './components/ProfilePage';
-import StartNewRoastModal from './components/StartNewRoastModal';
+import LoginForm from './components/user_profile/LoginForm';
+import UserProfile from './components/user_profile/UserProfile';
+import SetupWizard from './components/wizards/SetupWizard';
+import ProfilePage from './components/user_profile/ProfilePage';
+import StartNewRoastModal from './components/wizards/StartNewRoastModal';
 import EnvironmentalConditions from './components/EnvironmentalConditions';
 import RoastCurveGraph from './components/RoastCurveGraph';
 import HistoricalRoasts from './components/HistoricalRoasts';
 import { COFFEE_REGIONS } from './data/coffeeRegions';
-import CustomDropdown from './components/CustomDropdown';
+import CustomDropdown from './components/shared_ui/CustomDropdown';
 import DashboardHistoricalRoasts from './components/DashboardHistoricalRoasts';
 import RoastDetailPage from './components/RoastDetailPage';
-import ConfirmationModal from './components/ConfirmationModal';
-import TemperatureInputModal from './components/TemperatureInputModal';
-import ThemeToggle from './components/ThemeToggle';
+import ConfirmationModal from './components/modals/ConfirmationModal';
+import TemperatureInputModal from './components/modals/TemperatureInputModal';
+import ThemeToggle from './components/user_profile/ThemeToggle';
+import InitialRoasterSettings from './components/modals/InitialRoasterSettings';
 import { Analytics } from '@vercel/analytics/react';
 
 const API_BASE = import.meta.env.DEV 
@@ -959,69 +960,15 @@ function RoastAssistant() {
           )}
 
           {/* Initial Settings Modal */}
-          {showInitialSettings && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white dark:bg-dark-card rounded-lg p-4 sm:p-6 w-full max-w-md shadow-2xl dark:shadow-dark-glow">
-                <h3 className="text-lg font-bold mb-4 text-gray-800 dark:text-dark-text-primary">Initial Roaster Settings</h3>
-                <p className="text-gray-600 dark:text-dark-text-secondary mb-4">Set your starting fan and heat levels before beginning the roast.</p>
-                
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-1">Fan Level</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="9"
-                        value={initialSettings.fan_level}
-                        onChange={(e) => setInitialSettings(prev => ({ ...prev, fan_level: e.target.value }))}
-                        className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-1">Heat Level</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="9"
-                        value={initialSettings.heat_level}
-                        onChange={(e) => setInitialSettings(prev => ({ ...prev, heat_level: e.target.value }))}
-                        className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
-                      />
-                    </div>
-                  </div>
-                  
-                </div>
-
-                <div className="flex space-x-3 pt-6">
-                  <button
-                    onClick={() => {
-                      startRoast();
-                    }}
-                    disabled={loading || !formData.weightBefore || parseFloat(formData.weightBefore) <= 0}
-                    className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {loading ? (
-                      <div className="flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        Starting...
-                      </div>
-                    ) : !formData.weightBefore || parseFloat(formData.weightBefore) <= 0 ? (
-                      '⚠️ Enter Valid Weight'
-                    ) : (
-                      '🏁 Start Roast'
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setShowInitialSettings(false)}
-                    className="flex-1 bg-gray-300 dark:bg-dark-bg-tertiary text-gray-700 dark:text-dark-text-primary py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-dark-bg-quaternary font-medium transition"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          <InitialRoasterSettings
+            isOpen={showInitialSettings}
+            onClose={() => setShowInitialSettings(false)}
+            onStart={startRoast}
+            initialSettings={initialSettings}
+            setInitialSettings={setInitialSettings}
+            loading={loading}
+            weightBefore={formData.weightBefore}
+          />
 
           {/* Active Roast - During */}
           {roastId && !roastEnded && (
