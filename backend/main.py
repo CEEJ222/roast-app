@@ -128,7 +128,13 @@ class LogEventRequest(BaseModel):
     note: Optional[str] = None
 
 class UpdateRoastRequest(BaseModel):
+    coffee_type: Optional[str] = None
+    coffee_region: Optional[str] = None
+    coffee_process: Optional[str] = None
+    desired_roast_level: Optional[str] = None
+    weight_before_g: Optional[float] = None
     weight_after_g: Optional[float] = None
+    notes: Optional[str] = None
 
 class UserMachineRequest(BaseModel):
     name: str
@@ -166,7 +172,7 @@ def get_environmental_conditions(address: str, unit: str = "C") -> Dict[str, Any
             "https://nominatim.openstreetmap.org/search",
             params={"q": address, "format": "json", "limit": 1},
             headers={"User-Agent": "coffee-roast-agent/1.0"},
-            timeout=10
+            timeout=5
         )
         geo_data = geo_resp.json()
         if not geo_data:
@@ -185,7 +191,7 @@ def get_environmental_conditions(address: str, unit: str = "C") -> Dict[str, Any
                 "current_weather": True, "timezone": "auto"
             },
             headers={"User-Agent": "coffee-roast-agent/1.0"},
-            timeout=10
+            timeout=5
         )
         weather = weather_resp.json()
 
@@ -307,9 +313,43 @@ async def create_roast(request: CreateRoastRequest, user_id: str = Depends(verif
         machine_id = get_or_create_machine_id(request.machine_label)
         
         # Get environmental conditions
-        env = get_environmental_conditions(request.address)
-        if "error" in env:
-            raise HTTPException(status_code=400, detail=env["error"])
+        # Try to get environmental conditions, but don't fail if it times out
+        try:
+            env = get_environmental_conditions(request.address)
+            if "error" in env:
+                print(f"Environmental data error: {env['error']}")
+                # Use default values if environmental data fails
+                env = {
+                    "resolved_address": request.address,
+                    "latitude": None,
+                    "longitude": None,
+                    "temperature_c": None,
+                    "temperature_f": None,
+                    "humidity_pct": None,
+                    "pressure_hpa": None,
+                    "elevation_m": None,
+                    "elevation_ft": None,
+                    "as_of": None,
+                    "timezone": None,
+                    "timezone_abbreviation": None
+                }
+        except Exception as e:
+            print(f"Environmental data fetch failed: {e}")
+            # Use default values if environmental data fails
+            env = {
+                "resolved_address": request.address,
+                "latitude": None,
+                "longitude": None,
+                "temperature_c": None,
+                "temperature_f": None,
+                "humidity_pct": None,
+                "pressure_hpa": None,
+                "elevation_m": None,
+                "elevation_ft": None,
+                "as_of": None,
+                "timezone": None,
+                "timezone_abbreviation": None
+            }
         
         # Create roast entry
         roast_data = {
@@ -486,12 +526,28 @@ async def update_roast(roast_id: int, request: UpdateRoastRequest, user_id: str 
             raise HTTPException(status_code=404, detail="Roast not found")
         
         update_data = {}
+        
+        # Update all provided fields
+        if request.coffee_type is not None:
+            update_data["coffee_type"] = request.coffee_type
+        if request.coffee_region is not None:
+            update_data["coffee_region"] = request.coffee_region
+        if request.coffee_process is not None:
+            update_data["coffee_process"] = request.coffee_process
+        if request.desired_roast_level is not None:
+            update_data["desired_roast_level"] = request.desired_roast_level
+        if request.weight_before_g is not None:
+            update_data["weight_before_g"] = request.weight_before_g
         if request.weight_after_g is not None:
             update_data["weight_after_g"] = request.weight_after_g
+        if request.notes is not None:
+            update_data["notes"] = request.notes
             
-            # Calculate weight loss percentage
-            if roast_result.data[0]["weight_before_g"]:
-                weight_before = roast_result.data[0]["weight_before_g"]
+        # Calculate weight loss percentage if weight_after_g is being updated
+        if request.weight_after_g is not None:
+            # Get current weight_before_g (either from request or existing)
+            weight_before = request.weight_before_g if request.weight_before_g is not None else roast_result.data[0]["weight_before_g"]
+            if weight_before:
                 loss_pct = ((weight_before - request.weight_after_g) / weight_before) * 100
                 update_data["weight_loss_pct"] = loss_pct
         

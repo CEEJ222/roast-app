@@ -293,33 +293,19 @@ function RoastAssistant() {
       // Load events for this roast
       refreshEvents(roast.id);
       
-      // Try to load environmental conditions from the roast data first
-      if (roast.temperature_f || roast.humidity_pct) {
+      // Load environmental conditions from the roast data
+      if (roast.temperature_c || roast.temperature_f || roast.humidity_pct) {
         setEnvironmentalConditions({
+          temperature_c: roast.temperature_c,
           temperature_f: roast.temperature_f,
           humidity_pct: roast.humidity_pct,
+          elevation_m: roast.elevation_m,
           elevation_ft: roast.elevation_ft,
-          pressure_hpa: roast.pressure_hpa
+          pressure_hpa: roast.pressure_hpa,
+          as_of: roast.as_of,
+          timezone: roast.timezone,
+          timezone_abbreviation: roast.timezone_abbreviation
         });
-      } else {
-        // If no environmental data on roast, try to fetch current environmental data
-        try {
-          const token = await getAuthToken();
-          const response = await fetch(`${API_BASE}/roasts/${roast.id}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          
-          if (response.ok) {
-            const roastData = await response.json();
-            if (roastData.env) {
-              setEnvironmentalConditions(roastData.env);
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching environmental data:', error);
-        }
       }
     } else {
       // Show roast detail page for completed roasts
@@ -985,10 +971,9 @@ function RoastAssistant() {
                 <div className="flex space-x-3 pt-6">
                   <button
                     onClick={() => {
-                      console.log('Start Roast button clicked');
                       startRoast();
                     }}
-                    disabled={loading}
+                    disabled={loading || !formData.weightBefore || parseFloat(formData.weightBefore) <= 0}
                     className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {loading ? (
@@ -996,6 +981,8 @@ function RoastAssistant() {
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                         Starting...
                       </div>
+                    ) : !formData.weightBefore || parseFloat(formData.weightBefore) <= 0 ? (
+                      '⚠️ Enter Valid Weight'
                     ) : (
                       '🏁 Start Roast'
                     )}
@@ -1498,7 +1485,7 @@ function RoastAssistant() {
               
               <div className="max-w-md mx-auto space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">Weight After Roast (g)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">Weight After Roast (g) <span className="text-red-500">*</span></label>
                   <input
                     type="number"
                     step="0.1"
@@ -1510,7 +1497,11 @@ function RoastAssistant() {
                       '--tw-ring-offset-shadow': 'var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color)',
                       '--tw-ring-shadow': 'var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color)',
                     }}
+                    required
                   />
+                  {!formData.weightAfter && (
+                    <p className="text-sm text-red-500 dark:text-red-400 mt-1">Weight is required to complete the roast</p>
+                  )}
                 </div>
 
                 <div>
@@ -1526,7 +1517,7 @@ function RoastAssistant() {
 
                 <button
                   onClick={finishRoast}
-                  disabled={loading}
+                  disabled={loading || !formData.weightAfter}
                   className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-bold text-lg shadow-lg transform transition hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   ✅ Complete Roast Session
@@ -1872,7 +1863,7 @@ function RoastAssistant() {
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">Weight Before Roast (g)</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">Weight Before Roast (g) <span className="text-red-500">*</span></label>
                       <input
                         type="number"
                         step="0.1"
@@ -1880,7 +1871,11 @@ function RoastAssistant() {
                         onChange={(e) => handleInputChange('weightBefore', e.target.value)}
                         className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
                         placeholder="e.g., 250"
+                        required
                       />
+                      {!formData.weightBefore && (
+                        <p className="text-sm text-red-500 dark:text-red-400 mt-1">Initial weight is required to start the roast</p>
+                      )}
                     </div>
                   </div>
                 </div>
