@@ -68,6 +68,12 @@ function RoastAssistant() {
   const [currentPhase, setCurrentPhase] = useState('drying'); // 'drying', 'development', 'cooling'
   const [developmentStartTime, setDevelopmentStartTime] = useState(null);
   const [developmentTime, setDevelopmentTime] = useState(0);
+  
+  // Phase timing state
+  const [dryingStartTime, setDryingStartTime] = useState(null);
+  const [dryingTime, setDryingTime] = useState(0);
+  const [coolingStartTime, setCoolingStartTime] = useState(null);
+  const [coolingTime, setCoolingTime] = useState(0);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -94,15 +100,27 @@ function RoastAssistant() {
       const elapsed = Math.floor((Date.now() - startTs * 1000) / 1000);
       setElapsedTime(elapsed);
       
+      // Update drying time if we're in drying phase
+      if (currentPhase === 'drying' && dryingStartTime) {
+        const dryTime = Math.floor((Date.now() - dryingStartTime) / 1000);
+        setDryingTime(dryTime);
+      }
+      
       // Update development time if we're in development phase
       if (currentPhase === 'development' && developmentStartTime) {
         const devTime = Math.floor((Date.now() - developmentStartTime) / 1000);
         setDevelopmentTime(devTime);
       }
+      
+      // Update cooling time if we're in cooling phase
+      if (currentPhase === 'cooling' && coolingStartTime) {
+        const coolTime = Math.floor((Date.now() - coolingStartTime) / 1000);
+        setCoolingTime(coolTime);
+      }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [startTs, currentPhase, developmentStartTime]);
+  }, [startTs, currentPhase, dryingStartTime, developmentStartTime, coolingStartTime]);
 
   // Load user profile data
   const loadUserProfile = async () => {
@@ -381,8 +399,12 @@ function RoastAssistant() {
       
       // Reset phase tracking for new roast
       setCurrentPhase('drying');
+      setDryingStartTime(Date.now());
+      setDryingTime(0);
       setDevelopmentStartTime(null);
       setDevelopmentTime(0);
+      setCoolingStartTime(null);
+      setCoolingTime(0);
       
       // Update form data with initial settings
       setFormData(prev => ({
@@ -483,6 +505,8 @@ function RoastAssistant() {
         } else if (pendingMilestone === 'COOL') {
           setMilestonesMarked(prev => ({ ...prev, cool: true }));
           setCurrentPhase('cooling');
+          setCoolingStartTime(Date.now());
+          setCoolingTime(0);
         }
 
       refreshEvents();
@@ -512,9 +536,17 @@ function RoastAssistant() {
         cool: hasCool
       });
       
-      // Determine current phase based on milestones
+      // Determine current phase based on milestones and set start times
       if (hasCool) {
         setCurrentPhase('cooling');
+        // Find the COOL event to set cooling start time
+        const coolEvent = data.find(event => event.kind === 'COOL');
+        if (coolEvent) {
+          const coolTime = startTs * 1000 + (coolEvent.t_offset_sec * 1000);
+          setCoolingStartTime(coolTime);
+          const currentCoolTime = Math.floor((Date.now() - coolTime) / 1000);
+          setCoolingTime(currentCoolTime);
+        }
       } else if (hasFirstCrack) {
         setCurrentPhase('development');
         // Calculate development time if we're resuming
@@ -527,6 +559,10 @@ function RoastAssistant() {
         }
       } else {
         setCurrentPhase('drying');
+        // Drying phase starts when roast starts
+        setDryingStartTime(startTs * 1000);
+        const currentDryingTime = Math.floor((Date.now() - startTs * 1000) / 1000);
+        setDryingTime(currentDryingTime);
       }
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -812,7 +848,12 @@ function RoastAssistant() {
                                 <span className="text-orange-600 dark:text-dark-accent-primary font-bold">☕</span>
                               </div>
                               <div>
-                                <p className="font-medium text-gray-900 dark:text-dark-text-primary">{roast.coffee_type}</p>
+                                <p className="font-medium text-gray-900 dark:text-dark-text-primary">
+                                  {roast.coffee_region && roast.coffee_type 
+                                    ? `${roast.coffee_region} ${roast.coffee_type}` 
+                                    : roast.coffee_type || roast.coffee_region || 'Unknown Coffee'
+                                  }
+                                </p>
                                 <p className="text-sm text-gray-500 dark:text-dark-text-tertiary">
                                   {new Date(roast.created_at).toLocaleDateString()} • {roast.machine_label || 'Unknown Machine'}
                                 </p>
@@ -947,6 +988,16 @@ function RoastAssistant() {
                     <div className="text-sm text-gray-600 dark:text-dark-text-secondary">
                       Total Roast Time
                     </div>
+                    
+                    {/* Development Time - positioned near Total Roast Time */}
+                    {currentPhase === 'development' && (
+                      <div className="mt-4">
+                        <div className="text-2xl font-bold text-orange-500 dark:text-orange-400">
+                          {formatTime(developmentTime)}
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-dark-text-secondary">Development</div>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Key Metrics Row */}
@@ -958,16 +1009,6 @@ function RoastAssistant() {
                       </div>
                       <div className="text-xs text-gray-600 dark:text-dark-text-secondary">Current Temp</div>
                     </div>
-                    
-                    {/* Development Time */}
-                    {currentPhase === 'development' && (
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-orange-500 dark:text-orange-400">
-                          {formatTime(developmentTime)}
-                        </div>
-                        <div className="text-xs text-gray-600 dark:text-dark-text-secondary">Development</div>
-                      </div>
-                    )}
                     
                     {/* Environmental Conditions - Compact */}
                     {environmentalConditions && (
@@ -1000,7 +1041,7 @@ function RoastAssistant() {
                   </div>
                 </div>
                 
-                {/* Phase Indicators - Cleaner Design */}
+                {/* Phase Indicators with Individual Counters */}
                 <div className="flex justify-center gap-8">
                   <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${
                     currentPhase === 'drying' 
@@ -1008,7 +1049,12 @@ function RoastAssistant() {
                       : 'text-gray-500 dark:text-dark-text-tertiary'
                   }`}>
                     <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                    <span className="font-medium">Drying Phase</span>
+                    <div className="flex flex-col items-center">
+                      <span className="font-medium">Drying Phase</span>
+                      <span className="text-xs font-mono">
+                        {milestonesMarked.firstCrack ? formatTime(dryingTime) : formatTime(dryingTime)}
+                      </span>
+                    </div>
                   </div>
                   
                   <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${
@@ -1017,7 +1063,12 @@ function RoastAssistant() {
                       : 'text-gray-500 dark:text-dark-text-tertiary'
                   }`}>
                     <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                    <span className="font-medium">Development Phase</span>
+                    <div className="flex flex-col items-center">
+                      <span className="font-medium">Development Phase</span>
+                      <span className="text-xs font-mono">
+                        {milestonesMarked.firstCrack ? formatTime(developmentTime) : '—'}
+                      </span>
+                    </div>
                   </div>
                   
                   <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${
@@ -1026,7 +1077,12 @@ function RoastAssistant() {
                       : 'text-gray-500 dark:text-dark-text-tertiary'
                   }`}>
                     <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
-                    <span className="font-medium">Cooling Phase</span>
+                    <div className="flex flex-col items-center">
+                      <span className="font-medium">Cooling Phase</span>
+                      <span className="text-xs font-mono">
+                        {milestonesMarked.cool ? formatTime(coolingTime) : '—'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1141,7 +1197,7 @@ function RoastAssistant() {
                       : 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-700 hover:to-blue-700 shadow-lg'
                   } ${loading ? 'opacity-50' : ''}`}
                 >
-                  {milestonesMarked.cool ? '✅ Drop/Cool' : '🧊 Drop/Cool'}
+                  {milestonesMarked.cool ? '✅ Cool' : '🧊 Cool'}
                 </button>
                 <button
                   onClick={() => setShowEndRoastConfirm(true)}
@@ -1547,8 +1603,8 @@ function RoastAssistant() {
           setPendingMilestone(null);
         }}
         onConfirm={handleTemperatureConfirm}
-        milestoneType={pendingMilestone === 'FIRST_CRACK' ? 'First Crack' : pendingMilestone === 'SECOND_CRACK' ? 'Second Crack' : 'Drop/Cool'}
-        title={`${pendingMilestone === 'FIRST_CRACK' ? '🔥' : pendingMilestone === 'SECOND_CRACK' ? '🔥🔥' : '🧊'} ${pendingMilestone === 'FIRST_CRACK' ? 'First Crack' : pendingMilestone === 'SECOND_CRACK' ? 'Second Crack' : 'Drop/Cool'}`}
+        milestoneType={pendingMilestone === 'FIRST_CRACK' ? 'First Crack' : pendingMilestone === 'SECOND_CRACK' ? 'Second Crack' : 'Cool'}
+        title={`${pendingMilestone === 'FIRST_CRACK' ? '🔥' : pendingMilestone === 'SECOND_CRACK' ? '🔥🔥' : '🧊'} ${pendingMilestone === 'FIRST_CRACK' ? 'First Crack' : pendingMilestone === 'SECOND_CRACK' ? 'Second Crack' : 'Cool'}`}
       />
 
       {/* Start Roast Wizard Modal */}
