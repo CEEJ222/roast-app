@@ -109,7 +109,7 @@ const CustomDropdown = ({
 
       {/* Dropdown Options */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-dark-bg-secondary border border-gray-300 dark:border-dark-border-primary rounded-lg shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-[60] w-full mt-1 bg-white dark:bg-dark-bg-secondary border border-gray-300 dark:border-dark-border-primary rounded-lg shadow-lg max-h-60 overflow-y-auto">
           {filteredOptions.length > 0 ? (
             filteredOptions.map((option, index) => {
               const optionValue = typeof option === 'string' ? option : option.value;

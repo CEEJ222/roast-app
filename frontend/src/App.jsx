@@ -5,6 +5,7 @@ import LoginForm from './components/LoginForm';
 import UserProfile from './components/UserProfile';
 import SetupWizard from './components/SetupWizard';
 import ProfilePage from './components/ProfilePage';
+import StartNewRoastModal from './components/StartNewRoastModal';
 import EnvironmentalConditions from './components/EnvironmentalConditions';
 import RoastCurveGraph from './components/RoastCurveGraph';
 import HistoricalRoasts from './components/HistoricalRoasts';
@@ -415,43 +416,12 @@ function RoastAssistant() {
   };
 
   const startRoast = async () => {
-    // Get the selected machine name or use a fallback
-    const selectedMachine = userMachines.find(m => m.id === formData.selectedMachineId);
-    const machineLabel = selectedMachine?.name || `${formData.model}${formData.hasExtension ? ' + ET' : ''}`;
-    
-    // Debug: Log the data being sent
-    const requestData = {
-      machine_label: machineLabel,
-      address: formData.address,
-      coffee_region: formData.coffeeRegion,
-      coffee_type: formData.coffeeType,
-      coffee_process: formData.coffeeProcess,
-      desired_roast_level: formData.roastLevel,
-      weight_before_g: parseFloat(formData.weightBefore) || null,
-      notes: formData.notes
-    };
-    console.log('Starting roast with data:', requestData);
+    // The roast has already been created by StartNewRoastModal
+    // This function just sets the initial fan/heat levels and starts the session
+    console.log('Setting initial roast settings and starting session');
     
     setLoading(true);
     try {
-      const data = await apiCall(`${API_BASE}/roasts`, {
-        method: 'POST',
-        body: JSON.stringify(requestData)
-      });
-
-      setRoastId(data.roast_id);
-      setStartTs(data.start_ts);
-      setEnvironmentalConditions(data.env);
-      
-      // Reset phase tracking for new roast
-      setCurrentPhase('drying');
-      setDryingStartTime(Date.now());
-      setDryingTime(0);
-      setDevelopmentStartTime(null);
-      setDevelopmentTime(0);
-      setCoolingStartTime(null);
-      setCoolingTime(0);
-      
       // Update form data with initial settings
       setFormData(prev => ({
         ...prev,
@@ -464,7 +434,7 @@ function RoastAssistant() {
         const fanLevel = initialSettings.fan_level !== undefined && initialSettings.fan_level !== '' ? parseInt(initialSettings.fan_level) : null;
         const heatLevel = initialSettings.heat_level !== undefined && initialSettings.heat_level !== '' ? parseInt(initialSettings.heat_level) : null;
         
-        await apiCall(`${API_BASE}/roasts/${data.roast_id}/events`, {
+        await apiCall(`${API_BASE}/roasts/${roastId}/events`, {
           method: 'POST',
           body: JSON.stringify({
             kind: 'SET',
@@ -475,7 +445,7 @@ function RoastAssistant() {
         });
       }
       
-      refreshEvents(data.roast_id);
+      refreshEvents(roastId);
       setShowInitialSettings(false);
     } catch (error) {
       console.error('Start roast failed:', error);
@@ -1911,319 +1881,58 @@ function RoastAssistant() {
         title={`${pendingMilestone === 'FIRST_CRACK' ? '🔥' : pendingMilestone === 'SECOND_CRACK' ? '🔥🔥' : '🧊'} ${pendingMilestone === 'FIRST_CRACK' ? 'First Crack' : pendingMilestone === 'SECOND_CRACK' ? 'Second Crack' : 'Cool'}`}
       />
 
-      {/* Start Roast Wizard Modal */}
-      {showStartRoastWizard && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-6 py-4 text-white">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-2xl font-bold">🏁 Start New Roast</h2>
-                  <p className="opacity-90">Configure your roast session</p>
-                </div>
-                <button
-                  onClick={handleStartRoastWizardCancel}
-                  className="text-white hover:text-indigo-200 text-2xl font-bold"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-
-            {/* Progress Steps */}
-            <div className="bg-gray-50 dark:bg-dark-bg-tertiary px-6 py-4 border-b dark:border-dark-border-primary">
-              <div className="flex items-center justify-center space-x-8">
-                {[
-                  { key: 'machine', label: 'Machine Setup', icon: '⚙️' },
-                  { key: 'coffee', label: 'Coffee Details', icon: '☕' },
-                  { key: 'review', label: 'Review & Start', icon: '🏁' }
-                ].map((step, index) => (
-                  <div key={step.key} className="flex items-center">
-                    <div className="w-10 h-10 flex items-center justify-center text-lg font-medium">
-                      {['machine', 'coffee', 'review'].indexOf(roastSetupStep) > index ? '✅' : step.icon}
-                    </div>
-                    <span className={`ml-2 text-sm font-medium ${
-                      roastSetupStep === step.key ? 'text-indigo-600 dark:text-white' : 'text-gray-600 dark:text-gray-300'
-                    }`}>
-                      {step.label}
-                    </span>
-                    {index < 2 && (
-                      <div className={`w-16 h-1 mx-4 ${
-                        ['machine', 'coffee', 'review'].indexOf(roastSetupStep) > index ? 'bg-green-600' : index === ['machine', 'coffee', 'review'].indexOf(roastSetupStep) ? 'bg-indigo-600' : 'bg-gray-300'
-                      }`} />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto">
-              {/* Machine Setup Step */}
-              {roastSetupStep === 'machine' && (
-                <div className="space-y-6">
-                  <div className="text-center mb-6">
-                    <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Machine Setup</h3>
-                    <p className="text-gray-600 dark:text-dark-text-secondary">Select your machine and roasting location</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-semibold text-gray-700 dark:text-dark-text-primary border-b dark:border-dark-border-primary pb-2">Machine</h4>
-                      
-                      {userMachines.length === 0 ? (
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                          <div className="flex items-center mb-3">
-                            <span className="text-yellow-600 text-xl mr-2">⚠️</span>
-                            <h5 className="font-semibold text-yellow-800">No Machines Found</h5>
-                          </div>
-                          <p className="text-yellow-700 mb-3">You need to add a machine to your profile before starting a roast.</p>
-                          <button
-                            onClick={() => setShowProfilePage(true)}
-                            className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 font-medium transition"
-                          >
-                            Add Machine to Profile
-                          </button>
-                        </div>
-                      ) : userMachines.length === 1 ? (
-                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                          <div className="flex items-center mb-2">
-                            <span className="text-green-600 dark:text-green-400 text-xl mr-2">✅</span>
-                            <h5 className="font-semibold text-green-800 dark:text-green-300">Machine Selected</h5>
-                          </div>
-                          <p className="text-green-700 dark:text-green-300">{userMachines[0].name}</p>
-                          <p className="text-sm text-green-600 dark:text-green-400">
-                            {userMachines[0].model}{userMachines[0].has_extension ? ' + Extension Tube' : ''}
-                          </p>
-                        </div>
-                      ) : (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
-                            Select Machine <span className="text-red-500">*</span>
-                          </label>
-                          <CustomDropdown
-                            options={userMachines.map(machine => ({
-                              value: machine.id,
-                              label: `${machine.name} (${machine.model}${machine.has_extension ? ' + ET' : ''})`
-                            }))}
-                            value={formData.selectedMachineId || userMachines[0]?.id}
-                            onChange={(value) => {
-                              const selectedMachine = userMachines.find(m => m.id === value);
-                              setFormData(prev => ({
-                                ...prev,
-                                selectedMachineId: value,
-                                model: selectedMachine?.model || '',
-                                hasExtension: selectedMachine?.has_extension || false
-                              }));
-                            }}
-                            placeholder="Select machine..."
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-semibold text-gray-700 dark:text-dark-text-primary border-b dark:border-dark-border-primary pb-2">Location</h4>
-                      
-                      {userProfile?.address ? (
-                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                          <div className="flex items-center mb-2">
-                            <span className="text-green-600 dark:text-green-400 text-xl mr-2">✅</span>
-                            <h5 className="font-semibold text-green-800 dark:text-green-300">Location Set</h5>
-                          </div>
-                          <p className="text-green-700 dark:text-green-300 text-sm">{userProfile.address}</p>
-                          <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                            Environmental data will be fetched automatically
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                          <div className="flex items-center mb-3">
-                            <span className="text-blue-600 text-xl mr-2">📍</span>
-                            <h5 className="font-semibold text-blue-800">No Location Set</h5>
-                          </div>
-                          <p className="text-blue-700 mb-3">Add your location to get environmental data for better roast tracking.</p>
-                          <button
-                            onClick={() => setShowProfilePage(true)}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium transition"
-                          >
-                            Add Location to Profile
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Coffee Details Step */}
-              {roastSetupStep === 'coffee' && (
-                <div className="space-y-6">
-                  <div className="text-center mb-6">
-                    <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Coffee Details</h3>
-                    <p className="text-gray-600 dark:text-dark-text-secondary">Tell us about the coffee you're roasting</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
-                        Coffee Region <span className="text-red-500">*</span>
-                      </label>
-                      <CustomDropdown
-                        options={COFFEE_REGIONS}
-                        value={formData.coffeeRegion}
-                        onChange={(value) => handleInputChange('coffeeRegion', value)}
-                        placeholder="Select a region..."
-                        error={!formData.coffeeRegion}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">Origin (Subregion)</label>
-                      <input
-                        type="text"
-                        value={formData.coffeeType}
-                        onChange={(e) => handleInputChange('coffeeType', e.target.value)}
-                        placeholder="Yirgacheffe, Sidama, etc."
-                        className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
-                        Process <span className="text-red-500">*</span>
-                      </label>
-                      <CustomDropdown
-                        options={['Washed', 'Natural', 'Honey', 'Anaerobic', 'Other']}
-                        value={formData.coffeeProcess}
-                        onChange={(value) => handleInputChange('coffeeProcess', value)}
-                        placeholder="Select process..."
-                        error={!formData.coffeeProcess}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">Target Roast</label>
-                      <CustomDropdown
-                        options={['City', 'City Plus', 'Full City', 'Full City Plus']}
-                        value={formData.roastLevel}
-                        onChange={(value) => handleInputChange('roastLevel', value)}
-                        placeholder="Select roast level..."
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">Weight Before Roast (g) <span className="text-red-500">*</span></label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={formData.weightBefore}
-                        onChange={(e) => handleInputChange('weightBefore', e.target.value)}
-                        className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
-                        placeholder="e.g., 250"
-                        required
-                      />
-                      {!formData.weightBefore && (
-                        <p className="text-sm text-red-500 dark:text-red-400 mt-1">Initial weight is required to start the roast</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Review Step */}
-              {roastSetupStep === 'review' && (
-                <div className="space-y-6">
-                  <div className="text-center mb-6">
-                    <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Review & Start</h3>
-                    <p className="text-gray-600 dark:text-dark-text-secondary">Review your settings and start the roast</p>
-                  </div>
-                  
-                  <div className="bg-gray-50 dark:bg-dark-bg-tertiary rounded-lg p-6">
-                    <h4 className="text-lg font-semibold text-gray-700 dark:text-dark-text-primary mb-4">Roast Summary</h4>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h5 className="font-medium text-gray-700 dark:text-dark-text-primary mb-2">Machine Setup</h5>
-                        <div className="space-y-1 text-sm text-gray-600 dark:text-dark-text-secondary">
-                          <p><span className="font-medium">Machine:</span> {userMachines.find(m => m.id === formData.selectedMachineId)?.name || userMachines[0]?.name || 'Not selected'}</p>
-                          <p><span className="font-medium">Location:</span> {userProfile?.address || 'Not set'}</p>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <h5 className="font-medium text-gray-700 dark:text-dark-text-primary mb-2">Coffee Details</h5>
-                        <div className="space-y-1 text-sm text-gray-600 dark:text-dark-text-secondary">
-                          <p><span className="font-medium">Region:</span> {formData.coffeeType || 'Not specified'}</p>
-                          <p><span className="font-medium">Process:</span> {formData.coffeeProcess}</p>
-                          <p><span className="font-medium">Target:</span> {formData.roastLevel}</p>
-                          <p><span className="font-medium">Weight:</span> {formData.weightBefore ? `${formData.weightBefore}g` : 'Not specified'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Footer Navigation */}
-            <div className="bg-gray-50 dark:bg-dark-bg-tertiary px-4 sm:px-6 py-4 border-t dark:border-dark-border-primary flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
-              <button
-                onClick={handleStartRoastWizardCancel}
-                className="px-6 py-2 text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary font-medium transition"
-              >
-                Cancel
-              </button>
-              
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                {roastSetupStep !== 'machine' && (
-                  <button
-                    onClick={() => setRoastSetupStep(roastSetupStep === 'coffee' ? 'machine' : 'coffee')}
-                    className="px-6 py-2 bg-gray-300 dark:bg-dark-bg-tertiary text-gray-700 dark:text-dark-text-primary rounded-lg hover:bg-gray-400 dark:hover:bg-dark-bg-quaternary font-medium transition"
-                  >
-                    Back
-                  </button>
-                )}
-                
-                {roastSetupStep === 'machine' && (
-                  <button
-                    onClick={() => setRoastSetupStep('coffee')}
-                    disabled={userMachines.length === 0}
-                    className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                  >
-                    Next: Coffee Details
-                  </button>
-                )}
-                
-                {roastSetupStep === 'coffee' && (
-                  <button
-                    onClick={() => setRoastSetupStep('review')}
-                    disabled={!formData.coffeeRegion || !formData.coffeeProcess}
-                    className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                  >
-                    Next: Review
-                  </button>
-                )}
-                
-                {roastSetupStep === 'review' && (
-                  <button
-                    onClick={() => {
-                      setShowStartRoastWizard(false);
-                      setRoastSetupStep('machine');
-                      showInitialSettingsForm();
-                    }}
-                    disabled={!formData.coffeeRegion || !formData.coffeeProcess || userMachines.length === 0}
-                    className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                  >
-                    🏁 Start Roast Session
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Start New Roast Modal */}
+      <StartNewRoastModal
+        isOpen={showStartRoastWizard}
+        onClose={() => {
+          setShowStartRoastWizard(false);
+          setRoastSetupStep('machine');
+        }}
+        onStart={(data) => {
+          console.log('DEBUG: onStart received data:', data);
+          console.log('DEBUG: weight_before_g in data:', data.weight_before_g);
+          
+          setRoastId(data.roast_id);
+          setStartTs(data.start_ts);
+          setEnvironmentalConditions(data.env);
+          
+          // Reset phase tracking for new roast
+          setCurrentPhase('drying');
+          setDryingStartTime(Date.now());
+          setDryingTime(0);
+          setDevelopmentStartTime(null);
+          setDevelopmentTime(0);
+          setCoolingStartTime(null);
+          setCoolingTime(0);
+          
+          // Update form data with initial settings and weight
+          setFormData(prev => {
+            const newData = {
+              ...prev,
+              weightBefore: data.weight_before_g || prev.weightBefore,
+              fan: initialSettings.fan_level !== undefined && initialSettings.fan_level !== '' ? parseInt(initialSettings.fan_level) : 8,
+              heat: initialSettings.heat_level !== undefined && initialSettings.heat_level !== '' ? parseInt(initialSettings.heat_level) : 4
+            };
+            console.log('DEBUG: Setting formData.weightBefore to:', newData.weightBefore);
+            return newData;
+          });
+          
+          // Create initial SET event with user-provided settings (without loading state)
+          if (initialSettings.fan_level !== undefined || initialSettings.heat_level !== undefined) {
+            // This will be handled by the component
+          }
+          
+          setShowStartRoastWizard(false);
+          setRoastSetupStep('machine');
+          showInitialSettingsForm();
+        }}
+        userProfile={userProfile}
+        userMachines={userMachines}
+        environmentalConditions={environmentalConditions}
+        getAuthToken={getAuthToken}
+        setLoading={setLoading}
+        setShowProfilePage={setShowProfilePage}
+      />
     </div>
   );
 }
