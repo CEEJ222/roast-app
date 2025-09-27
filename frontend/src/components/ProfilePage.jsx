@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import CustomDropdown from './CustomDropdown'
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'
@@ -246,26 +247,22 @@ const ProfilePage = ({ onClose }) => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">Temperature</label>
-                        <select
+                        <CustomDropdown
+                          options={['fahrenheit', 'celsius']}
                           value={profile.units?.temperature || 'fahrenheit'}
-                          onChange={(e) => setProfile({...profile, units: {...profile.units, temperature: e.target.value}})}
-                          className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
-                        >
-                          <option value="fahrenheit">Fahrenheit (°F)</option>
-                          <option value="celsius">Celsius (°C)</option>
-                        </select>
+                          onChange={(value) => setProfile({...profile, units: {...profile.units, temperature: value}})}
+                          placeholder="Select temperature unit..."
+                        />
                       </div>
                       
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">Elevation</label>
-                        <select
+                        <CustomDropdown
+                          options={['feet', 'meters']}
                           value={profile.units?.elevation || 'feet'}
-                          onChange={(e) => setProfile({...profile, units: {...profile.units, elevation: e.target.value}})}
-                          className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
-                        >
-                          <option value="feet">Feet (ft)</option>
-                          <option value="meters">Meters (m)</option>
-                        </select>
+                          onChange={(value) => setProfile({...profile, units: {...profile.units, elevation: value}})}
+                          placeholder="Select elevation unit..."
+                        />
                       </div>
                     </div>
                   </div>
@@ -315,15 +312,12 @@ const ProfilePage = ({ onClose }) => {
                         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-1">
                           Model
                         </label>
-                        <select
+                        <CustomDropdown
+                          options={['SR800', 'SR540']}
                           value={newMachine.model}
-                          onChange={(e) => setNewMachine({...newMachine, model: e.target.value})}
-                          className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
-                        >
-                          <option value="">Select a model...</option>
-                          <option value="SR800">SR800</option>
-                          <option value="SR540">SR540</option>
-                        </select>
+                          onChange={(value) => setNewMachine({...newMachine, model: value})}
+                          placeholder="Select a model..."
+                        />
                       </div>
                       <div className="flex items-center">
                         <label className="flex items-center space-x-2">
@@ -388,15 +382,12 @@ const ProfilePage = ({ onClose }) => {
                               <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-1">
                                 Model
                               </label>
-                              <select
+                              <CustomDropdown
+                                options={['SR800', 'SR450']}
                                 value={editingMachine.model}
-                                onChange={(e) => setEditingMachine({...editingMachine, model: e.target.value})}
-                                className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
-                              >
-                                <option value="">Select a model...</option>
-                                <option value="SR800">SR800</option>
-                                <option value="SR450">SR450</option>
-                              </select>
+                                onChange={(value) => setEditingMachine({...editingMachine, model: value})}
+                                placeholder="Select a model..."
+                              />
                             </div>
                             <div className="flex items-center">
                               <label className="flex items-center space-x-2">

@@ -144,8 +144,12 @@ const DashboardHistoricalRoasts = ({
       const events = roastDetails[roastId] || [];
       return {
         id: roastId,
-        name: `${roast?.coffee_type || 'Unknown'}`,
-        fullName: `${roast?.coffee_type || 'Unknown'} - ${formatDate(roast?.created_at)}`,
+        name: roast?.coffee_region && roast?.coffee_type 
+          ? `${roast.coffee_region} ${roast.coffee_type}` 
+          : roast?.coffee_type || roast?.coffee_region || 'Unknown Coffee',
+        fullName: roast?.coffee_region && roast?.coffee_type 
+          ? `${roast.coffee_region} ${roast.coffee_type} - ${formatDate(roast?.created_at)}`
+          : `${roast?.coffee_type || roast?.coffee_region || 'Unknown Coffee'} - ${formatDate(roast?.created_at)}`,
         events: events
       };
     });
@@ -405,10 +409,12 @@ const DashboardHistoricalRoasts = ({
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-dark-text-primary">
                         <div>
-                          <div className="font-medium">{roast.coffee_type}</div>
-                          {roast.coffee_region && (
-                            <div className="text-gray-500 dark:text-dark-text-secondary text-xs">{roast.coffee_region}</div>
-                          )}
+                          <div className="font-medium">
+                            {roast.coffee_region && roast.coffee_type 
+                              ? `${roast.coffee_region} ${roast.coffee_type}` 
+                              : roast.coffee_type || roast.coffee_region || 'Unknown Coffee'
+                            }
+                          </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-dark-text-primary">

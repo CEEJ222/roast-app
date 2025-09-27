@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import CustomDropdown from './CustomDropdown'
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'
@@ -198,14 +199,12 @@ const SetupWizard = ({ onComplete }) => {
                 <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-1">
                   Model
                 </label>
-                <select
+                <CustomDropdown
+                  options={['SR800', 'SR540']}
                   value={currentMachine.model}
-                  onChange={(e) => setCurrentMachine({...currentMachine, model: e.target.value})}
-                  className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
-                >
-                  <option value="SR800">SR800</option>
-                  <option value="SR540">SR540</option>
-                </select>
+                  onChange={(value) => setCurrentMachine({...currentMachine, model: value})}
+                  placeholder="Select model..."
+                />
               </div>
               <div className="flex items-center">
                 <label className="flex items-center space-x-2">

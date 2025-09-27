@@ -15,9 +15,10 @@ const CustomDropdown = ({
   const inputRef = useRef(null);
 
   // Filter options based on search term
-  const filteredOptions = options.filter(option =>
-    option.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredOptions = options.filter(option => {
+    const searchText = typeof option === 'string' ? option : option.label || option.value;
+    return searchText.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -40,7 +41,8 @@ const CustomDropdown = ({
   }, [isOpen]);
 
   const handleSelect = (option) => {
-    onChange(option);
+    const selectedValue = typeof option === 'string' ? option : option.value;
+    onChange(selectedValue);
     setIsOpen(false);
     setSearchTerm("");
   };
@@ -82,7 +84,13 @@ const CustomDropdown = ({
         <input
           ref={inputRef}
           type="text"
-          value={isOpen ? searchTerm : (value || "")}
+          value={isOpen ? searchTerm : (() => {
+            if (!value) return "";
+            const selectedOption = options.find(option => 
+              (typeof option === 'string' ? option : option.value) === value
+            );
+            return typeof selectedOption === 'string' ? selectedOption : selectedOption?.label || selectedOption?.value || "";
+          })()}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
@@ -103,20 +111,26 @@ const CustomDropdown = ({
       {isOpen && (
         <div className="absolute z-50 w-full mt-1 bg-white dark:bg-dark-bg-secondary border border-gray-300 dark:border-dark-border-primary rounded-lg shadow-lg max-h-60 overflow-y-auto">
           {filteredOptions.length > 0 ? (
-            filteredOptions.map((option, index) => (
-              <div
-                key={index}
-                className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary cursor-pointer text-gray-900 dark:text-dark-text-primary flex items-center justify-between"
-                onClick={() => handleSelect(option)}
-              >
-                <span>{option}</span>
-                {value === option && (
-                  <svg className="w-4 h-4 text-indigo-600 dark:text-dark-accent-primary" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                )}
-              </div>
-            ))
+            filteredOptions.map((option, index) => {
+              const optionValue = typeof option === 'string' ? option : option.value;
+              const optionLabel = typeof option === 'string' ? option : option.label || option.value;
+              const isSelected = value === optionValue;
+              
+              return (
+                <div
+                  key={index}
+                  className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary cursor-pointer text-gray-900 dark:text-dark-text-primary flex items-center justify-between"
+                  onClick={() => handleSelect(option)}
+                >
+                  <span>{optionLabel}</span>
+                  {isSelected && (
+                    <svg className="w-4 h-4 text-indigo-600 dark:text-dark-accent-primary" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
+              );
+            })
           ) : (
             <div className="px-3 py-2 text-gray-500 dark:text-dark-text-tertiary">
               No options found

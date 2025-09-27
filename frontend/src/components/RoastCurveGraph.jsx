@@ -398,7 +398,7 @@ function getMilestoneLabel(kind) {
   const labels = {
     'FIRST_CRACK': 'First Crack',
     'SECOND_CRACK': 'Second Crack',
-    'COOL': 'Drop/Cool',
+    'COOL': 'Cool',
     'END': 'End Roast'
   };
   return labels[kind] || kind;
