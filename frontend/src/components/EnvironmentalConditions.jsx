@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-const EnvironmentalConditions = ({ conditions, units }) => {
+const EnvironmentalConditions = ({ conditions, units, userProfile }) => {
   const [isMinimized, setIsMinimized] = useState(false)
   
   if (!conditions) return null
@@ -40,9 +40,20 @@ const EnvironmentalConditions = ({ conditions, units }) => {
     if (!timestamp) return 'Unknown'
     try {
       const date = new Date(timestamp)
-      return date.toLocaleTimeString()
+      return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
     } catch {
       return 'Unknown'
+    }
+  }
+
+  const getCityName = () => {
+    if (!userProfile?.address) return 'Environmental'
+    try {
+      // Extract city name from address (assuming format like "City, State" or "City, Country")
+      const addressParts = userProfile.address.split(',')
+      return addressParts[0].trim() || 'Environmental'
+    } catch {
+      return 'Environmental'
     }
   }
 
@@ -155,7 +166,7 @@ const EnvironmentalConditions = ({ conditions, units }) => {
           <div className="flex items-center space-x-1.5">
             <div className="text-lg">{weatherStyles.icon}</div>
             <div>
-              <h3 className={`text-xs font-semibold ${weatherStyles.labelColor}`}>Environmental</h3>
+              <h3 className={`text-xs font-semibold ${weatherStyles.labelColor}`}>{getCityName()}</h3>
               {conditions.as_of && !isMinimized && (
                 <p className={`text-xs ${weatherStyles.labelColor}`}>
                   {formatTimestamp(conditions.as_of)}

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   LineChart,
   Line,
@@ -36,6 +36,17 @@ const RoastCurveGraph = ({
   compact = false,
   interactive = true
 }) => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   // Filter roasts for historical mode (must be defined first)
   const filteredRoasts = useMemo(() => {
     if (mode !== 'historical') return data;
@@ -140,7 +151,12 @@ const RoastCurveGraph = ({
         <ResponsiveContainer>
           <LineChart
             data={showROR && mode === 'live' ? rorData : chartData}
-            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+            margin={{ 
+              top: 20, 
+              right: isMobile ? 10 : 30, 
+              left: isMobile ? 10 : 20, 
+              bottom: isMobile ? 80 : 20 
+            }}
             {...(enableZoom && { zoom: { enabled: true } })}
             {...(enablePan && { pan: { enabled: true } })}
           >
@@ -150,17 +166,19 @@ const RoastCurveGraph = ({
               type="number"
               scale="linear"
               domain={['dataMin', 'dataMax']}
-              tickFormatter={(value) => `${value.toFixed(1)}m`}
+              tickFormatter={(value) => isMobile ? `${value.toFixed(0)}m` : `${value.toFixed(1)}m`}
               stroke="#6b7280"
               className="dark:stroke-dark-text-tertiary"
               xAxisId="time"
+              tick={{ fontSize: isMobile ? 10 : 12 }}
             />
             <YAxis 
               yAxisId="temp"
               orientation="left"
-              tickFormatter={(value) => `${value}°${units.temperature}`}
+              tickFormatter={(value) => isMobile ? `${value}°` : `${value}°${units.temperature}`}
               stroke="#6b7280"
               className="dark:stroke-dark-text-tertiary"
+              tick={{ fontSize: isMobile ? 10 : 12 }}
             />
             {showROR && mode === 'live' && (
               <YAxis 
@@ -176,7 +194,18 @@ const RoastCurveGraph = ({
                 content={<CustomTooltip data={data} />}
               />
             )}
-            {showLegend && <Legend />}
+            {showLegend && (
+              <Legend 
+                wrapperStyle={{
+                  paddingTop: isMobile ? '10px' : '20px',
+                  fontSize: isMobile ? '10px' : '12px'
+                }}
+                iconType="line"
+                layout="horizontal"
+                align="center"
+                verticalAlign="bottom"
+              />
+            )}
 
             {/* Temperature line(s) */}
             {mode === 'live' ? (

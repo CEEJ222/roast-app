@@ -101,9 +101,9 @@ function RoastAssistant() {
       const elapsed = Math.floor((Date.now() - roastStartTimeMs) / 1000);
       setElapsedTime(Math.max(0, elapsed));
       
-      // Update drying time if we're in drying phase
-      if (currentPhase === 'drying' && dryingStartTime) {
-        const dryTime = Math.floor((Date.now() - dryingStartTime) / 1000);
+      // Update drying time if we're in drying phase (use same calculation as main timer)
+      if (currentPhase === 'drying') {
+        const dryTime = Math.floor((Date.now() - roastStartTimeMs) / 1000);
         setDryingTime(Math.max(0, dryTime));
       }
       
@@ -278,7 +278,7 @@ function RoastAssistant() {
     setRoastSetupStep('machine');
   }
 
-  const handleRoastResume = (roast) => {
+  const handleRoastResume = async (roast) => {
     // Check if this might be an abandoned active roast
     const currentTime = new Date();
     const roastTime = new Date(roast.created_at);
@@ -292,7 +292,8 @@ function RoastAssistant() {
       setRoastEnded(false); // Assume not ended if we're resuming
       // Load events for this roast
       refreshEvents(roast.id);
-      // Load environmental conditions if available
+      
+      // Try to load environmental conditions from the roast data first
       if (roast.temperature_f || roast.humidity_pct) {
         setEnvironmentalConditions({
           temperature_f: roast.temperature_f,
@@ -300,6 +301,25 @@ function RoastAssistant() {
           elevation_ft: roast.elevation_ft,
           pressure_hpa: roast.pressure_hpa
         });
+      } else {
+        // If no environmental data on roast, try to fetch current environmental data
+        try {
+          const token = await getAuthToken();
+          const response = await fetch(`${API_BASE}/roasts/${roast.id}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            const roastData = await response.json();
+            if (roastData.env) {
+              setEnvironmentalConditions(roastData.env);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching environmental data:', error);
+        }
       }
     } else {
       // Show roast detail page for completed roasts
@@ -391,6 +411,7 @@ function RoastAssistant() {
     const selectedMachine = userMachines.find(m => m.id === formData.selectedMachineId);
     const machineLabel = selectedMachine?.name || `${formData.model}${formData.hasExtension ? ' + ET' : ''}`;
     
+    setLoading(true);
     try {
       const data = await apiCall(`${API_BASE}/roasts`, {
         method: 'POST',
@@ -426,7 +447,7 @@ function RoastAssistant() {
         heat: initialSettings.heat_level || 5
       }));
       
-      // Create initial SET event with user-provided settings
+      // Create initial SET event with user-provided settings (without loading state)
       if (initialSettings.fan_level || initialSettings.heat_level) {
         await apiCall(`${API_BASE}/roasts/${data.roast_id}/events`, {
           method: 'POST',
@@ -443,6 +464,8 @@ function RoastAssistant() {
       setShowInitialSettings(false);
     } catch (error) {
       // Error already handled in apiCall
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -572,7 +595,7 @@ function RoastAssistant() {
         }
       } else {
         setCurrentPhase('drying');
-        // Drying phase starts when roast starts (startTs is already in seconds)
+        // Drying phase starts when roast starts (startTs is in seconds)
         const roastStartTimeMs = startTs * 1000;
         setDryingStartTime(roastStartTimeMs);
         const currentDryingTime = Math.floor((Date.now() - roastStartTimeMs) / 1000);
@@ -725,15 +748,27 @@ function RoastAssistant() {
   return (
     <div className="min-h-screen bg-light-gradient-blue dark:bg-dark-gradient p-2 sm:p-4">
       <div className="max-w-7xl mx-auto bg-white dark:bg-dark-bg-secondary rounded-xl shadow-2xl dark:shadow-dark-xl overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-4 sm:px-6 py-3 sm:py-4 text-white">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-            <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl font-bold">☕ Roast Buddy</h1>
-              <p className="opacity-90 text-sm sm:text-base">Professional roast logging and analysis</p>
+        {/* Loading Overlay */}
+        {loading && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl p-8 max-w-md mx-4 text-center">
+              <div className="mb-4">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-800 dark:text-dark-text-primary mb-2">Starting Your Roast</h3>
+              <p className="text-gray-600 dark:text-dark-text-secondary">Setting up your roast session...</p>
             </div>
-            <div className="flex items-center gap-3 sm:gap-4">
-              <ThemeToggle />
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-3 sm:px-6 py-2 sm:py-4 text-white">
+          <div className="flex justify-between items-center">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-3xl font-bold truncate">☕ Roast Buddy</h1>
+              <p className="opacity-90 text-xs sm:text-base hidden sm:block">Professional roast logging and analysis</p>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-4 ml-3">
               <UserProfile />
             </div>
           </div>
@@ -741,12 +776,6 @@ function RoastAssistant() {
 
 
         <div className="p-3 sm:p-6 dark:bg-dark-bg-secondary">
-          {/* Loading indicator */}
-          {loading && (
-            <div className="mb-4 p-3 bg-blue-50 dark:bg-dark-bg-tertiary border-l-4 border-blue-400 dark:border-dark-accent-info text-blue-700 dark:text-dark-accent-info">
-              Processing...
-            </div>
-          )}
 
           {/* Dashboard - Show when no active roast */}
           {!roastId && (
@@ -760,7 +789,7 @@ function RoastAssistant() {
                   onClick={() => setShowStartRoastWizard(true)}
                   className="w-full sm:w-auto bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant text-white px-4 sm:px-6 py-3 rounded-lg hover:from-indigo-800 hover:via-purple-700 hover:to-purple-800 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-bold shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105 flex items-center justify-center gap-2"
                 >
-                  🚦 Start New Roast
+                  🏁 Start New Roast
                 </button>
               </div>
 
@@ -775,7 +804,7 @@ function RoastAssistant() {
                         onClick={() => setShowHistoricalRoasts(true)}
                         className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
                       >
-                        View All Roasts →
+                        Compare Roasts →
                       </button>
                     </div>
                   </div>
@@ -856,7 +885,11 @@ function RoastAssistant() {
                     ) : (
                       <div className="space-y-4">
                         {historicalRoasts.slice(0, 5).map((roast) => (
-                          <div key={roast.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary">
+                          <div 
+                            key={roast.id} 
+                            onClick={() => handleRoastResume(roast)}
+                            className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary cursor-pointer"
+                          >
                             <div className="flex items-center space-x-4">
                               <div className="w-10 h-10 bg-orange-100 dark:bg-dark-bg-tertiary rounded-full flex items-center justify-center border dark:border-dark-border-primary">
                                 <span className="text-orange-600 dark:text-dark-accent-primary font-bold">☕</span>
@@ -882,12 +915,12 @@ function RoastAssistant() {
                                   {roast.weight_loss_pct.toFixed(1)}% loss
                                 </span>
                               )}
-                              <button
-                                onClick={() => handleRoastResume(roast)}
-                                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
-                              >
+                              {/* Click indicator for all screen sizes */}
+                              <div className="text-indigo-600 dark:text-indigo-400">
                                 {(() => {
-                                  if (roast.id === roastId) return 'Currently Active →';
+                                  if (roast.id === roastId) {
+                                    return 'Currently Active →';
+                                  }
                                   
                                   const currentTime = new Date();
                                   const roastTime = new Date(roast.created_at);
@@ -896,9 +929,13 @@ function RoastAssistant() {
                                   if (timeDiff < 120 && !roast.weight_after_g) {
                                     return 'Continue Roast →';
                                   }
-                                  return 'View Details →';
+                                  return (
+                                    <>
+                                      <span className="hidden sm:inline">View Details </span>→
+                                    </>
+                                  );
                                 })()}
-                              </button>
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -947,10 +984,21 @@ function RoastAssistant() {
 
                 <div className="flex space-x-3 pt-6">
                   <button
-                    onClick={startRoast}
-                    className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition shadow-lg"
+                    onClick={() => {
+                      console.log('Start Roast button clicked');
+                      startRoast();
+                    }}
+                    disabled={loading}
+                    className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    🔥 Start Roast
+                    {loading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Starting...
+                      </div>
+                    ) : (
+                      '🏁 Start Roast'
+                    )}
                   </button>
                   <button
                     onClick={() => setShowInitialSettings(false)}
@@ -1033,6 +1081,7 @@ function RoastAssistant() {
                         <EnvironmentalConditions 
                           conditions={environmentalConditions} 
                           units={userProfile?.units}
+                          userProfile={userProfile}
                         />
                       </div>
                     )}
@@ -1477,7 +1526,7 @@ function RoastAssistant() {
 
                 <button
                   onClick={finishRoast}
-                  disabled={loading || !formData.weightAfter}
+                  disabled={loading}
                   className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-bold text-lg shadow-lg transform transition hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   ✅ Complete Roast Session
@@ -1921,7 +1970,7 @@ function RoastAssistant() {
                     disabled={!formData.coffeeRegion || !formData.coffeeProcess || userMachines.length === 0}
                     className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                   >
-                    🚦 Start Roast Session
+                    🏁 Start Roast Session
                   </button>
                 )}
               </div>

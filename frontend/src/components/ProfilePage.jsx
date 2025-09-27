@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import CustomDropdown from './CustomDropdown'
+import ThemeToggle from './ThemeToggle'
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'
@@ -264,6 +265,17 @@ const ProfilePage = ({ onClose }) => {
                           placeholder="Select elevation unit..."
                         />
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-gray-700 dark:text-dark-text-primary">Appearance</h4>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-1">Theme</label>
+                        <p className="text-xs text-gray-500 dark:text-dark-text-secondary">Choose your preferred color scheme</p>
+                      </div>
+                      <ThemeToggle />
                     </div>
                   </div>
 
