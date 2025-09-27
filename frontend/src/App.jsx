@@ -40,8 +40,8 @@ function RoastAssistant() {
   const [editingFormData, setEditingFormData] = useState({});
   const [showInitialSettings, setShowInitialSettings] = useState(false);
   const [initialSettings, setInitialSettings] = useState({
-    fan_level: 5,
-    heat_level: 5
+    fan_level: 8,
+    heat_level: 4
   });
   const [roastEnded, setRoastEnded] = useState(false);
   const [showSetupWizard, setShowSetupWizard] = useState(false);
@@ -75,6 +75,11 @@ function RoastAssistant() {
   const [coolingStartTime, setCoolingStartTime] = useState(null);
   const [coolingTime, setCoolingTime] = useState(0);
 
+  // Pause state
+  const [isPaused, setIsPaused] = useState(false);
+  const [pauseStartTime, setPauseStartTime] = useState(null);
+  const [totalPausedTime, setTotalPausedTime] = useState(0);
+
   // Form state
   const [formData, setFormData] = useState({
     model: 'SR800',
@@ -86,8 +91,8 @@ function RoastAssistant() {
     roastLevel: 'City',
     weightBefore: '',
     notes: '',
-    fan: 5,
-    heat: 5,
+    fan: 8,
+    heat: 4,
     tempF: '',
     weightAfter: ''
   });
@@ -97,31 +102,34 @@ function RoastAssistant() {
     if (!startTs) return;
     
     const interval = setInterval(() => {
+      if (isPaused) return; // Don't update timers when paused
+      
       const roastStartTimeMs = startTs * 1000;
-      const elapsed = Math.floor((Date.now() - roastStartTimeMs) / 1000);
+      const currentTime = Date.now();
+      const elapsed = Math.floor((currentTime - roastStartTimeMs - totalPausedTime) / 1000);
       setElapsedTime(Math.max(0, elapsed));
       
       // Update drying time if we're in drying phase (use same calculation as main timer)
       if (currentPhase === 'drying') {
-        const dryTime = Math.floor((Date.now() - roastStartTimeMs) / 1000);
+        const dryTime = Math.floor((currentTime - roastStartTimeMs - totalPausedTime) / 1000);
         setDryingTime(Math.max(0, dryTime));
       }
       
       // Update development time if we're in development phase
       if (currentPhase === 'development' && developmentStartTime) {
-        const devTime = Math.floor((Date.now() - developmentStartTime) / 1000);
+        const devTime = Math.floor((currentTime - developmentStartTime - totalPausedTime) / 1000);
         setDevelopmentTime(Math.max(0, devTime));
       }
       
       // Update cooling time if we're in cooling phase
       if (currentPhase === 'cooling' && coolingStartTime) {
-        const coolTime = Math.floor((Date.now() - coolingStartTime) / 1000);
+        const coolTime = Math.floor((currentTime - coolingStartTime - totalPausedTime) / 1000);
         setCoolingTime(Math.max(0, coolTime));
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [startTs, currentPhase, dryingStartTime, developmentStartTime, coolingStartTime]);
+  }, [startTs, currentPhase, dryingStartTime, developmentStartTime, coolingStartTime, isPaused, totalPausedTime]);
 
   // Load user profile data
   const loadUserProfile = async () => {
@@ -290,6 +298,12 @@ function RoastAssistant() {
       setRoastId(roast.id);
       setStartTs(Math.floor(new Date(roast.created_at).getTime() / 1000));
       setRoastEnded(false); // Assume not ended if we're resuming
+      
+      // Reset pause state
+      setIsPaused(false);
+      setPauseStartTime(null);
+      setTotalPausedTime(0);
+      
       // Load events for this roast
       refreshEvents(roast.id);
       
@@ -375,12 +389,20 @@ function RoastAssistant() {
       });
       
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || `HTTP ${response.status}`);
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+          const error = await response.json();
+          errorMessage = error.detail || error.message || errorMessage;
+          console.error('API Error:', error);
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+        }
+        throw new Error(errorMessage);
       }
       
       return await response.json();
     } catch (error) {
+      console.error('API Call failed:', error);
       setStatus(`Error: ${error.message}`);
       throw error;
     } finally {
@@ -397,20 +419,24 @@ function RoastAssistant() {
     const selectedMachine = userMachines.find(m => m.id === formData.selectedMachineId);
     const machineLabel = selectedMachine?.name || `${formData.model}${formData.hasExtension ? ' + ET' : ''}`;
     
+    // Debug: Log the data being sent
+    const requestData = {
+      machine_label: machineLabel,
+      address: formData.address,
+      coffee_region: formData.coffeeRegion,
+      coffee_type: formData.coffeeType,
+      coffee_process: formData.coffeeProcess,
+      desired_roast_level: formData.roastLevel,
+      weight_before_g: parseFloat(formData.weightBefore) || null,
+      notes: formData.notes
+    };
+    console.log('Starting roast with data:', requestData);
+    
     setLoading(true);
     try {
       const data = await apiCall(`${API_BASE}/roasts`, {
         method: 'POST',
-        body: JSON.stringify({
-          machine_label: machineLabel,
-          address: formData.address,
-          coffee_region: formData.coffeeRegion,
-          coffee_type: formData.coffeeType,
-          coffee_process: formData.coffeeProcess,
-          desired_roast_level: formData.roastLevel,
-          weight_before_g: parseFloat(formData.weightBefore) || null,
-          notes: formData.notes
-        })
+        body: JSON.stringify(requestData)
       });
 
       setRoastId(data.roast_id);
@@ -429,18 +455,21 @@ function RoastAssistant() {
       // Update form data with initial settings
       setFormData(prev => ({
         ...prev,
-        fan: initialSettings.fan_level || 5,
-        heat: initialSettings.heat_level || 5
+        fan: initialSettings.fan_level !== undefined && initialSettings.fan_level !== '' ? parseInt(initialSettings.fan_level) : 8,
+        heat: initialSettings.heat_level !== undefined && initialSettings.heat_level !== '' ? parseInt(initialSettings.heat_level) : 4
       }));
       
       // Create initial SET event with user-provided settings (without loading state)
-      if (initialSettings.fan_level || initialSettings.heat_level) {
+      if (initialSettings.fan_level !== undefined || initialSettings.heat_level !== undefined) {
+        const fanLevel = initialSettings.fan_level !== undefined && initialSettings.fan_level !== '' ? parseInt(initialSettings.fan_level) : null;
+        const heatLevel = initialSettings.heat_level !== undefined && initialSettings.heat_level !== '' ? parseInt(initialSettings.heat_level) : null;
+        
         await apiCall(`${API_BASE}/roasts/${data.roast_id}/events`, {
           method: 'POST',
           body: JSON.stringify({
             kind: 'SET',
-            fan_level: initialSettings.fan_level ? parseInt(initialSettings.fan_level) : null,
-            heat_level: initialSettings.heat_level ? parseInt(initialSettings.heat_level) : null,
+            fan_level: fanLevel,
+            heat_level: heatLevel,
             note: 'Initial settings'
           })
         });
@@ -449,7 +478,9 @@ function RoastAssistant() {
       refreshEvents(data.roast_id);
       setShowInitialSettings(false);
     } catch (error) {
-      // Error already handled in apiCall
+      console.error('Start roast failed:', error);
+      // Error already handled in apiCall, but let's show more specific info
+      setStatus(`Failed to start roast: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -610,13 +641,16 @@ function RoastAssistant() {
       setStartTs(null);
       setRoastEnded(false);
       setEvents([]);
+      setIsPaused(false);
+      setPauseStartTime(null);
+      setTotalPausedTime(0);
       setFormData({
         beanType: '',
         weightBefore: '',
         weightAfter: '',
         notes: '',
-        fan: 5,
-        heat: 5,
+        fan: 8,
+        heat: 4,
         temp: ''
       });
       setMilestonesMarked({
@@ -685,6 +719,27 @@ function RoastAssistant() {
     } catch (error) {
       // Error already handled in apiCall
     }
+  };
+
+  const pauseRoast = () => {
+    if (!roastId || isPaused) return;
+
+    // Just pause locally for now (backend doesn't support PAUSE events yet)
+    setIsPaused(true);
+    setPauseStartTime(Date.now());
+    setStatus(`⏸️ Roast paused at ${formatTime(elapsedTime)}`);
+  };
+
+  const resumeRoast = () => {
+    if (!roastId || !isPaused) return;
+
+    // Calculate how long we were paused and add to total paused time
+    const pauseDuration = Date.now() - pauseStartTime;
+    setTotalPausedTime(prev => prev + pauseDuration);
+
+    setIsPaused(false);
+    setPauseStartTime(null);
+    setStatus(`▶️ Roast resumed at ${formatTime(elapsedTime)}`);
   };
 
   const endRoastSession = async () => {
@@ -1009,6 +1064,9 @@ function RoastAssistant() {
                     setRoastEnded(false);
                     setEvents([]);
                     setEnvironmentalConditions(null);
+                    setIsPaused(false);
+                    setPauseStartTime(null);
+                    setTotalPausedTime(0);
                     setMilestonesMarked({
                       firstCrack: false,
                       secondCrack: false,
@@ -1027,228 +1085,395 @@ function RoastAssistant() {
 
               {/* Clean Header Layout */}
               <div className="mb-8">
-                {/* Top Row - Timer and Key Metrics */}
-                <div className="flex flex-col lg:flex-row items-center justify-between mb-6 gap-6">
-                  {/* Timer - Large and prominent */}
-                  <div className="text-center flex-1">
-                    <div className="text-4xl sm:text-6xl font-mono font-bold text-indigo-600 dark:text-indigo-400 mb-2">
-                      {formatTime(elapsedTime)}
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-dark-text-secondary">
-                      Total Roast Time
-                    </div>
-                    
-                    {/* Development Time - positioned near Total Roast Time */}
-                    {currentPhase === 'development' && (
-                      <div className="mt-4">
-                        <div className="text-xl sm:text-2xl font-bold text-orange-500 dark:text-orange-400">
-                          {formatTime(developmentTime)}
+                {/* Responsive Layout - Stack on mobile, side-by-side on larger screens */}
+                <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-6 mb-6">
+                  {/* Timer with Circular Progress Chart and Phase Indicators */}
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 lg:gap-8">
+                    {/* Circular Chart and Timer */}
+                    <div className="text-center flex-shrink-0">
+                      <div className="relative flex items-center justify-center w-64 h-64 sm:w-80 sm:h-80 lg:w-80 lg:h-80">
+                        {/* Circular Progress Chart */}
+                        <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 120 120">
+                          {/* Background circle */}
+                          <circle
+                            cx="60"
+                            cy="60"
+                            r="50"
+                            fill="none"
+                            stroke="#374151"
+                            strokeWidth="8"
+                          />
+                          
+                          {/* Progress segments drawn sequentially */}
+                          {(() => {
+                            const circumference = 2 * Math.PI * 50;
+                            const radius = 50;
+                            const centerX = 60;
+                            const centerY = 60;
+                            
+                            // Calculate phase angles
+                            const dryingAngle = (dryingTime / elapsedTime) * 2 * Math.PI;
+                            const developmentAngle = (developmentTime / elapsedTime) * 2 * Math.PI;
+                            const coolingAngle = (coolingTime / elapsedTime) * 2 * Math.PI;
+                            
+                            // Helper function to create arc path
+                            const createArcPath = (startAngle, endAngle, radius) => {
+                              const start = {
+                                x: centerX + radius * Math.cos(startAngle - Math.PI / 2),
+                                y: centerY + radius * Math.sin(startAngle - Math.PI / 2)
+                              };
+                              const end = {
+                                x: centerX + radius * Math.cos(endAngle - Math.PI / 2),
+                                y: centerY + radius * Math.sin(endAngle - Math.PI / 2)
+                              };
+                              
+                              const largeArcFlag = endAngle - startAngle <= Math.PI ? "0" : "1";
+                              
+                              return [
+                                `M ${start.x} ${start.y}`,
+                                `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`
+                              ].join(" ");
+                            };
+                            
+                            let currentAngle = 0;
+                            
+                            return (
+                              <>
+                                {/* Drying phase (green) */}
+                                {elapsedTime > 0 && dryingTime > 0 && (
+                                  <path
+                                    d={createArcPath(currentAngle, currentAngle + dryingAngle, radius)}
+                                    fill="none"
+                                    stroke="#10b981"
+                                    strokeWidth="8"
+                                    strokeLinecap="round"
+                                    style={{ transition: 'all 0.5s ease' }}
+                                  />
+                                )}
+                                
+                                {/* Development phase (orange) */}
+                                {elapsedTime > 0 && developmentTime > 0 && (
+                                  <path
+                                    d={createArcPath(
+                                      currentAngle + dryingAngle, 
+                                      currentAngle + dryingAngle + developmentAngle, 
+                                      radius
+                                    )}
+                                    fill="none"
+                                    stroke="#f59e0b"
+                                    strokeWidth="8"
+                                    strokeLinecap="round"
+                                    style={{ transition: 'all 0.5s ease' }}
+                                  />
+                                )}
+                                
+                                {/* Cooling phase (blue) */}
+                                {elapsedTime > 0 && coolingTime > 0 && (
+                                  <path
+                                    d={createArcPath(
+                                      currentAngle + dryingAngle + developmentAngle,
+                                      currentAngle + dryingAngle + developmentAngle + coolingAngle,
+                                      radius
+                                    )}
+                                    fill="none"
+                                    stroke="#06b6d4"
+                                    strokeWidth="8"
+                                    strokeLinecap="round"
+                                    style={{ transition: 'all 0.5s ease' }}
+                                  />
+                                )}
+                              </>
+                            );
+                          })()}
+                        </svg>
+                        
+                        {/* Timer in center - Responsive sizing */}
+                        <div className="p-4 sm:p-6 w-32 h-20 sm:w-44 sm:h-28 lg:w-48 lg:h-32">
+                          <div className="flex flex-col items-center justify-center gap-2 sm:gap-3">
+                            <div className="text-3xl sm:text-3xl md:text-4xl lg:text-4xl font-bold text-green-400 text-center" style={{
+                              fontFamily: '"Orbitron", "Seven Segment", "DS-Digital", monospace',
+                              letterSpacing: '0.1em',
+                              textShadow: '0 0 3px #22c55e',
+                              fontWeight: '900',
+                              fontVariantNumeric: 'tabular-nums',
+                              lineHeight: '1'
+                            }}>
+                              {formatTime(elapsedTime)}
+                            </div>
+                            
+                            {/* Pause/Resume Button - Below timer inside chart */}
+                            <button
+                              onClick={isPaused ? resumeRoast : pauseRoast}
+                              disabled={loading}
+                              className={`p-2 sm:p-3 rounded-full border-2 transition-all duration-200 hover:scale-105 ${
+                                isPaused 
+                                  ? 'border-green-500 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20'
+                                  : 'border-gray-400 text-gray-600 hover:border-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:border-gray-500 dark:hover:border-gray-300 dark:hover:bg-gray-800/20'
+                              } ${loading ? 'opacity-50' : ''}`}
+                            >
+                              {isPaused ? (
+                                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M8 5v14l11-7z"/>
+                                </svg>
+                              ) : (
+                                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                                </svg>
+                              )}
+                            </button>
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-600 dark:text-dark-text-secondary">Development</div>
                       </div>
-                    )}
-                  </div>
-                  
-                  {/* Key Metrics Row */}
-                  <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full lg:w-auto">
-                    {/* Current Temperature */}
-                    <div className="text-center">
-                      <div className="text-xl sm:text-2xl font-bold text-red-500 dark:text-red-400">
-                        {(() => {
-                          const latestTemp = getLatestTemperature();
-                          return latestTemp ? `${latestTemp}°F` : '—';
-                        })()}
-                      </div>
-                      <div className="text-xs text-gray-600 dark:text-dark-text-secondary">Latest Temp</div>
+                      
                     </div>
-                    
-                    {/* Environmental Conditions - Compact */}
-                    {environmentalConditions && (
-                      <div className="w-full sm:w-auto">
-                        <EnvironmentalConditions 
-                          conditions={environmentalConditions} 
-                          units={userProfile?.units}
-                          userProfile={userProfile}
-                        />
+
+                    {/* Phase Indicators - Responsive layout */}
+                    <div className="flex flex-row md:flex-col gap-2 sm:gap-4 md:gap-4 pt-4 sm:pt-8">
+                      <div className={`flex items-center space-x-3 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition ${
+                        currentPhase === 'drying' 
+                          ? 'bg-indigo-100 dark:bg-dark-accent-primary/20 text-indigo-800 dark:text-dark-accent-primary' 
+                          : 'text-gray-500 dark:text-dark-text-tertiary'
+                      }`}>
+                        <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-green-500 flex-shrink-0"></div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-medium text-sm sm:text-base truncate">Drying</span>
+                          <span className="text-xs sm:text-sm font-mono">
+                            {formatTime(dryingTime)}
+                          </span>
+                        </div>
                       </div>
-                    )}
+                      
+                      <div className={`flex items-center space-x-3 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition ${
+                        currentPhase === 'development' 
+                          ? 'bg-indigo-100 dark:bg-dark-accent-primary/20 text-indigo-800 dark:text-dark-accent-primary' 
+                          : 'text-gray-500 dark:text-dark-text-tertiary'
+                      }`}>
+                        <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-orange-500 flex-shrink-0"></div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-medium text-sm sm:text-base truncate">Development</span>
+                          <span className="text-xs sm:text-sm font-mono">
+                            {milestonesMarked.firstCrack ? formatTime(developmentTime) : '—'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className={`flex items-center space-x-3 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition ${
+                        currentPhase === 'cooling' 
+                          ? 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-400' 
+                          : 'text-gray-500 dark:text-dark-text-tertiary'
+                      }`}>
+                        <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-cyan-500 flex-shrink-0"></div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-medium text-sm sm:text-base truncate">Cooling</span>
+                          <span className="text-xs sm:text-sm font-mono">
+                            {milestonesMarked.cool ? formatTime(coolingTime) : '—'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Roaster Controls - Improved layout */}
+                  <div className="w-full max-w-md lg:flex-1">
+                    <div className="bg-gray-900 border border-gray-700 rounded-xl p-4 sm:p-6">
+                      <h3 className="text-lg font-bold text-white mb-6 text-center">Roaster Controls</h3>
+                      
+                      <div className="space-y-6">
+                        {/* Left Side - Fan & Heat Controls */}
+                        <div className="space-y-4">
+                          {/* Fan Control */}
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <div className="text-xs font-semibold tracking-wide text-gray-300">
+                                FAN SPEED
+                              </div>
+                              <div className="text-sm font-bold text-white">
+                                {formData.fan}
+                              </div>
+                            </div>
+                            
+                            <div className="relative h-4 rounded-full overflow-hidden cursor-pointer"
+                                 onClick={(e) => {
+                                   const rect = e.currentTarget.getBoundingClientRect();
+                                   const x = e.clientX - rect.left;
+                                   const newValue = Math.round((x / rect.width) * 9);
+                                   handleInputChange('fan', Math.max(0, Math.min(9, newValue)));
+                                 }}>
+                              {/* Color spectrum background */}
+                              <div 
+                                className="absolute inset-0 rounded-full"
+                                style={{
+                                  background: 'linear-gradient(to right, #8b5cf6, #a855f7, #c084fc, #ddd6fe, #10b981, #34d399, #6ee7b7, #a7f3d0)'
+                                }}
+                              />
+                              
+                              {/* Overlay for inactive portion */}
+                              <div 
+                                className="absolute inset-0 bg-gray-800/60 rounded-full transition-all duration-300"
+                                style={{
+                                  clipPath: `polygon(${(formData.fan / 9) * 100}% 0%, 100% 0%, 100% 100%, ${(formData.fan / 9) * 100}% 100%)`
+                                }}
+                              />
+                              
+                              {/* Active indicator */}
+                              <div 
+                                className="absolute top-1/2 w-2 h-2 bg-white rounded-full border border-gray-900 transform -translate-y-1/2 transition-all duration-300 shadow-lg"
+                                style={{
+                                  left: `calc(${(formData.fan / 9) * 100}% - 4px)`
+                                }}
+                              />
+                            </div>
+                            
+                            <div className="flex justify-between text-xs text-gray-500">
+                              <span>0</span>
+                              <span>5</span>
+                              <span>9</span>
+                            </div>
+                          </div>
+
+                          {/* Heat Control */}
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <div className="text-xs font-semibold tracking-wide text-gray-300">
+                                HEAT LEVEL
+                              </div>
+                              <div className="text-sm font-bold text-white">
+                                {formData.heat}
+                              </div>
+                            </div>
+                            
+                            <div className="relative h-4 rounded-full overflow-hidden cursor-pointer"
+                                 onClick={(e) => {
+                                   const rect = e.currentTarget.getBoundingClientRect();
+                                   const x = e.clientX - rect.left;
+                                   const newValue = Math.round((x / rect.width) * 9);
+                                   handleInputChange('heat', Math.max(0, Math.min(9, newValue)));
+                                 }}>
+                              {/* Color spectrum background */}
+                              <div 
+                                className="absolute inset-0 rounded-full"
+                                style={{
+                                  background: 'linear-gradient(to right, #f97316, #fb923c, #fdba74, #fed7aa, #dc2626, #ef4444, #f87171, #fca5a5)'
+                                }}
+                              />
+                              
+                              {/* Overlay for inactive portion */}
+                              <div 
+                                className="absolute inset-0 bg-gray-800/60 rounded-full transition-all duration-300"
+                                style={{
+                                  clipPath: `polygon(${(formData.heat / 9) * 100}% 0%, 100% 0%, 100% 100%, ${(formData.heat / 9) * 100}% 100%)`
+                                }}
+                              />
+                              
+                              {/* Active indicator */}
+                              <div 
+                                className="absolute top-1/2 w-2 h-2 bg-white rounded-full border border-gray-900 transform -translate-y-1/2 transition-all duration-300 shadow-lg"
+                                style={{
+                                  left: `calc(${(formData.heat / 9) * 100}% - 4px)`
+                                }}
+                              />
+                            </div>
+                            
+                            <div className="flex justify-between text-xs text-gray-500">
+                              <span>0</span>
+                              <span>5</span>
+                              <span>9</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Temperature Input Section */}
+                        <div className="bg-gray-800 rounded-lg p-3 w-full border border-gray-600">
+                          <div className="text-sm font-semibold tracking-wide text-cyan-400 text-center mb-3">
+                            TEMP LOG
+                          </div>
+                          
+                          <div className="flex items-center gap-3 mb-3">
+                            <button
+                              onClick={() => {
+                                const currentValue = parseFloat(formData.tempF) || 0;
+                                handleInputChange('tempF', (currentValue - 1).toString());
+                              }}
+                              className="bg-gray-700 hover:bg-gray-600 text-white text-lg font-bold py-2 px-3 rounded transition-all duration-150"
+                            >
+                              −
+                            </button>
+                            
+                            <input
+                              type="number"
+                              step="1"
+                              value={formData.tempF}
+                              onChange={(e) => handleInputChange('tempF', e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  logChange();
+                                }
+                              }}
+                              placeholder="°F"
+                              className="flex-1 min-w-0 bg-gray-900 text-white text-lg font-bold text-center rounded px-3 py-2 border border-gray-600 focus:border-cyan-400 focus:outline-none"
+                            />
+                            
+                            <button
+                              onClick={() => {
+                                const currentValue = parseFloat(formData.tempF) || 0;
+                                handleInputChange('tempF', (currentValue + 1).toString());
+                              }}
+                              className="bg-gray-700 hover:bg-gray-600 text-white text-lg font-bold py-2 px-3 rounded transition-all duration-150"
+                            >
+                              +
+                            </button>
+                          </div>
+                          
+                          <button
+                            onClick={logChange}
+                            disabled={loading}
+                            className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-2 rounded-lg text-sm font-bold transition-all duration-150 disabled:opacity-50"
+                          >
+                            LOG
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
                 
-                {/* Phase Progress Bar */}
-                <div className="bg-gray-200 dark:bg-dark-bg-tertiary rounded-full h-2 mb-4">
-                  <div className={`h-2 rounded-full transition-all duration-500 ${
-                    currentPhase === 'drying' 
-                      ? 'bg-gradient-to-r from-green-500 to-green-400' 
-                      : currentPhase === 'development' 
-                      ? 'bg-gradient-to-r from-orange-500 to-orange-400' 
-                      : currentPhase === 'cooling' 
-                      ? 'bg-gradient-to-r from-cyan-500 to-blue-500' 
-                      : 'bg-gradient-to-r from-gray-400 to-gray-300'
-                  }`}
-                       style={{
-                         width: currentPhase === 'drying' ? '33%' : 
-                                currentPhase === 'development' ? '66%' : 
-                                currentPhase === 'cooling' ? '100%' : '0%'
-                       }}>
-                  </div>
-                </div>
-                
-                {/* Phase Indicators with Individual Counters */}
-                <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-8">
-                  <div className={`flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg transition ${
-                    currentPhase === 'drying' 
-                      ? 'bg-indigo-100 dark:bg-dark-accent-primary/20 text-indigo-800 dark:text-dark-accent-primary' 
-                      : 'text-gray-500 dark:text-dark-text-tertiary'
-                  }`}>
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                    <div className="flex flex-col items-center">
-                      <span className="font-medium text-sm sm:text-base">Drying Phase</span>
-                      <span className="text-xs font-mono">
-                        {milestonesMarked.firstCrack ? formatTime(dryingTime) : formatTime(dryingTime)}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className={`flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg transition ${
-                    currentPhase === 'development' 
-                      ? 'bg-indigo-100 dark:bg-dark-accent-primary/20 text-indigo-800 dark:text-dark-accent-primary' 
-                      : 'text-gray-500 dark:text-dark-text-tertiary'
-                  }`}>
-                    <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                    <div className="flex flex-col items-center">
-                      <span className="font-medium text-sm sm:text-base">Development Phase</span>
-                      <span className="text-xs font-mono">
-                        {milestonesMarked.firstCrack ? formatTime(developmentTime) : '—'}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className={`flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg transition ${
-                    currentPhase === 'cooling' 
-                      ? 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-400' 
-                      : 'text-gray-500 dark:text-dark-text-tertiary'
-                  }`}>
-                    <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
-                    <div className="flex flex-col items-center">
-                      <span className="font-medium text-sm sm:text-base">Cooling Phase</span>
-                      <span className="text-xs font-mono">
-                        {milestonesMarked.cool ? formatTime(coolingTime) : '—'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
               </div>
 
-              {/* Controls */}
-              <div className="bg-gray-50 dark:bg-dark-bg-tertiary rounded-lg p-4 sm:p-6">
-                <h3 className="text-lg font-semibold text-gray-700 dark:text-dark-text-primary mb-4">Roaster Controls</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
-                      Fan: {formData.fan}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="9"
-                      value={formData.fan}
-                      onChange={(e) => handleInputChange('fan', parseInt(e.target.value))}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                    />
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>0</span>
-                      <span>9</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
-                      Heat: {formData.heat}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="9"
-                      value={formData.heat}
-                      onChange={(e) => handleInputChange('heat', parseInt(e.target.value))}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                    />
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>0</span>
-                      <span>9</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">BT/ET Temp (°F)</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        step="1"
-                        value={formData.tempF}
-                        onChange={(e) => handleInputChange('tempF', e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            logChange();
-                          } else if (e.key === 'ArrowUp') {
-                            e.preventDefault();
-                            const currentValue = parseFloat(formData.tempF) || 0;
-                            handleInputChange('tempF', (currentValue + 1).toString());
-                          } else if (e.key === 'ArrowDown') {
-                            e.preventDefault();
-                            const currentValue = parseFloat(formData.tempF) || 0;
-                            handleInputChange('tempF', (currentValue - 1).toString());
-                          }
-                        }}
-                        placeholder="Optional"
-                        className="flex-1 border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
-                      />
-                      <button
-                        onClick={logChange}
-                        disabled={loading}
-                        className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 flex items-center gap-2 shadow-lg"
-                      >
-                        ⚙️ Log
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               {/* Milestone Buttons */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                 <button
                   onClick={() => markMilestone('FIRST_CRACK')}
-                  disabled={loading || milestonesMarked.firstCrack}
+                  disabled={loading || milestonesMarked.firstCrack || isPaused}
                   className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-medium transition text-sm sm:text-base ${
                     milestonesMarked.firstCrack 
                       ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
                       : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg'
-                  } ${loading ? 'opacity-50' : ''}`}
+                  } ${loading || isPaused ? 'opacity-50' : ''}`}
                 >
                   {milestonesMarked.firstCrack ? '✅ First Crack' : '🔥 First Crack'}
                 </button>
                 <button
                   onClick={() => markMilestone('SECOND_CRACK')}
-                  disabled={loading || milestonesMarked.secondCrack}
+                  disabled={loading || milestonesMarked.secondCrack || isPaused}
                   className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-medium transition text-sm sm:text-base ${
                     milestonesMarked.secondCrack 
                       ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
                       : 'bg-gradient-to-r from-red-600 to-pink-600 text-white hover:from-red-700 hover:to-pink-700 shadow-lg'
-                  } ${loading ? 'opacity-50' : ''}`}
+                  } ${loading || isPaused ? 'opacity-50' : ''}`}
                 >
                   {milestonesMarked.secondCrack ? '✅ Second Crack' : '🔥🔥 Second Crack'}
                 </button>
                 <button
                   onClick={() => markMilestone('COOL')}
-                  disabled={loading || milestonesMarked.cool}
+                  disabled={loading || milestonesMarked.cool || isPaused}
                   className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-medium transition text-sm sm:text-base ${
                     milestonesMarked.cool 
                       ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
                       : 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-700 hover:to-blue-700 shadow-lg'
-                  } ${loading ? 'opacity-50' : ''}`}
+                  } ${loading || isPaused ? 'opacity-50' : ''}`}
                 >
                   {milestonesMarked.cool ? '✅ Cool' : '🧊 Cool'}
                 </button>
@@ -1280,11 +1505,13 @@ function RoastAssistant() {
                 interactive={true}
               />
 
-              {/* Events Table */}
-              <div className="bg-white dark:bg-dark-card rounded-lg shadow dark:shadow-dark-glow overflow-hidden">
-                <div className="px-4 py-3 bg-gray-50 dark:bg-dark-bg-tertiary border-b dark:border-dark-border-primary">
-                  <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text-primary">Roast Event Log</h3>
-                </div>
+              {/* Events Table and Weather Layout */}
+              <div className="flex flex-col lg:flex-row gap-6">
+                {/* Events Table - Reduced Width */}
+                <div className="flex-1 max-w-4xl bg-white dark:bg-dark-card rounded-lg shadow dark:shadow-dark-glow overflow-hidden">
+                  <div className="px-4 py-3 bg-gray-50 dark:bg-dark-bg-tertiary border-b dark:border-dark-border-primary">
+                    <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text-primary">Roast Event Log</h3>
+                  </div>
                 <div className="overflow-x-auto text-sm sm:text-base">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50 dark:bg-dark-bg-tertiary">
@@ -1312,7 +1539,7 @@ function RoastAssistant() {
                             <td className="px-4 py-2 text-sm">
                               {editingEventId === event.id ? (
                                 <CustomDropdown
-                                  options={['SET', 'FIRST_CRACK', 'SECOND_CRACK', 'COOL', 'END']}
+                                  options={['SET', 'FIRST_CRACK', 'SECOND_CRACK', 'COOL', 'PAUSE', 'RESUME', 'END']}
                                   value={editingFormData.kind}
                                   onChange={(value) => setEditingFormData(prev => ({ ...prev, kind: value }))}
                                   placeholder="Select event type..."
@@ -1325,6 +1552,8 @@ function RoastAssistant() {
                                   event.kind === 'SECOND_CRACK' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
                                   event.kind === 'COOL' ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300' :
                                   event.kind === 'END' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
+                                  event.kind === 'PAUSE' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
+                                  event.kind === 'RESUME' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
                                   'bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-300'
                                 }`}>
                                   {event.kind.replace('_', ' ')}
@@ -1424,6 +1653,23 @@ function RoastAssistant() {
                     </tbody>
                   </table>
                 </div>
+                </div>
+                
+                {/* Weather Component - Bottom Right */}
+                <div className="flex-shrink-0">
+                  <div className="w-80">
+                    {/* Environmental Conditions - Compact */}
+                    {environmentalConditions && (
+                      <div>
+                        <EnvironmentalConditions 
+                          conditions={environmentalConditions} 
+                          units={userProfile?.units}
+                          userProfile={userProfile}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
             </div>
@@ -1440,6 +1686,9 @@ function RoastAssistant() {
                     setRoastEnded(false);
                     setEvents([]);
                     setEnvironmentalConditions(null);
+                    setIsPaused(false);
+                    setPauseStartTime(null);
+                    setTotalPausedTime(0);
                     setMilestonesMarked({
                       firstCrack: false,
                       secondCrack: false,
@@ -1580,6 +1829,8 @@ function RoastAssistant() {
                                 event.kind === 'SECOND_CRACK' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
                                 event.kind === 'COOL' ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300' :
                                 event.kind === 'END' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
+                                event.kind === 'PAUSE' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
+                                event.kind === 'RESUME' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
                                 'bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-300'
                               }`}>
                                 {event.kind.replace('_', ' ')}
