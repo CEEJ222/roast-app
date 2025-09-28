@@ -10,8 +10,15 @@ import datetime
 from jose import jwt, JWTError
 from supabase import create_client, Client
 from dotenv import load_dotenv
-from bean_parser import parse_sweet_marias_url
-from sweet_marias_parser import parse_sweet_marias_html, get_ai_optimized_data
+from vendor_parsers.sweet_marias import parse_sweet_marias_url, parse_sweet_marias_html, get_ai_optimized_data
+from weaviate_integration import (
+    get_weaviate_integration, 
+    sync_bean_to_weaviate, 
+    sync_roast_to_weaviate,
+    search_beans_semantic,
+    search_roasts_semantic
+)
+from weaviate_config import initialize_weaviate
 
 # Coffee regions validation
 COFFEE_REGIONS = [
@@ -173,6 +180,10 @@ class ParseQRRequest(BaseModel):
 
 class ParseHTMLRequest(BaseModel):
     html_content: str
+
+class SemanticSearchRequest(BaseModel):
+    query: str
+    limit: int = 10
 
 class LogEventRequest(BaseModel):
     kind: str
@@ -1044,6 +1055,126 @@ async def parse_bean_html(request: ParseHTMLRequest, user_id: str = Depends(veri
         result = sb.table("bean_profiles").insert(profile_data).execute()
         return result.data[0]
         
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Semantic Search Endpoints
+@app.post("/search/beans")
+async def search_beans_semantic_endpoint(request: SemanticSearchRequest, user_id: str = Depends(verify_jwt_token)):
+    """Search for beans using semantic similarity"""
+    try:
+        results = search_beans_semantic(request.query, request.limit)
+        return {
+            "query": request.query,
+            "results": results,
+            "count": len(results)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/search/roasts")
+async def search_roasts_semantic_endpoint(request: SemanticSearchRequest, user_id: str = Depends(verify_jwt_token)):
+    """Search for roast profiles using semantic similarity"""
+    try:
+        results = search_roasts_semantic(request.query, request.limit)
+        return {
+            "query": request.query,
+            "results": results,
+            "count": len(results)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/search/similar-beans/{bean_profile_id}")
+async def find_similar_beans(bean_profile_id: str, limit: int = 5, user_id: str = Depends(verify_jwt_token)):
+    """Find similar beans based on a bean profile"""
+    try:
+        sb = get_supabase()
+        
+        # Get the bean profile
+        bean_result = sb.table("bean_profiles").select("*").eq("id", bean_profile_id).eq("user_id", user_id).execute()
+        if not bean_result.data:
+            raise HTTPException(status_code=404, detail="Bean profile not found")
+        
+        bean_profile = bean_result.data[0]
+        
+        # Find similar beans using Weaviate
+        integration = get_weaviate_integration()
+        similar_beans = integration.find_similar_beans(bean_profile, limit)
+        
+        return {
+            "bean_profile_id": bean_profile_id,
+            "similar_beans": similar_beans,
+            "count": len(similar_beans)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/search/recommend-roast/{bean_profile_id}")
+async def recommend_roast_profile(bean_profile_id: str, user_id: str = Depends(verify_jwt_token)):
+    """Get roast profile recommendation for a bean"""
+    try:
+        sb = get_supabase()
+        
+        # Get the bean profile
+        bean_result = sb.table("bean_profiles").select("*").eq("id", bean_profile_id).eq("user_id", user_id).execute()
+        if not bean_result.data:
+            raise HTTPException(status_code=404, detail="Bean profile not found")
+        
+        bean_profile = bean_result.data[0]
+        
+        # Get roast recommendation using Weaviate
+        integration = get_weaviate_integration()
+        recommended_roast = integration.recommend_roast_profile(bean_profile)
+        
+        return {
+            "bean_profile_id": bean_profile_id,
+            "recommended_roast": recommended_roast
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/weaviate/initialize")
+async def initialize_weaviate_schemas(user_id: str = Depends(verify_jwt_token)):
+    """Initialize Weaviate schemas (admin endpoint)"""
+    try:
+        integration = get_weaviate_integration()
+        success = integration.initialize_schemas()
+        
+        if success:
+            return {"message": "Weaviate schemas initialized successfully"}
+        else:
+            return {"message": "Weaviate not available or schema initialization failed"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/weaviate/sync-bean/{bean_profile_id}")
+async def sync_bean_to_weaviate_endpoint(bean_profile_id: str, user_id: str = Depends(verify_jwt_token)):
+    """Sync a bean profile to Weaviate"""
+    try:
+        sb = get_supabase()
+        
+        # Get the bean profile
+        bean_result = sb.table("bean_profiles").select("*").eq("id", bean_profile_id).eq("user_id", user_id).execute()
+        if not bean_result.data:
+            raise HTTPException(status_code=404, detail="Bean profile not found")
+        
+        bean_profile = bean_result.data[0]
+        
+        # Sync to Weaviate
+        success = sync_bean_to_weaviate(bean_profile)
+        
+        return {
+            "bean_profile_id": bean_profile_id,
+            "synced": success,
+            "message": "Bean profile synced to Weaviate" if success else "Failed to sync to Weaviate"
+        }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
