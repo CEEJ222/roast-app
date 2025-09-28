@@ -30,7 +30,7 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
   const [editingEventFormData, setEditingEventFormData] = useState({});
 
   useEffect(() => {
-    if (roast) {
+    if (roast && roast.id) {
       loadRoastEvents();
     }
   }, [roast]);
@@ -40,6 +40,14 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
     setError(null);
     
     try {
+      // Debug: Check if roast and roast.id exist
+      console.log('DEBUG: Roast object:', roast);
+      console.log('DEBUG: Roast ID:', roast?.id);
+      
+      if (!roast || !roast.id) {
+        throw new Error('Roast ID is missing');
+      }
+      
       const token = await getAuthToken();
       
       // Load events for this roast
@@ -264,7 +272,8 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
     );
   }
 
-  if (!roast) {
+  if (!roast || !roast.id) {
+    console.log('DEBUG: RoastDetailPage - Missing roast or roast.id:', { roast, hasId: roast?.id });
     return null;
   }
 

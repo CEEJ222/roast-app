@@ -69,7 +69,7 @@ const RecentRoasts = ({
                 <div 
                   key={roast.id}
                   className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary cursor-pointer"
-                  onClick={() => onRoastResume(roast.id)}
+                  onClick={() => onRoastResume(roast)}
                 >
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10 bg-amber-100 dark:bg-dark-bg-tertiary rounded-full flex items-center justify-center border dark:border-dark-border-primary">

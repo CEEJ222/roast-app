@@ -75,6 +75,8 @@ async def add_cors_headers(request: Request, call_next):
     
     return response
 
+# RAG API router will be included after app creation to avoid circular imports
+
 # Supabase setup
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
@@ -1177,6 +1179,14 @@ async def sync_bean_to_weaviate_endpoint(bean_profile_id: str, user_id: str = De
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# Include RAG API router (imported here to avoid circular dependency)
+try:
+    from rag_endpoints import router as rag_router
+    app.include_router(rag_router, prefix="/api", tags=["RAG Copilot"])
+    print("✅ RAG API router included successfully")
+except ImportError as e:
+    print(f"⚠️ Could not import RAG API router: {e}")
 
 if __name__ == "__main__":
     import uvicorn

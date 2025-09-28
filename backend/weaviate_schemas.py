@@ -321,12 +321,208 @@ def get_roast_event_schema() -> Dict[str, Any]:
         ]
     }
 
+def get_roast_outcome_schema() -> Dict[str, Any]:
+    """Schema for roast outcomes with RAG-enhanced data"""
+    return {
+        "class": "RoastOutcome",
+        "description": "Roast outcomes and reflections for RAG system",
+        "vectorizer": "text2vec-transformers",
+        "moduleConfig": {
+            "text2vec-transformers": {
+                "model": "sentence-transformers/all-MiniLM-L6-v2",
+                "passageModel": "sentence-transformers/all-MiniLM-L6-v2",
+                "queryModel": "sentence-transformers/all-MiniLM-L6-v2"
+            }
+        },
+        "properties": [
+            {
+                "name": "roast_id",
+                "dataType": ["text"],
+                "description": "Reference to roast entry"
+            },
+            {
+                "name": "actual_roast_level",
+                "dataType": ["text"],
+                "description": "Actual roast level achieved"
+            },
+            {
+                "name": "roast_duration_minutes",
+                "dataType": ["number"],
+                "description": "Total roast duration in minutes"
+            },
+            {
+                "name": "development_time_minutes",
+                "dataType": ["number"],
+                "description": "Development time (first crack to drop)"
+            },
+            {
+                "name": "development_ratio",
+                "dataType": ["number"],
+                "description": "Development ratio (development time / total time)"
+            },
+            {
+                "name": "tasting_notes",
+                "dataType": ["text"],
+                "description": "Detailed tasting notes and observations"
+            },
+            {
+                "name": "flavor_profile",
+                "dataType": ["text[]"],
+                "description": "Array of flavor descriptors"
+            },
+            {
+                "name": "aroma_profile",
+                "dataType": ["text[]"],
+                "description": "Array of aroma descriptors"
+            },
+            {
+                "name": "body_rating",
+                "dataType": ["number"],
+                "description": "Body rating (1-10)"
+            },
+            {
+                "name": "acidity_rating",
+                "dataType": ["number"],
+                "description": "Acidity rating (1-10)"
+            },
+            {
+                "name": "sweetness_rating",
+                "dataType": ["number"],
+                "description": "Sweetness rating (1-10)"
+            },
+            {
+                "name": "overall_rating",
+                "dataType": ["number"],
+                "description": "Overall roast rating (1-10)"
+            },
+            {
+                "name": "roast_quality",
+                "dataType": ["text"],
+                "description": "Overall roast quality assessment"
+            },
+            {
+                "name": "roast_consistency",
+                "dataType": ["text"],
+                "description": "Roast consistency assessment"
+            },
+            {
+                "name": "roast_challenges",
+                "dataType": ["text[]"],
+                "description": "Array of challenges encountered during roast"
+            },
+            {
+                "name": "roast_successes",
+                "dataType": ["text[]"],
+                "description": "Array of successful aspects of the roast"
+            },
+            {
+                "name": "improvement_notes",
+                "dataType": ["text"],
+                "description": "Notes on what to improve next time"
+            },
+            {
+                "name": "roast_reflections",
+                "dataType": ["text"],
+                "description": "Detailed reflections on the roast process and outcome"
+            },
+            {
+                "name": "ai_insights",
+                "dataType": ["text"],
+                "description": "AI-generated insights and analysis"
+            },
+            {
+                "name": "user_id",
+                "dataType": ["text"],
+                "description": "User who created this outcome"
+            },
+            {
+                "name": "created_at",
+                "dataType": ["date"],
+                "description": "Creation timestamp"
+            }
+        ]
+    }
+
+def get_ai_coaching_schema() -> Dict[str, Any]:
+    """Schema for AI coaching recommendations"""
+    return {
+        "class": "AICoaching",
+        "description": "AI coaching recommendations and insights",
+        "vectorizer": "text2vec-transformers",
+        "moduleConfig": {
+            "text2vec-transformers": {
+                "model": "sentence-transformers/all-MiniLM-L6-v2",
+                "passageModel": "sentence-transformers/all-MiniLM-L6-v2",
+                "queryModel": "sentence-transformers/all-MiniLM-L6-v2"
+            }
+        },
+        "properties": [
+            {
+                "name": "roast_id",
+                "dataType": ["text"],
+                "description": "Reference to specific roast (if applicable)"
+            },
+            {
+                "name": "coaching_type",
+                "dataType": ["text"],
+                "description": "Type of coaching (pre_roast, during_roast, post_roast, general)"
+            },
+            {
+                "name": "recommendation",
+                "dataType": ["text"],
+                "description": "AI-generated recommendation"
+            },
+            {
+                "name": "reasoning",
+                "dataType": ["text"],
+                "description": "Explanation for the recommendation"
+            },
+            {
+                "name": "confidence_score",
+                "dataType": ["number"],
+                "description": "AI confidence in the recommendation (0-1)"
+            },
+            {
+                "name": "similar_roasts",
+                "dataType": ["text[]"],
+                "description": "References to similar historical roasts used for recommendation"
+            },
+            {
+                "name": "context_data",
+                "dataType": ["text"],
+                "description": "Context data used for the recommendation"
+            },
+            {
+                "name": "user_feedback",
+                "dataType": ["text"],
+                "description": "User feedback on the recommendation"
+            },
+            {
+                "name": "effectiveness_rating",
+                "dataType": ["number"],
+                "description": "User rating of recommendation effectiveness (1-5)"
+            },
+            {
+                "name": "user_id",
+                "dataType": ["text"],
+                "description": "User receiving coaching"
+            },
+            {
+                "name": "created_at",
+                "dataType": ["date"],
+                "description": "Creation timestamp"
+            }
+        ]
+    }
+
 def get_all_schemas() -> List[Dict[str, Any]]:
     """Get all schema definitions"""
     return [
         get_bean_profile_schema(),
         get_roast_profile_schema(),
-        get_roast_event_schema()
+        get_roast_event_schema(),
+        get_roast_outcome_schema(),
+        get_ai_coaching_schema()
     ]
 
 def get_schema_by_class(class_name: str) -> Dict[str, Any]:
@@ -334,6 +530,8 @@ def get_schema_by_class(class_name: str) -> Dict[str, Any]:
     schemas = {
         "BeanProfile": get_bean_profile_schema(),
         "RoastProfile": get_roast_profile_schema(),
-        "RoastEvent": get_roast_event_schema()
+        "RoastEvent": get_roast_event_schema(),
+        "RoastOutcome": get_roast_outcome_schema(),
+        "AICoaching": get_ai_coaching_schema()
     }
     return schemas.get(class_name, {})
