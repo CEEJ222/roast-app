@@ -4,6 +4,7 @@ import QrScanner from 'qr-scanner';
 const QRCodeScanner = ({ onScanSuccess, onClose }) => {
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const videoRef = useRef(null);
   const qrScannerRef = useRef(null);
@@ -22,7 +23,7 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
         qrScannerRef.current.destroy();
       }
 
-      // Create QR scanner with the video element
+      // Create QR scanner with enhanced focus settings
       qrScannerRef.current = new QrScanner(
         videoRef.current,
         (result) => {
@@ -33,12 +34,40 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
           highlightScanRegion: true,
           highlightCodeOutline: true,
           maxScansPerSecond: 10,
+          preferredCamera: 'environment', // Force back camera
+          // Enhanced camera constraints for better focus
+          constraints: {
+            video: {
+              facingMode: 'environment',
+              width: { ideal: 1920, min: 1280 },
+              height: { ideal: 1080, min: 720 },
+              frameRate: { ideal: 30, min: 15 },
+              focusMode: 'continuous',
+              whiteBalanceMode: 'continuous',
+              exposureMode: 'continuous'
+            }
+          }
         }
       );
 
       // Start the scanner
       await qrScannerRef.current.start();
       console.log('QR Scanner started successfully');
+
+      // Apply additional focus constraints after starting
+      setTimeout(() => {
+        const videoTrack = videoRef.current?.srcObject?.getVideoTracks()[0];
+        if (videoTrack && videoTrack.getCapabilities) {
+          const capabilities = videoTrack.getCapabilities();
+          if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+            videoTrack.applyConstraints({
+              focusMode: 'continuous',
+              focusDistance: { ideal: 0.5 }, // Focus at 50cm for QR codes
+              zoom: { ideal: 1.5 } // Slight zoom for better QR code visibility
+            }).catch(err => console.log('Focus constraints not supported:', err));
+          }
+        }
+      }, 1000);
 
     } catch (err) {
       console.error('QR Scanner error:', err);
@@ -58,6 +87,7 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
   const requestCameraPermission = async () => {
     try {
       setError(null);
+      setSuccess(null);
       setPermissionGranted(true);
       setScanning(true);
       
@@ -87,12 +117,15 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
   const handleQRCodeData = async (qrData) => {
     try {
       setError(null);
+      setSuccess('QR code detected! Processing...');
       stopCamera(); // Stop scanning once we get a result
       
       console.log('Processing QR data:', qrData);
       
       // Check if it's a Sweet Maria's URL
       if (qrData.includes('sweetmarias.com')) {
+        setSuccess('Valid Sweet Maria\'s URL detected! Fetching bean data...');
+        
         const API_BASE = import.meta.env.DEV 
           ? 'http://localhost:8000'
           : 'https://roast-backend-production-8883.up.railway.app';
@@ -108,12 +141,16 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
         
         if (response.ok) {
           const beanData = await response.json();
-          onScanSuccess(beanData);
+          setSuccess('Bean profile created successfully!');
+          setTimeout(() => {
+            onScanSuccess(beanData);
+          }, 1500);
         } else {
           throw new Error('Failed to parse QR code data');
         }
       } else {
         setError('This QR code is not from Sweet Maria\'s. Please scan a Sweet Maria\'s coffee bag.');
+        setSuccess(null);
         // Restart scanning after showing error
         setTimeout(() => {
           setError(null);
@@ -124,6 +161,7 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
     } catch (err) {
       console.error('QR processing error:', err);
       setError('Failed to parse QR code data: ' + err.message);
+      setSuccess(null);
       // Restart scanning after showing error
       setTimeout(() => {
         setError(null);
@@ -188,6 +226,12 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
                 </div>
               </div>
             </div>
+            
+            {success && (
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mb-4">
+                <p className="text-green-600 dark:text-green-400 text-sm font-medium">{success}</p>
+              </div>
+            )}
             
             {error && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
