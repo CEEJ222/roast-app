@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import RoastCurveGraph from '../shared/RoastCurveGraph';
-import ConfirmationModal from '../modals/ConfirmationModal';
 
 const AfterRoast = ({
   roastEnded,
@@ -23,7 +22,6 @@ const AfterRoast = ({
   setTotalPausedTime,
   setMilestonesMarked
 }) => {
-  const [showEndRoastConfirm, setShowEndRoastConfirm] = useState(false);
   const handleBackToDashboard = () => {
     setRoastId(null);
     setStartTs(null);
@@ -70,7 +68,7 @@ const AfterRoast = ({
                 <p>It looks like you haven't ended the roast session yet. If you're weighing your beans, the roast is complete!</p>
                 <div className="mt-3">
                   <button
-                    onClick={() => setShowEndRoastConfirm(true)}
+                    onClick={endRoastSession}
                     className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded-lg hover:from-green-700 hover:to-emerald-700 font-medium"
                   >
                     🛑 End Roast Session Now
@@ -197,22 +195,6 @@ const AfterRoast = ({
           </table>
         </div>
       </div>
-
-      {/* End Roast Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={showEndRoastConfirm}
-        onClose={() => setShowEndRoastConfirm(false)}
-        onConfirm={() => {
-          setShowEndRoastConfirm(false);
-          endRoastSession();
-        }}
-        title="End Roast Session"
-        message="Are you sure you want to end the roast session? This will complete the roast and move to the final step where you can record the final weight and notes."
-        confirmText="End Roast"
-        cancelText="Continue Roasting"
-        confirmButtonColor="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-        icon="🛑"
-      />
     </div>
   );
 };
