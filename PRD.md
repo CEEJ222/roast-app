@@ -468,6 +468,8 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - ✅ Roast pattern vector storage
 - ✅ AI coaching data preparation
 - ✅ Semantic search APIs and endpoints
+- ✅ Enhanced database schemas for RAG system
+- ✅ Roast outcomes and reflections data capture
 - **Timeline:** Completed December 2024
 
 ### Phase 6: Browser Extension Development ✅ **PLANNED**
@@ -577,7 +579,12 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 
 📌 **This is a living document. All sections are open for refinement as the product evolves with user feedback and technical discoveries.**
 
-**Recent Updates (v0.6):**
+**Recent Updates (v0.7):**
+- ✅ **MAJOR:** RAG-Powered Roasting Copilot System Implementation
+- ✅ **MAJOR:** Enhanced database schemas for AI coaching and roast outcomes
+- ✅ **MAJOR:** Weaviate vector database integration with FastEmbed
+- ✅ **MAJOR:** Semantic search capabilities for beans and roasts
+- ✅ **MAJOR:** RAG API endpoints for pre-roast planning and outcomes
 - ✅ **MAJOR:** Complete App.jsx refactoring - 47% size reduction (1902 → 1007 lines)
 - ✅ **MAJOR:** Extracted 7 major reusable components from monolithic architecture
 - ✅ **MAJOR:** Created modular component architecture with focused responsibilities
@@ -601,6 +608,7 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - ✅ **NEW:** Added frontend test interface for HTML parsing functionality
 - ✅ **NEW:** Implemented automated bean profile creation from supplier HTML
 - ✅ **NEW:** Added comprehensive data extraction (cupping scores, flavor profiles, technical specs)
-- ✅ **NEW:** Planned Qdrant vector database integration for semantic search
+- ✅ **NEW:** Implemented Weaviate vector database integration for semantic search
 - ✅ **NEW:** Planned browser extension for multi-supplier bean import
-- ✅ Updated implementation roadmap with completed bean profile management phase
+- ✅ **NEW:** Fixed roast detail page undefined ID issue
+- ✅ Updated implementation roadmap with completed RAG system phase

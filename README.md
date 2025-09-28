@@ -22,6 +22,15 @@ See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues and solutions, 
 
 ## 🆕 Latest Updates
 
+### 🤖 RAG-POWERED ROASTING COPILOT (December 2024)
+- **🧠 AI-Powered Recommendations:** Intelligent pre-roast planning based on historical data
+- **📊 Enhanced Data Capture:** Roast outcomes, reflections, and tasting notes for AI learning
+- **🔍 Semantic Search:** Vector database integration for finding similar beans and roasts
+- **⚡ Real-Time Guidance:** During-roast AI coaching and adjustment recommendations
+- **📈 Post-Roast Analysis:** AI analysis of roast outcomes with improvement suggestions
+- **🗄️ Advanced Database:** New tables for roast outcomes, curves, and AI coaching data
+- **🔗 Vector Integration:** Weaviate vector database with FastEmbed for free local embeddings
+
 ### 🏗️ MAJOR ARCHITECTURE REFACTORING (December 2024)
 - **🎯 47% Size Reduction:** App.jsx reduced from 1902 lines to 1007 lines
 - **🧩 Component Architecture:** Extracted 7 major reusable components from monolithic App.jsx
@@ -33,6 +42,7 @@ See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues and solutions, 
 - **🔧 Environmental Data Accuracy Fix:** Fixed timestamp selection logic to ensure accurate current weather data instead of stale forecast data
 - **🌡️ Improved Weather Integration:** Enhanced Open-Meteo API integration with better timezone handling and current conditions
 - **📅 Real-time Timestamps:** Environmental data now shows actual current time instead of future forecast times
+- **🐛 Roast Detail Page Fix:** Fixed undefined roast ID issue causing 422 errors
 
 ### Major Feature Additions
 - **🌟 Setup Wizard:** Beautiful onboarding flow for new users with progress indicators
@@ -103,6 +113,16 @@ See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues and solutions, 
   - Roast recommendations (City+ to Full City+, espresso suitability)
 - **Frontend Test Interface:** Simple HTML paste interface for testing parser functionality
 - **Raw Data Storage:** Store complete parsed data for reference and future analysis
+
+### 🤖 RAG-Powered AI Roasting Copilot
+- **Pre-Roast Planning:** AI recommendations based on similar historical roasts and bean characteristics
+- **Real-Time Guidance:** During-roast coaching with temperature and timing adjustments
+- **Post-Roast Analysis:** AI analysis of roast outcomes with improvement suggestions
+- **Semantic Search:** Find similar beans and roasts using vector embeddings
+- **Learning System:** AI learns from your roast outcomes, reflections, and tasting notes
+- **Vector Database:** Weaviate integration with FastEmbed for free local embeddings
+- **Enhanced Data Capture:** Store detailed roast outcomes, reflections, and AI insights
+- **Intelligent Recommendations:** Context-aware suggestions based on your roasting history
 
 ### 🎨 User Experience & Interface
 - **Clean, Intuitive Design:** Professional styling with orange theme and modern UI
@@ -343,6 +363,15 @@ The API will be available at `http://localhost:8000`
 - `PATCH /bean-profiles/{id}` - Update bean profile
 - `POST /bean-profiles/parse-html` - Parse Sweet Maria's HTML and create bean profile
 - `POST /bean-profiles/parse-qr` - Parse QR code URL and create bean profile
+
+**RAG Copilot API:**
+- `POST /api/rag/pre-roast-planning` - Get AI-powered roast recommendations
+- `POST /api/rag/roast-outcome` - Store roast outcomes and reflections
+- `GET /api/rag/health` - RAG system health check
+- `GET /search/beans` - Semantic search for similar beans
+- `GET /search/roasts` - Semantic search for similar roasts
+- `GET /search/similar-beans/{bean_id}` - Find similar beans to a specific bean
+- `GET /search/recommend-roast/{bean_id}` - Get roast recommendations for a bean
 
 ## 🚀 Deployment
 
