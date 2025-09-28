@@ -1,111 +1,77 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
+import QrScanner from 'qr-scanner';
 
 const QRCodeScanner = ({ onScanSuccess, onClose }) => {
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const videoRef = useRef(null);
-  const streamRef = useRef(null);
-  const qrCodeRef = useRef(null);
+  const qrScannerRef = useRef(null);
 
   useEffect(() => {
-    if (scanning && permissionGranted) {
-      startCamera();
-    }
-
     return () => {
-      stopCamera();
+      if (qrScannerRef.current) {
+        qrScannerRef.current.destroy();
+      }
     };
-  }, [scanning, permissionGranted]);
+  }, []);
 
   const startCamera = async () => {
     try {
-      if (qrCodeRef.current) {
-        qrCodeRef.current.clear();
+      if (qrScannerRef.current) {
+        qrScannerRef.current.destroy();
       }
 
-      qrCodeRef.current = new Html5Qrcode('qr-reader');
-      
-      const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0,
-        videoConstraints: {
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: 30 }
-        }
-      };
-
-      // Start QR detection with camera
-      await qrCodeRef.current.start(
-        { facingMode: 'environment' },
-        config,
-        (decodedText) => {
-          handleQRCodeData(decodedText);
+      // Create QR scanner with the video element
+      qrScannerRef.current = new QrScanner(
+        videoRef.current,
+        (result) => {
+          console.log('QR Code detected:', result.data);
+          handleQRCodeData(result.data);
         },
-        (errorMessage) => {
-          // Ignore common scanning errors
-          if (errorMessage && !errorMessage.includes('No QR code found')) {
-            console.log('QR scan error:', errorMessage);
-          }
+        {
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+          maxScansPerSecond: 10,
         }
       );
 
-      // Get the video element from the QR scanner and display it
-      const videoElement = document.querySelector('#qr-reader video');
-      if (videoElement && videoRef.current) {
-        videoRef.current.srcObject = videoElement.srcObject;
-        streamRef.current = videoElement.srcObject;
-      }
+      // Start the scanner
+      await qrScannerRef.current.start();
+      console.log('QR Scanner started successfully');
 
     } catch (err) {
-      console.error('Camera/QR detection error:', err);
-      setError('Camera access denied. Please allow camera permissions and try again.');
+      console.error('QR Scanner error:', err);
+      setError('Failed to start camera. Please check permissions and try again.');
       setScanning(false);
     }
   };
 
   const stopCamera = () => {
-    if (qrCodeRef.current) {
-      qrCodeRef.current.stop().then(() => {
-        qrCodeRef.current.clear();
-        qrCodeRef.current = null;
-      }).catch(err => {
-        console.error('Error stopping QR detection:', err);
-      });
+    if (qrScannerRef.current) {
+      qrScannerRef.current.destroy();
+      qrScannerRef.current = null;
     }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
+    setScanning(false);
   };
 
   const requestCameraPermission = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        } 
-      });
-      
-      // Stop the test stream
-      stream.getTracks().forEach(track => track.stop());
-      
+      setError(null);
       setPermissionGranted(true);
       setScanning(true);
-      setError(null);
+      
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        startCamera();
+      }, 100);
+      
     } catch (err) {
       setError('Camera access denied. Please allow camera permissions and try again.');
     }
   };
 
   const stopScanning = () => {
-    setScanning(false);
     stopCamera();
   };
 
@@ -122,6 +88,8 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
     try {
       setError(null);
       stopCamera(); // Stop scanning once we get a result
+      
+      console.log('Processing QR data:', qrData);
       
       // Check if it's a Sweet Maria's URL
       if (qrData.includes('sweetmarias.com')) {
@@ -149,15 +117,18 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
         // Restart scanning after showing error
         setTimeout(() => {
           setError(null);
-          startCamera();
+          setScanning(true);
+          setTimeout(() => startCamera(), 100);
         }, 3000);
       }
     } catch (err) {
+      console.error('QR processing error:', err);
       setError('Failed to parse QR code data: ' + err.message);
       // Restart scanning after showing error
       setTimeout(() => {
         setError(null);
-        startCamera();
+        setScanning(true);
+        setTimeout(() => startCamera(), 100);
       }, 3000);
     }
   };
@@ -207,10 +178,9 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
         ) : (
           <div>
             <div className="relative mb-4">
-              {/* QR Code Scanner Container - visible but styled */}
-              <div 
-                id="qr-reader" 
-                className="w-full h-64 bg-gray-900 rounded-lg overflow-hidden"
+              <video
+                ref={videoRef}
+                className="w-full h-64 bg-gray-900 rounded-lg object-cover"
               />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-48 h-48 border-2 border-white border-dashed rounded-lg flex items-center justify-center">
