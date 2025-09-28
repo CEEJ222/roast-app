@@ -8,10 +8,10 @@ import ProfilePage from './components/user_profile/ProfilePage';
 import StartNewRoastModal from './components/wizards/StartNewRoastModal';
 import EnvironmentalConditions from './components/EnvironmentalConditions';
 import RoastCurveGraph from './components/RoastCurveGraph';
-import HistoricalRoasts from './components/HistoricalRoasts';
+import HistoricalRoasts from './components/modals/CompareRoasts';
 import { COFFEE_REGIONS } from './data/coffeeRegions';
 import CustomDropdown from './components/shared_ui/CustomDropdown';
-import DashboardHistoricalRoasts from './components/DashboardHistoricalRoasts';
+import DashboardHistoricalRoasts from './components/dashboard/DashboardHistoricalRoasts';
 import RoastDetailPage from './components/RoastDetailPage';
 import ConfirmationModal from './components/modals/ConfirmationModal';
 import TemperatureInputModal from './components/modals/TemperatureInputModal';
@@ -182,7 +182,7 @@ function RoastAssistant() {
     setLoadingHistoricalRoasts(true);
     try {
       const token = await getAuthToken();
-      const response = await fetch(`${API_BASE}/roasts`, {
+      const response = await fetch(`${API_BASE}/roasts?limit=100`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -194,10 +194,7 @@ function RoastAssistant() {
         const sortedRoasts = roasts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         setHistoricalRoasts(sortedRoasts);
         
-        // Load details for all roasts for curve visualization
-        if (sortedRoasts.length > 0) {
-          loadAllRoastDetails(sortedRoasts);
-        }
+        // Don't automatically load details - only load when needed for comparison
       }
     } catch (error) {
       console.error('Error loading historical roasts:', error);

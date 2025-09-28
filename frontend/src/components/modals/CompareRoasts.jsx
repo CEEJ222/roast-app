@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import RoastCurveGraph from './RoastCurveGraph';
+import { useAuth } from '../../contexts/AuthContext';
+import RoastCurveGraph from '../RoastCurveGraph';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'  // Local development
@@ -25,7 +25,7 @@ const HistoricalRoasts = ({ onClose }) => {
   const loadHistoricalRoasts = async () => {
     try {
       const token = await getAuthToken();
-      const response = await fetch(`${API_BASE}/roasts`, {
+      const response = await fetch(`${API_BASE}/roasts?limit=100`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

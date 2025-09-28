@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import RoastCurveGraph from './RoastCurveGraph';
+import { useAuth } from '../../contexts/AuthContext';
+import RoastCurveGraph from '../RoastCurveGraph';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'  // Local development
@@ -31,7 +31,7 @@ const DashboardHistoricalRoasts = ({
   const loadHistoricalRoasts = async () => {
     try {
       const token = await getAuthToken();
-      const response = await fetch(`${API_BASE}/roasts`, {
+      const response = await fetch(`${API_BASE}/roasts?limit=100`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -43,10 +43,7 @@ const DashboardHistoricalRoasts = ({
         const sortedRoasts = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         setRoasts(sortedRoasts);
         
-        // Load events for all roasts to calculate duration
-        for (const roast of sortedRoasts) {
-          await loadRoastDetails(roast.id);
-        }
+        // Don't load details automatically - only load when needed for comparison
       }
     } catch (error) {
       console.error('Error loading historical roasts:', error);
@@ -58,7 +55,6 @@ const DashboardHistoricalRoasts = ({
   const loadRoastDetails = async (roastId) => {
     if (roastDetails[roastId]) return; // Already loaded
 
-    setLoadingDetails(true);
     try {
       const token = await getAuthToken();
       const response = await fetch(`${API_BASE}/roasts/${roastId}/events`, {
@@ -78,31 +74,36 @@ const DashboardHistoricalRoasts = ({
       }
     } catch (error) {
       console.error('Error loading roast details:', error);
-    } finally {
-      setLoadingDetails(false);
     }
   };
 
   const toggleRoastSelection = (roastId) => {
+    // Simple, direct toggle without complex state management
     setSelectedRoasts(prev => {
       if (prev.includes(roastId)) {
+        // If this roast is selected, deselect it
         return prev.filter(id => id !== roastId);
       } else {
-        // Load details if not already loaded
-        loadRoastDetails(roastId);
+        // If this roast is not selected, select it
         return [...prev, roastId];
       }
     });
   };
 
-  // Load details for all selected roasts when selection changes
+  // Load details for selected roasts only when the graph view is shown
   useEffect(() => {
-    selectedRoasts.forEach(roastId => {
-      if (!roastDetails[roastId]) {
-        loadRoastDetails(roastId);
-      }
-    });
-  }, [selectedRoasts]);
+    if (showGraph && selectedRoasts.length > 0) {
+      setLoadingDetails(true);
+      // Load details for all selected roasts that don't have them yet
+      const promises = selectedRoasts
+        .filter(roastId => !roastDetails[roastId])
+        .map(roastId => loadRoastDetails(roastId));
+      
+      Promise.all(promises).finally(() => {
+        setLoadingDetails(false);
+      });
+    }
+  }, [showGraph, selectedRoasts]);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -318,11 +319,18 @@ const DashboardHistoricalRoasts = ({
               </h3>
               <div className="flex gap-3">
                 <button
-                  onClick={() => setSelectedRoasts(roasts.map(r => r.id))}
-                  disabled={selectedRoasts.length === roasts.length}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => {
+                    if (selectedRoasts.length === roasts.length) {
+                      // If all are selected, deselect all
+                      setSelectedRoasts([]);
+                    } else {
+                      // If not all are selected, select all
+                      setSelectedRoasts(roasts.map(r => r.id));
+                    }
+                  }}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
                 >
-                  ✓ Select All
+                  {selectedRoasts.length === roasts.length ? '✗ Deselect All' : '✓ Select All'}
                 </button>
                 {!hideCompareButton && (
                   <button
@@ -400,7 +408,13 @@ const DashboardHistoricalRoasts = ({
                         <input
                           type="checkbox"
                           checked={selectedRoasts.includes(roast.id)}
-                          onChange={() => toggleRoastSelection(roast.id)}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            toggleRoastSelection(roast.id);
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                          }}
                           className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-dark-border-primary rounded"
                         />
                       </td>

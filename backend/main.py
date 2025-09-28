@@ -563,7 +563,7 @@ async def update_roast(roast_id: int, request: UpdateRoastRequest, user_id: str 
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/roasts")
-async def get_roasts(limit: int = 25, user_id: str = Depends(verify_jwt_token)):
+async def get_roasts(limit: int = 100, user_id: str = Depends(verify_jwt_token)):
     try:
         sb = get_supabase()
         # Join with machines table to get machine name
