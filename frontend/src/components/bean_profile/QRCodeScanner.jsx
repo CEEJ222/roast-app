@@ -21,66 +21,51 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment', // Use back camera by default
+      if (qrCodeRef.current) {
+        qrCodeRef.current.clear();
+      }
+
+      qrCodeRef.current = new Html5Qrcode('qr-reader');
+      
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        videoConstraints: {
+          facingMode: 'environment',
           width: { ideal: 1280 },
           height: { ideal: 720 },
           frameRate: { ideal: 30 }
-        } 
-      });
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        
-        // Apply focus constraints to the video track
-        const videoTrack = stream.getVideoTracks()[0];
-        if (videoTrack && videoTrack.getCapabilities) {
-          const capabilities = videoTrack.getCapabilities();
-          if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-            videoTrack.applyConstraints({
-              focusMode: 'continuous'
-            }).catch(err => console.log('Focus mode not supported:', err));
+        }
+      };
+
+      // Start QR detection with camera
+      await qrCodeRef.current.start(
+        { facingMode: 'environment' },
+        config,
+        (decodedText) => {
+          handleQRCodeData(decodedText);
+        },
+        (errorMessage) => {
+          // Ignore common scanning errors
+          if (errorMessage && !errorMessage.includes('No QR code found')) {
+            console.log('QR scan error:', errorMessage);
           }
         }
+      );
 
-        // Start QR code detection
-        startQRDetection();
+      // Get the video element from the QR scanner and display it
+      const videoElement = document.querySelector('#qr-reader video');
+      if (videoElement && videoRef.current) {
+        videoRef.current.srcObject = videoElement.srcObject;
+        streamRef.current = videoElement.srcObject;
       }
+
     } catch (err) {
+      console.error('Camera/QR detection error:', err);
       setError('Camera access denied. Please allow camera permissions and try again.');
       setScanning(false);
     }
-  };
-
-  const startQRDetection = () => {
-    if (qrCodeRef.current) {
-      qrCodeRef.current.clear();
-    }
-
-    qrCodeRef.current = new Html5Qrcode('qr-reader');
-    
-    const config = {
-      fps: 10,
-      qrbox: { width: 250, height: 250 }
-    };
-
-    qrCodeRef.current.start(
-      { facingMode: 'environment' },
-      config,
-      (decodedText) => {
-        handleQRCodeData(decodedText);
-      },
-      (errorMessage) => {
-        // Ignore common scanning errors
-        if (errorMessage && !errorMessage.includes('No QR code found')) {
-          console.log('QR scan error:', errorMessage);
-        }
-      }
-    ).catch(err => {
-      console.error('QR detection start error:', err);
-    });
   };
 
   const stopCamera = () => {
@@ -222,21 +207,17 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
         ) : (
           <div>
             <div className="relative mb-4">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                className="w-full h-64 bg-gray-900 rounded-lg object-cover"
+              {/* QR Code Scanner Container - visible but styled */}
+              <div 
+                id="qr-reader" 
+                className="w-full h-64 bg-gray-900 rounded-lg overflow-hidden"
               />
-              <div className="absolute inset-0 flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-48 h-48 border-2 border-white border-dashed rounded-lg flex items-center justify-center">
                   <span className="text-white text-sm">Point camera at QR code</span>
                 </div>
               </div>
             </div>
-            
-            {/* Hidden QR detection container */}
-            <div id="qr-reader" style={{ display: 'none' }}></div>
             
             {error && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
