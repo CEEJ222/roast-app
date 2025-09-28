@@ -27,7 +27,7 @@ const StartNewRoastModal = ({
     coffeeSubregion: '',
     coffeeType: '',
     coffeeProcess: '',
-    roastLevel: 'medium',
+    roastLevel: 'City',
     weightBefore: '',
     notes: ''
   });
@@ -379,7 +379,7 @@ const StartNewRoastModal = ({
                       Desired Roast Level
                     </label>
                     <CustomDropdown
-                      options={['light', 'medium-light', 'medium', 'medium-dark', 'dark']}
+                      options={['City', 'City+', 'Full City', 'Full City+']}
                       value={formData.roastLevel}
                       onChange={(value) => handleInputChange('roastLevel', value)}
                       placeholder="Select roast level..."
