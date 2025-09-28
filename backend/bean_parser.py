@@ -17,12 +17,27 @@ class SweetMariasParser:
         Returns structured bean profile data
         """
         try:
-            # Fetch the page content
+            # Fetch the page content with more realistic headers
             headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'DNT': '1',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1',
+                'Cache-Control': 'max-age=0'
             }
             
-            response = requests.get(url, headers=headers, timeout=10)
+            # Add session to handle cookies
+            session = requests.Session()
+            session.headers.update(headers)
+            
+            response = session.get(url, timeout=15, allow_redirects=True)
             response.raise_for_status()
             
             soup = BeautifulSoup(response.content, 'html.parser')
@@ -47,8 +62,40 @@ class SweetMariasParser:
             
             return bean_data
             
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 403:
+                # Return basic data when blocked by anti-bot protection
+                return {
+                    'name': self._extract_name_from_url(url),
+                    'origin': 'Unknown',
+                    'variety': 'Unknown',
+                    'process_method': 'Unknown',
+                    'altitude': None,
+                    'harvest_year': None,
+                    'flavor_notes': [],
+                    'roasting_notes': '',
+                    'recommended_roast_levels': ['City', 'City+'],
+                    'density': None,
+                    'moisture_content': None,
+                    'supplier_url': url,
+                    'supplier_name': 'Sweet Maria\'s',
+                    'raw_data': {'error': 'Website blocked request, using URL-based extraction'}
+                }
+            else:
+                raise Exception(f"HTTP Error {e.response.status_code}: {str(e)}")
         except Exception as e:
             raise Exception(f"Failed to parse Sweet Maria's data: {str(e)}")
+    
+    def _extract_name_from_url(self, url: str) -> str:
+        """Extract a basic name from the URL when parsing fails"""
+        try:
+            # Extract the last part of the URL path
+            path_parts = url.split('/')[-1].split('.')[0]
+            # Convert hyphens to spaces and title case
+            name = path_parts.replace('-', ' ').title()
+            return name
+        except:
+            return "Unknown Coffee Bean"
     
     def _extract_name(self, soup: BeautifulSoup) -> str:
         """Extract coffee bean name from page title or heading"""

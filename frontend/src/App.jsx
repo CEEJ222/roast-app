@@ -821,6 +821,7 @@ function RoastAssistant() {
             />
           )}
 
+
           {/* Initial Settings Modal */}
           <InitialRoasterSettings
             isOpen={showInitialSettings}

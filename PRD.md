@@ -161,6 +161,28 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - **Custom Tooltips:** Hover to see detailed temperature and milestone information
 - **Temperature Input:** Custom modal for entering temperature readings at milestone events
 
+### 4.7 Bean Profile Management ✅ **IMPLEMENTED**
+- **Personal Bean Profiles:** User-specific coffee bean information storage
+- **AI-Optimized Data Fields:** Comprehensive bean characteristics for future AI coaching
+- **Manual Bean Entry:** Detailed form for entering bean specifications
+- **Profile Enhancement:** Ability to enhance basic profiles with detailed information
+- **Bean Profile Dashboard:** View and manage all personal bean profiles
+- **Profile Completeness Tracking:** Automatic calculation of profile completeness levels
+
+### 4.8 Sweet Maria's HTML Parser ✅ **IMPLEMENTED**
+- **HTML Content Parsing:** Extract comprehensive data from Sweet Maria's product pages
+- **Automated Bean Profile Creation:** Parse HTML and create complete bean profiles automatically
+- **Data Extraction Capabilities:**
+  - Basic product info (name, price, description, stock status)
+  - Cupping scores (10 categories: Dry Fragrance, Wet Aroma, Brightness, Flavor, Body, Finish, Sweetness, Clean Cup, Complexity, Uniformity)
+  - Flavor profiles (12 categories: Floral, Honey, Sugars, Caramel, Fruits, Citrus, Berry, Cocoa, Nuts, Rustic, Spice, Body)
+  - Technical specifications (screen size, processing method, region, grade, appearance)
+  - Farm information (altitude, farmer count, processing details)
+  - Roast recommendations (City+ to Full City+, espresso suitability)
+- **API Endpoint:** `/bean-profiles/parse-html` for HTML content processing
+- **Frontend Test Interface:** Simple HTML paste interface for testing parser functionality
+- **Raw Data Storage:** Store complete parsed data for reference and future analysis
+
 ## 5. Enhanced Features (V2)
 
 ### 5.1 AI Analysis & Recommendations
@@ -183,6 +205,16 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - Audio Feedback: Spoken confirmations and roast status updates
 - Conversational AI: Planning assistance and roast guidance
 
+### 5.4 Browser Extension for Coffee Suppliers ✅ **PLANNED**
+- **One-Click Bean Import:** Browser extension for seamless bean profile creation
+- **Multi-Supplier Support:** Support for Sweet Maria's, Blue Bottle, Counter Culture, and other coffee suppliers
+- **Automatic Detection:** Extension detects coffee product pages and offers to import bean data
+- **Real-Time Parsing:** Parse product pages without manual HTML copying
+- **Direct Integration:** Import bean profiles directly into FreshRoast CoPilot
+- **Supplier-Specific Parsers:** Configurable parsing rules for different coffee suppliers
+- **Privacy-Focused:** All parsing happens locally in the browser extension
+- **Cross-Platform:** Works with Chrome, Firefox, Safari, and Edge browsers
+
 ## 6. Advanced Features (V3)
 
 ### 6.1 Hardware Integration
@@ -203,6 +235,16 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - Roast Challenges: Community-driven roasting experiments and comparisons
 - Knowledge Base: Crowd-sourced roasting tips and troubleshooting
 - **NEW:** User consent and privacy controls for sharing
+
+### 6.4 Vector Database Integration ✅ **PLANNED**
+- **Semantic Bean Search:** Find beans similar to current selection using vector embeddings
+- **Flavor Profile Matching:** AI-powered flavor profile similarity search
+- **Roast Pattern Learning:** Vector storage of successful roast patterns and outcomes
+- **Real-Time Recommendations:** Semantic search for roast recommendations based on bean characteristics
+- **Qdrant Integration:** High-performance vector database for coffee bean and roast pattern embeddings
+- **Embedding Generation:** Convert bean profiles and roast data into searchable vector representations
+- **Similarity Scoring:** Advanced similarity algorithms for bean and roast matching
+- **AI Coaching Data:** Vector storage for AI-powered roast coaching and recommendations
 
 ## 7. Data Model Updates ✅ **ENHANCED**
 
@@ -277,6 +319,49 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 | auto_logged | Boolean | NEW: Distinguishes manual vs. probe data |
 | created_at | Timestamptz | System timestamp |
 
+### New bean_profiles Table ✅ **IMPLEMENTED**
+| Field | Type | Notes |
+|-------|------|-------|
+| id | UUID | PK |
+| user_id | UUID | FK → auth.users |
+| name | Text | Bean name |
+| origin | Text | Coffee origin/region |
+| variety | Text | Coffee variety/cultivar |
+| process_method | Text | Processing method (Natural, Washed, etc.) |
+| recommended_roast_levels | Text[] | Array of recommended roast levels |
+| notes | Text | User notes |
+| supplier_url | Text | URL to supplier page |
+| supplier_name | Text | Supplier name (e.g., "Sweet Maria's") |
+| profile_completeness | Text | 'basic', 'enhanced', 'complete' |
+| **AI-Optimized Fields:** | | |
+| moisture_content_pct | Float | Moisture content percentage |
+| density_g_ml | Float | Bean density |
+| screen_size | Text | Screen size (e.g., "15-16") |
+| altitude_m | Integer | Growing altitude in meters |
+| body_intensity | Float | Body intensity (0-5) |
+| harvest_year | Integer | Harvest year |
+| acidity_intensity | Float | Acidity intensity (0-5) |
+| cupping_score | Float | Overall cupping score (0-100) |
+| fragrance_score | Float | Fragrance score (0-10) |
+| **Flavor Profile Fields:** | | |
+| floral_intensity | Float | Floral intensity (0-5) |
+| honey_intensity | Float | Honey intensity (0-5) |
+| sugars_intensity | Float | Sugars intensity (0-5) |
+| caramel_intensity | Float | Caramel intensity (0-5) |
+| fruits_intensity | Float | Fruits intensity (0-5) |
+| citrus_intensity | Float | Citrus intensity (0-5) |
+| berry_intensity | Float | Berry intensity (0-5) |
+| cocoa_intensity | Float | Cocoa intensity (0-5) |
+| nuts_intensity | Float | Nuts intensity (0-5) |
+| rustic_intensity | Float | Rustic intensity (0-5) |
+| spice_intensity | Float | Spice intensity (0-5) |
+| flavor_notes | Text[] | Additional flavor notes |
+| roasting_notes | Text | Roasting-specific notes |
+| qr_code_url | Text | QR code URL for scanning |
+| raw_data | JSONB | Raw parsed data from HTML parser |
+| created_at | Timestamptz | Profile creation timestamp |
+| updated_at | Timestamptz | Last update timestamp |
+
 ### New roast_curves Table (Future)
 | Field | Type | Notes |
 |-------|------|-------|
@@ -330,26 +415,53 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - ✅ **Scalable Design:** Foundation for future feature additions
 - **Timeline:** Completed December 2024
 
-### Phase 3: Core Curve Visualization (Current)
+### Phase 3: Bean Profile Management ✅ **COMPLETED**
+- ✅ Implemented comprehensive bean profile system
+- ✅ Added AI-optimized data fields for future coaching
+- ✅ Created manual bean entry forms with detailed specifications
+- ✅ Built bean profile dashboard for management
+- ✅ Added profile completeness tracking
+- ✅ Implemented Sweet Maria's HTML parser
+- ✅ Created automated bean profile creation from HTML
+- ✅ Added frontend test interface for HTML parsing
+- **Timeline:** Completed December 2024
+
+### Phase 4: Core Curve Visualization (Current)
 - ✅ Fixed environmental data collection bug (field name mismatch resolved)
 - Implement historical roast curve charts (Recharts)
 - Add temperature logging to current roast flow
 - Basic ROR calculations
 - **Timeline:** 2-4 weeks
 
-### Phase 4: AI Analysis Integration
+### Phase 5: Vector Database Integration ✅ **PLANNED**
+- Qdrant vector database setup and configuration
+- Bean profile embedding generation
+- Semantic search for similar beans
+- Roast pattern vector storage
+- AI coaching data preparation
+- **Timeline:** 1-2 months
+
+### Phase 6: Browser Extension Development ✅ **PLANNED**
+- Chrome extension for Sweet Maria's integration
+- Multi-supplier parser configuration
+- One-click bean import functionality
+- Cross-browser compatibility (Firefox, Safari, Edge)
+- Privacy-focused local parsing
+- **Timeline:** 2-3 months
+
+### Phase 7: AI Analysis Integration
 - Claude API integration for roast pattern analysis
 - Basic recommendation engine
 - Roast comparison features
 - **Timeline:** 1-2 months
 
-### Phase 5: Real-Time & Voice
+### Phase 8: Real-Time & Voice
 - Live roast monitoring with curve updates
 - Voice command integration
 - Chat interface for roast queries
 - **Timeline:** 2-3 months
 
-### Phase 6: Hardware Integration
+### Phase 9: Hardware Integration
 - Temperature probe integration
 - Automated data collection
 - Advanced curve analytics
@@ -431,7 +543,7 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 
 📌 **This is a living document. All sections are open for refinement as the product evolves with user feedback and technical discoveries.**
 
-**Recent Updates (v0.5):**
+**Recent Updates (v0.6):**
 - ✅ **MAJOR:** Complete App.jsx refactoring - 47% size reduction (1902 → 1007 lines)
 - ✅ **MAJOR:** Extracted 7 major reusable components from monolithic architecture
 - ✅ **MAJOR:** Created modular component architecture with focused responsibilities
@@ -449,4 +561,12 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - ✅ **NEW:** Implemented environmental conditions display during roasting
 - ✅ **NEW:** Added complete event log visibility including END events
 - ✅ **NEW:** Enhanced validation and error handling throughout the application
-- ✅ Updated implementation roadmap with completed profile management phase
+- ✅ **NEW:** Implemented comprehensive bean profile management system
+- ✅ **NEW:** Added AI-optimized data fields for future coaching features
+- ✅ **NEW:** Created Sweet Maria's HTML parser for automated bean profile creation
+- ✅ **NEW:** Added frontend test interface for HTML parsing functionality
+- ✅ **NEW:** Implemented automated bean profile creation from supplier HTML
+- ✅ **NEW:** Added comprehensive data extraction (cupping scores, flavor profiles, technical specs)
+- ✅ **NEW:** Planned Qdrant vector database integration for semantic search
+- ✅ **NEW:** Planned browser extension for multi-supplier bean import
+- ✅ Updated implementation roadmap with completed bean profile management phase

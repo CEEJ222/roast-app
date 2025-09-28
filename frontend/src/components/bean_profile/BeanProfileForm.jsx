@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import QRCodeScanner from './QRCodeScanner';
+import { useAuth } from '../../contexts/AuthContext';
 import CustomDropdown from '../ux_ui/CustomDropdown';
+import URLInputModal from '../modals/URLInputModal';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'
@@ -52,9 +53,9 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
     qr_code_url: ''
   });
 
-  const [showQRScanner, setShowQRScanner] = useState(false);
   const [loading, setLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [showURLModal, setShowURLModal] = useState(false);
 
   // Reset dataLoaded when beanProfileId or initialData changes
   useEffect(() => {
@@ -109,18 +110,64 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleQRScanSuccess = (beanData) => {
-    // Pre-populate form with any data we can extract from URL
-    setFormData(prev => ({
-      ...prev,
-      supplier_url: beanData.supplier_url || '',
-      supplier_name: beanData.supplier_name || 'Sweet Maria\'s',
-      name: beanData.name || prev.name,
-      origin: beanData.origin || prev.origin,
-      variety: beanData.variety || prev.variety,
-      process_method: beanData.process_method || prev.process_method
-    }));
-    setShowQRScanner(false);
+  const handleManualURLInput = () => {
+    setShowURLModal(true);
+  };
+
+  const handleURLSubmit = (url) => {
+    if (url && url.includes('sweetmarias.com')) {
+      // Process the URL manually
+      processSupplierURL(url);
+    } else if (url) {
+      alert('Please enter a valid coffee supplier URL');
+    }
+  };
+
+  const processSupplierURL = async (url) => {
+    try {
+      console.log('Processing URL:', url);
+      const token = await getAuthToken();
+      const response = await fetch(`${API_BASE}/bean-profiles/parse-qr`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ url })
+      });
+      
+      console.log('Response status:', response.status);
+      
+      if (response.ok) {
+        const result = await response.json();
+        const beanData = result.bean_data;
+        console.log('Parsed bean data:', beanData);
+        
+        // Check if we got basic data due to website blocking
+        const isBasicData = beanData.raw_data?.error === 'Website blocked request, using URL-based extraction';
+        
+        setFormData(prev => ({
+          ...prev,
+          supplier_url: beanData.supplier_url || '',
+          supplier_name: beanData.supplier_name || 'Sweet Maria\'s',
+          name: beanData.name || prev.name,
+          origin: beanData.origin || prev.origin,
+          variety: beanData.variety || prev.variety,
+          process_method: beanData.process_method || prev.process_method
+        }));
+        
+        if (isBasicData) {
+          alert('Note: Website blocked automated parsing. Basic information extracted from URL. You may need to fill in additional details manually.');
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+        console.error('Backend error:', errorData);
+        alert(`Failed to parse URL data: ${errorData.detail || 'Server error'}`);
+      }
+    } catch (error) {
+      console.error('Error processing URL:', error);
+      alert(`Error processing URL: ${error.message}`);
+    }
   };
 
   const handleSave = async () => {
@@ -277,13 +324,13 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
             />
           </div>
 
-          {/* QR Code Scanner Button */}
+          {/* Manual URL Input Button */}
           <div className="mb-6">
             <button
-              onClick={() => setShowQRScanner(true)}
+              onClick={handleManualURLInput}
               className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
             >
-              📱 Scan QR Code from Coffee Bag
+              🔗 Enter Supplier URL
             </button>
             {formData.supplier_url && (
               <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-2">
@@ -602,13 +649,12 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
         </div>
       </div>
 
-      {/* QR Scanner Modal */}
-      {showQRScanner && (
-        <QRCodeScanner
-          onScanSuccess={handleQRScanSuccess}
-          onClose={() => setShowQRScanner(false)}
-        />
-      )}
+      {/* URL Input Modal */}
+      <URLInputModal
+        isOpen={showURLModal}
+        onClose={() => setShowURLModal(false)}
+        onSubmit={handleURLSubmit}
+      />
     </div>
   );
 };

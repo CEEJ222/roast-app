@@ -294,7 +294,8 @@ const BeanProfiles = ({ getAuthToken }) => {
                 return (
                   <div 
                     key={profile.id}
-                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary"
+                    onClick={() => handleViewProfile(profile)}
+                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary cursor-pointer"
                   >
                     <div className="flex items-center space-x-4">
                       <div className="w-10 h-10 bg-indigo-100 dark:bg-dark-bg-tertiary rounded-full flex items-center justify-center border dark:border-dark-border-primary">
@@ -317,13 +318,9 @@ const BeanProfiles = ({ getAuthToken }) => {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium border dark:border-dark-border-primary ${badge.color}`}>
                         {badge.text}
                       </span>
-                      <button
-                        onClick={() => handleViewProfile(profile)}
-                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
-                        title="View profile details"
-                      >
+                      <div className="text-indigo-600 dark:text-indigo-400">
                         👁️
-                      </button>
+                      </div>
                     </div>
                   </div>
                 );

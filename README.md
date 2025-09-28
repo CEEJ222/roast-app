@@ -43,6 +43,10 @@ See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues and solutions, 
 - **🎨 Enhanced UI:** Custom gradient avatars, improved styling, and better user experience
 - **📱 Responsive Design:** Optimized for all device sizes with clean, modern interface
 - **🔐 Multiple Auth Options:** Google, GitHub, and email/password authentication
+- **🫘 Bean Profile Management:** Comprehensive coffee bean information storage with AI-optimized fields
+- **🔍 Sweet Maria's HTML Parser:** Automated bean profile creation from supplier product pages
+- **🧪 HTML Parser Test Interface:** Frontend interface for testing HTML parsing functionality
+- **📊 Advanced Data Extraction:** Cupping scores, flavor profiles, technical specifications, and farm information
 
 ## ✨ Features
 
@@ -77,6 +81,28 @@ See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues and solutions, 
 - **Custom Tooltips:** Hover to see detailed temperature and milestone information
 - **Weight Tracking:** Before and after roast weights with automatic loss calculations
 - **Complete Event History:** Full roast session timeline with edit/delete capabilities
+
+### 🫘 Bean Profile Management
+- **Personal Bean Profiles:** User-specific coffee bean information storage
+- **AI-Optimized Data Fields:** Comprehensive bean characteristics for future AI coaching
+- **Manual Bean Entry:** Detailed form for entering bean specifications with flavor profiles
+- **Profile Enhancement:** Ability to enhance basic profiles with detailed information
+- **Bean Profile Dashboard:** View and manage all personal bean profiles
+- **Profile Completeness Tracking:** Automatic calculation of profile completeness levels
+- **Sweet Maria's Integration:** Automated bean profile creation from supplier HTML
+
+### 🔍 Sweet Maria's HTML Parser
+- **HTML Content Parsing:** Extract comprehensive data from Sweet Maria's product pages
+- **Automated Bean Profile Creation:** Parse HTML and create complete bean profiles automatically
+- **Data Extraction Capabilities:**
+  - Basic product info (name, price, description, stock status)
+  - Cupping scores (10 categories: Dry Fragrance, Wet Aroma, Brightness, Flavor, Body, Finish, Sweetness, Clean Cup, Complexity, Uniformity)
+  - Flavor profiles (12 categories: Floral, Honey, Sugars, Caramel, Fruits, Citrus, Berry, Cocoa, Nuts, Rustic, Spice, Body)
+  - Technical specifications (screen size, processing method, region, grade, appearance)
+  - Farm information (altitude, farmer count, processing details)
+  - Roast recommendations (City+ to Full City+, espresso suitability)
+- **Frontend Test Interface:** Simple HTML paste interface for testing parser functionality
+- **Raw Data Storage:** Store complete parsed data for reference and future analysis
 
 ### 🎨 User Experience & Interface
 - **Clean, Intuitive Design:** Professional styling with orange theme and modern UI
@@ -309,6 +335,14 @@ The API will be available at `http://localhost:8000`
 - `POST /user/machines` - Add new roasting machine
 - `PATCH /user/machines/{id}` - Update machine details
 - `DELETE /user/machines/{id}` - Delete machine
+
+**Bean Profile Management:**
+- `GET /bean-profiles` - Get all user's bean profiles
+- `POST /bean-profiles` - Create new bean profile
+- `GET /bean-profiles/{id}` - Get specific bean profile
+- `PATCH /bean-profiles/{id}` - Update bean profile
+- `POST /bean-profiles/parse-html` - Parse Sweet Maria's HTML and create bean profile
+- `POST /bean-profiles/parse-qr` - Parse QR code URL and create bean profile
 
 ## 🚀 Deployment
 

@@ -11,6 +11,7 @@ from jose import jwt, JWTError
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from bean_parser import parse_sweet_marias_url
+from sweet_marias_parser import parse_sweet_marias_html, get_ai_optimized_data
 
 # Coffee regions validation
 COFFEE_REGIONS = [
@@ -169,6 +170,9 @@ class CreateBeanProfileRequest(BaseModel):
 
 class ParseQRRequest(BaseModel):
     url: str
+
+class ParseHTMLRequest(BaseModel):
+    html_content: str
 
 class LogEventRequest(BaseModel):
     kind: str
@@ -975,35 +979,73 @@ async def parse_bean_qr(request: ParseQRRequest, user_id: str = Depends(verify_j
         # Parse the Sweet Maria's URL to extract bean data
         bean_data = parse_sweet_marias_url(request.url)
         
+        # Return the parsed data without creating a profile
+        return {
+            "bean_data": bean_data,
+            "message": "URL parsed successfully"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to parse QR code: {str(e)}")
+
+@app.post("/bean-profiles/parse-html")
+async def parse_bean_html(request: ParseHTMLRequest, user_id: str = Depends(verify_jwt_token)):
+    """Parse Sweet Maria's HTML content and create bean profile"""
+    try:
+        # Parse the HTML content
+        parsed_data = parse_sweet_marias_html(request.html_content)
+        ai_data = get_ai_optimized_data(request.html_content)
+        
         # Create bean profile from parsed data
         sb = get_supabase()
         
+        # Build profile data with all extracted information
         profile_data = {
             "user_id": user_id,
-            "name": bean_data.get("name", "Unknown Bean"),
-            "origin": bean_data.get("origin", "Unknown Origin"),
-            "variety": bean_data.get("variety", "Unknown Variety"),
-            "process_method": bean_data.get("process_method", "Unknown Process"),
-            "altitude_m": bean_data.get("altitude"),
-            "harvest_year": bean_data.get("harvest_year"),
-            "flavor_notes": bean_data.get("flavor_notes", []),
-            "recommended_roast_levels": bean_data.get("recommended_roast_levels", ["City", "City+"]),
-            "density_g_ml": bean_data.get("density"),
-            "moisture_content_pct": bean_data.get("moisture_content"),
-            "supplier_url": bean_data.get("supplier_url"),
-            "supplier_name": bean_data.get("supplier_name", "Sweet Maria's"),
-            "roasting_notes": bean_data.get("roasting_notes", ""),
-            "raw_data": bean_data.get("raw_data", {})
+            "name": parsed_data.get("name", "Unknown Bean"),
+            "origin": ai_data.get("origin", "Unknown Origin"),
+            "variety": ai_data.get("variety", "Unknown Variety"),
+            "process_method": ai_data.get("process_method", "Unknown Process"),
+            "recommended_roast_levels": ai_data.get("recommended_roast_levels", []),
+            "notes": parsed_data.get("description", ""),
+            "supplier_name": "Sweet Maria's",
+            "profile_completeness": "complete",
+            
+            # AI-optimized fields
+            "screen_size": ai_data.get("screen_size"),
+            "altitude_m": ai_data.get("altitude_m"),
+            "body_intensity": ai_data.get("body_intensity"),
+            "acidity_intensity": ai_data.get("acidity_intensity"),
+            "cupping_score": ai_data.get("cupping_score"),
+            
+            # Espresso suitability
+            "espresso_suitable": parsed_data.get("espresso_suitable"),
+            
+            # Flavor profile
+            "floral_intensity": ai_data.get("floral_intensity"),
+            "honey_intensity": ai_data.get("honey_intensity"),
+            "sugars_intensity": ai_data.get("sugars_intensity"),
+            "caramel_intensity": ai_data.get("caramel_intensity"),
+            "fruits_intensity": ai_data.get("fruits_intensity"),
+            "citrus_intensity": ai_data.get("citrus_intensity"),
+            "berry_intensity": ai_data.get("berry_intensity"),
+            "cocoa_intensity": ai_data.get("cocoa_intensity"),
+            "nuts_intensity": ai_data.get("nuts_intensity"),
+            "rustic_intensity": ai_data.get("rustic_intensity"),
+            "spice_intensity": ai_data.get("spice_intensity"),
+            
+            # Store raw parsed data for reference
+            "raw_data": parsed_data
         }
         
         # Remove None values
         profile_data = {k: v for k, v in profile_data.items() if v is not None}
         
         result = sb.table("bean_profiles").insert(profile_data).execute()
-        return {"id": result.data[0]["id"], "bean_data": bean_data, "message": "Bean profile created from QR code"}
+        return result.data[0]
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to parse QR code: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
