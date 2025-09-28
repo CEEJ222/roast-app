@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import CustomDropdown from '../shared_ui/CustomDropdown'
+import CustomDropdown from '../ux_ui/CustomDropdown'
 import ThemeToggle from './ThemeToggle'
 
 const API_BASE = import.meta.env.DEV 
@@ -198,11 +198,11 @@ const ProfilePage = ({ onClose }) => {
             {/* Profile Section */}
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-800 dark:text-dark-text-primary dark:text-dark-text-primary mb-4">Profile Information</h2>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-dark-text-primary mb-4">Profile Information</h2>
                 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary dark:text-dark-text-primary mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
                       Display Name
                     </label>
                     <input
@@ -293,7 +293,7 @@ const ProfilePage = ({ onClose }) => {
             {/* Machines Section */}
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-dark-text-primary dark:text-dark-text-primary">Your Machines</h2>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-dark-text-primary">Your Machines</h2>
                 <button
                   onClick={() => setShowAddMachine(true)}
                   className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition shadow-lg"

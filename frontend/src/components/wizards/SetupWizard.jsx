@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import CustomDropdown from '../shared_ui/CustomDropdown'
+import CustomDropdown from '../ux_ui/CustomDropdown'
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'
@@ -318,8 +318,8 @@ const SetupWizard = ({ onComplete }) => {
             <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full mx-auto mb-4 flex items-center justify-center">
               <span className="text-5xl">🎉</span>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary dark:text-dark-text-primary mb-2">Setup Complete!</h2>
-            <p className="text-gray-600 dark:text-dark-text-secondary dark:text-dark-text-secondary">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Setup Complete!</h2>
+            <p className="text-gray-600 dark:text-dark-text-secondary">
               You're ready to start tracking your coffee roasting sessions.
             </p>
           </div>

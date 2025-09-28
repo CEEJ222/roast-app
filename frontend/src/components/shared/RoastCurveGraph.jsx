@@ -330,10 +330,12 @@ function processHistoricalData(roasts) {
   // For historical mode, we need to process multiple roasts
   if (!roasts || roasts.length === 0) return [];
   
-  // Find the maximum time across all roasts
+  // Find the maximum time across all roasts, but only consider events with temperature data
   const maxTime = Math.max(...roasts.map(roast => {
     if (!roast.events || roast.events.length === 0) return 0;
-    return Math.max(...roast.events.map(event => event.t_offset_sec / 60));
+    const tempEvents = roast.events.filter(event => event.temp_f !== null && event.temp_f !== undefined);
+    if (tempEvents.length === 0) return 0;
+    return Math.max(...tempEvents.map(event => event.t_offset_sec / 60));
   }));
 
   if (maxTime === 0) return [];

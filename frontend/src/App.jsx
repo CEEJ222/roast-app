@@ -6,11 +6,11 @@ import UserProfile from './components/user_profile/UserProfile';
 import SetupWizard from './components/wizards/SetupWizard';
 import ProfilePage from './components/user_profile/ProfilePage';
 import StartNewRoastModal from './components/wizards/StartNewRoastModal';
-import EnvironmentalConditions from './components/EnvironmentalConditions';
-import RoastCurveGraph from './components/RoastCurveGraph';
+import EnvironmentalConditions from './components/shared/EnvironmentalConditions';
+import RoastCurveGraph from './components/shared/RoastCurveGraph';
 import HistoricalRoasts from './components/modals/CompareRoasts';
 import { COFFEE_REGIONS } from './data/coffeeRegions';
-import CustomDropdown from './components/shared_ui/CustomDropdown';
+import CustomDropdown from './components/ux_ui/CustomDropdown';
 import DashboardHistoricalRoasts from './components/dashboard/DashboardHistoricalRoasts';
 import RoastDetailPage from './components/RoastDetailPage';
 import ConfirmationModal from './components/modals/ConfirmationModal';
@@ -194,7 +194,8 @@ function RoastAssistant() {
         const sortedRoasts = roasts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         setHistoricalRoasts(sortedRoasts);
         
-        // Don't automatically load details - only load when needed for comparison
+        // Load details for all roasts to display curves on dashboard
+        await loadAllRoastDetails(sortedRoasts);
       }
     } catch (error) {
       console.error('Error loading historical roasts:', error);
@@ -205,6 +206,11 @@ function RoastAssistant() {
 
   // Load roast details for all roasts (for automatic curve display)
   const loadAllRoastDetails = async (allRoasts) => {
+    if (!allRoasts || allRoasts.length === 0) {
+      setRecentRoastDetails({});
+      return;
+    }
+
     try {
       const token = await getAuthToken();
       
@@ -232,6 +238,7 @@ function RoastAssistant() {
       setRecentRoastDetails(detailsMap);
     } catch (error) {
       console.error('Error loading all roast details:', error);
+      setRecentRoastDetails({});
     }
   };
 

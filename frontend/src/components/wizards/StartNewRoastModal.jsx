@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { COFFEE_REGIONS } from '../../data/coffeeRegions';
-import CustomDropdown from '../shared_ui/CustomDropdown';
+import CustomDropdown from '../ux_ui/CustomDropdown';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'

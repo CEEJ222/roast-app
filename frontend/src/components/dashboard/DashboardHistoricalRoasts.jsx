@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import RoastCurveGraph from '../RoastCurveGraph';
+import RoastCurveGraph from '../shared/RoastCurveGraph';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'  // Local development
