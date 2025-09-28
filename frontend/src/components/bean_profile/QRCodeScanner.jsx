@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 
 const QRCodeScanner = ({ onScanSuccess, onClose }) => {
   const [scanning, setScanning] = useState(false);
@@ -6,6 +7,7 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const scannerRef = useRef(null);
 
   useEffect(() => {
     if (scanning && permissionGranted) {
@@ -19,30 +21,38 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment', // Use back camera by default
+      // Create QR scanner with simple config
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        videoConstraints: {
+          facingMode: 'environment',
           width: { ideal: 1280 },
           height: { ideal: 720 },
           frameRate: { ideal: 30 }
-        } 
-      });
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        
-        // Apply focus constraints to the video track
-        const videoTrack = stream.getVideoTracks()[0];
-        if (videoTrack && videoTrack.getCapabilities) {
-          const capabilities = videoTrack.getCapabilities();
-          if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-            videoTrack.applyConstraints({
-              focusMode: 'continuous'
-            }).catch(err => console.log('Focus mode not supported:', err));
+        }
+      };
+
+      scannerRef.current = new Html5QrcodeScanner(
+        'qr-reader',
+        config,
+        false // verbose
+      );
+
+      // Start scanning
+      await scannerRef.current.render(
+        (decodedText) => {
+          handleQRCodeData(decodedText);
+        },
+        (errorMessage) => {
+          // Ignore common scanning errors
+          if (errorMessage && !errorMessage.includes('No QR code found')) {
+            console.log('QR scan error:', errorMessage);
           }
         }
-      }
+      );
+
     } catch (err) {
       setError('Camera access denied. Please allow camera permissions and try again.');
       setScanning(false);
@@ -50,6 +60,12 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
   };
 
   const stopCamera = () => {
+    if (scannerRef.current) {
+      scannerRef.current.clear().catch(err => {
+        console.error('Error stopping scanner:', err);
+      });
+      scannerRef.current = null;
+    }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
@@ -168,19 +184,11 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
           </div>
         ) : (
           <div>
-            <div className="relative mb-4">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                className="w-full h-64 bg-gray-900 rounded-lg object-cover"
-              />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-48 h-48 border-2 border-white border-dashed rounded-lg flex items-center justify-center">
-                  <span className="text-white text-sm">Point camera at QR code</span>
-                </div>
-              </div>
-            </div>
+            {/* QR Code Scanner Container */}
+            <div 
+              id="qr-reader" 
+              className="w-full mb-4 rounded-lg overflow-hidden"
+            />
             
             {error && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
