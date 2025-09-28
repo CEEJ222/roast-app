@@ -1,73 +1,55 @@
 import React, { useState, useRef, useEffect } from 'react';
-import QrScanner from 'qr-scanner';
+import { BrowserMultiFormatReader } from '@zxing/library';
 
 const QRCodeScanner = ({ onScanSuccess, onClose }) => {
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [permissionGranted, setPermissionGranted] = useState(false);
   const videoRef = useRef(null);
-  const qrScannerRef = useRef(null);
+  const readerRef = useRef(null);
 
   useEffect(() => {
     return () => {
-      if (qrScannerRef.current) {
-        qrScannerRef.current.destroy();
+      if (readerRef.current) {
+        readerRef.current.reset();
       }
     };
   }, []);
 
   const startCamera = async () => {
     try {
-      if (qrScannerRef.current) {
-        qrScannerRef.current.destroy();
+      if (readerRef.current) {
+        readerRef.current.reset();
       }
 
-      // Create QR scanner with enhanced focus settings
-      qrScannerRef.current = new QrScanner(
+      readerRef.current = new BrowserMultiFormatReader();
+      
+      // Get available video devices
+      const videoInputDevices = await readerRef.current.listVideoInputDevices();
+      const backCamera = videoInputDevices.find(device => 
+        device.label.toLowerCase().includes('back') || 
+        device.label.toLowerCase().includes('rear') ||
+        device.label.toLowerCase().includes('environment')
+      );
+      
+      const deviceId = backCamera ? backCamera.deviceId : undefined;
+      
+      // Start scanning with the back camera
+      await readerRef.current.decodeFromVideoDevice(
+        deviceId,
         videoRef.current,
-        (result) => {
-          console.log('QR Code detected:', result.data);
-          handleQRCodeData(result.data);
-        },
-        {
-          highlightScanRegion: true,
-          highlightCodeOutline: true,
-          maxScansPerSecond: 10,
-          preferredCamera: 'environment', // Force back camera
-          // Enhanced camera constraints for better focus
-          constraints: {
-            video: {
-              facingMode: 'environment',
-              width: { ideal: 1920, min: 1280 },
-              height: { ideal: 1080, min: 720 },
-              frameRate: { ideal: 30, min: 15 },
-              focusMode: 'continuous',
-              whiteBalanceMode: 'continuous',
-              exposureMode: 'continuous'
-            }
+        (result, error) => {
+          if (result) {
+            console.log('QR Code detected:', result.getText());
+            handleQRCodeData(result.getText());
+          }
+          if (error && !error.message.includes('No MultiFormat Readers')) {
+            console.log('Scan error:', error.message);
           }
         }
       );
 
-      // Start the scanner
-      await qrScannerRef.current.start();
       console.log('QR Scanner started successfully');
-
-      // Apply additional focus constraints after starting
-      setTimeout(() => {
-        const videoTrack = videoRef.current?.srcObject?.getVideoTracks()[0];
-        if (videoTrack && videoTrack.getCapabilities) {
-          const capabilities = videoTrack.getCapabilities();
-          if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-            videoTrack.applyConstraints({
-              focusMode: 'continuous',
-              focusDistance: { ideal: 0.5 }, // Focus at 50cm for QR codes
-              zoom: { ideal: 1.5 } // Slight zoom for better QR code visibility
-            }).catch(err => console.log('Focus constraints not supported:', err));
-          }
-        }
-      }, 1000);
 
     } catch (err) {
       console.error('QR Scanner error:', err);
@@ -77,9 +59,9 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
   };
 
   const stopCamera = () => {
-    if (qrScannerRef.current) {
-      qrScannerRef.current.destroy();
-      qrScannerRef.current = null;
+    if (readerRef.current) {
+      readerRef.current.reset();
+      readerRef.current = null;
     }
     setScanning(false);
   };
@@ -88,7 +70,6 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
     try {
       setError(null);
       setSuccess(null);
-      setPermissionGranted(true);
       setScanning(true);
       
       // Small delay to ensure DOM is ready
@@ -106,11 +87,11 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
   };
 
   const handleManualInput = () => {
-    const url = prompt('Enter the Sweet Maria\'s URL manually:');
+    const url = prompt('Enter the coffee supplier URL manually:');
     if (url && url.includes('sweetmarias.com')) {
       handleQRCodeData(url);
     } else if (url) {
-      setError('Please enter a valid Sweet Maria\'s URL');
+      setError('Please enter a valid coffee supplier URL');
     }
   };
 
@@ -122,9 +103,9 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
       
       console.log('Processing QR data:', qrData);
       
-      // Check if it's a Sweet Maria's URL
+      // Check if it's a supported supplier URL
       if (qrData.includes('sweetmarias.com')) {
-        setSuccess('Valid Sweet Maria\'s URL detected! Fetching bean data...');
+        setSuccess('Valid supplier URL detected! Fetching bean data...');
         
         const API_BASE = import.meta.env.DEV 
           ? 'http://localhost:8000'
@@ -149,7 +130,7 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
           throw new Error('Failed to parse QR code data');
         }
       } else {
-        setError('This QR code is not from Sweet Maria\'s. Please scan a Sweet Maria\'s coffee bag.');
+        setError('This QR code is not from a supported supplier. Please scan a supported coffee bag.');
         setSuccess(null);
         // Restart scanning after showing error
         setTimeout(() => {
@@ -193,7 +174,7 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
                 📱
               </div>
               <p className="text-gray-600 dark:text-dark-text-secondary mb-4">
-                Scan the QR code from your Sweet Maria's coffee bag
+                Scan the QR code from your coffee bag
               </p>
             </div>
             
