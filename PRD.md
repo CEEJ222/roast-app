@@ -23,6 +23,9 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - **NEW:** Deliver beautiful, intuitive user experience with comprehensive profile management
 - **NEW:** Integrate real-time environmental data for enhanced roast tracking
 - **NEW:** Support multiple roasting machines per user with CRUD management
+- **NEW:** Build RAG-powered AI roasting copilot that learns from historical data
+- **NEW:** Provide real-time roasting guidance based on similar past roasts
+- **NEW:** Enable intelligent roast planning and adjustment recommendations
 
 ## 3. User Stories
 
@@ -70,6 +73,16 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - I want voice control for hands-free logging during roasting
 - I want automated milestone detection based on temperature curve analysis
 - **NEW:** I want confidence that my roasting data is secure and backed up
+
+### As an AI-Powered Roaster (RAG Copilot):
+- I want the system to analyze my 50+ historical roasts and provide intelligent recommendations
+- I want pre-roast planning: "Given this Ethiopian Yirgacheffe, here's your recommended roast profile based on your 12 similar roasts"
+- I want real-time guidance during roasting: "Your temp is 15°F below your target curve - increase heat to 8"
+- I want timing guidance: "You're 30 seconds behind on first crack - this will affect development"
+- I want post-roast analysis: "This roast was 2 minutes longer than your best result - here's what to adjust next time"
+- I want the system to learn from my reflections and tasting notes to improve recommendations
+- I want intelligent roast planning based on bean characteristics and environmental conditions
+- I want the AI to understand my preferences and adapt recommendations accordingly
 
 ## 4. Core Features (MVP)
 
@@ -236,15 +249,29 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - Knowledge Base: Crowd-sourced roasting tips and troubleshooting
 - **NEW:** User consent and privacy controls for sharing
 
-### 6.4 Vector Database Integration ✅ **PLANNED**
+### 6.4 Vector Database Integration ✅ **IMPLEMENTED**
 - **Semantic Bean Search:** Find beans similar to current selection using vector embeddings
 - **Flavor Profile Matching:** AI-powered flavor profile similarity search
 - **Roast Pattern Learning:** Vector storage of successful roast patterns and outcomes
 - **Real-Time Recommendations:** Semantic search for roast recommendations based on bean characteristics
-- **Qdrant Integration:** High-performance vector database for coffee bean and roast pattern embeddings
-- **Embedding Generation:** Convert bean profiles and roast data into searchable vector representations
+- **Weaviate Integration:** High-performance vector database for coffee bean and roast pattern embeddings
+- **FastEmbed Integration:** Free local embedding generation using sentence-transformers
 - **Similarity Scoring:** Advanced similarity algorithms for bean and roast matching
 - **AI Coaching Data:** Vector storage for AI-powered roast coaching and recommendations
+- **Semantic Search APIs:** RESTful endpoints for semantic search functionality
+- **Automatic Sync:** Real-time synchronization between Supabase and Weaviate
+
+### 6.5 RAG-Powered Roasting Copilot ✅ **PLANNED**
+- **Historical Data Analysis:** AI analysis of 50+ historical roasts with full context
+- **Pre-Roast Planning:** "Given this Ethiopian Yirgacheffe, here's your recommended roast profile based on your 12 similar roasts"
+- **Real-Time Guidance:** "Your temp is 15°F below your target curve - increase heat to 8"
+- **Timing Guidance:** "You're 30 seconds behind on first crack - this will affect development"
+- **Post-Roast Analysis:** "This roast was 2 minutes longer than your best result - here's what to adjust next time"
+- **Learning System:** AI learns from user reflections and tasting notes to improve recommendations
+- **Intelligent Planning:** Roast planning based on bean characteristics and environmental conditions
+- **Preference Adaptation:** AI understands user preferences and adapts recommendations accordingly
+- **RAG Architecture:** Retrieval-Augmented Generation for context-aware AI responses
+- **Vector Search:** Find similar roasts, beans, and patterns for intelligent recommendations
 
 ## 7. Data Model Updates ✅ **ENHANCED**
 
@@ -433,13 +460,15 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - Basic ROR calculations
 - **Timeline:** 2-4 weeks
 
-### Phase 5: Vector Database Integration ✅ **PLANNED**
-- Qdrant vector database setup and configuration
-- Bean profile embedding generation
-- Semantic search for similar beans
-- Roast pattern vector storage
-- AI coaching data preparation
-- **Timeline:** 1-2 months
+### Phase 5: Vector Database Integration ✅ **COMPLETED**
+- ✅ Weaviate vector database setup and configuration
+- ✅ FastEmbed integration for free local embeddings
+- ✅ Bean profile embedding generation
+- ✅ Semantic search for similar beans
+- ✅ Roast pattern vector storage
+- ✅ AI coaching data preparation
+- ✅ Semantic search APIs and endpoints
+- **Timeline:** Completed December 2024
 
 ### Phase 6: Browser Extension Development ✅ **PLANNED**
 - Chrome extension for Sweet Maria's integration
@@ -449,11 +478,16 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - Privacy-focused local parsing
 - **Timeline:** 2-3 months
 
-### Phase 7: AI Analysis Integration
-- Claude API integration for roast pattern analysis
-- Basic recommendation engine
-- Roast comparison features
-- **Timeline:** 1-2 months
+### Phase 7: RAG-Powered AI Copilot ✅ **PLANNED**
+- **Historical Data Ingestion:** Import and analyze 50+ historical roasts
+- **RAG System Architecture:** Retrieval-Augmented Generation for intelligent recommendations
+- **Pre-Roast Planning:** AI-powered roast profile recommendations based on similar past roasts
+- **Real-Time Guidance:** During-roast AI recommendations and adjustments
+- **Post-Roast Analysis:** AI analysis of roast outcomes and improvement suggestions
+- **Learning System:** AI learns from user reflections and tasting notes
+- **LLM Integration:** GPT/Claude for natural language reasoning and responses
+- **Context Retrieval:** Intelligent retrieval of relevant historical data
+- **Timeline:** 2-3 months
 
 ### Phase 8: Real-Time & Voice
 - Live roast monitoring with curve updates
