@@ -22,6 +22,13 @@ See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues and solutions, 
 
 ## 🆕 Latest Updates
 
+### 🏗️ MAJOR ARCHITECTURE REFACTORING (December 2024)
+- **🎯 47% Size Reduction:** App.jsx reduced from 1902 lines to 1007 lines
+- **🧩 Component Architecture:** Extracted 7 major reusable components from monolithic App.jsx
+- **⚡ Improved Maintainability:** Clean, modular codebase with focused component responsibilities
+- **🔧 Enhanced Developer Experience:** Better code organization and easier debugging
+- **📦 Component Library:** Created comprehensive component library for roast workflow
+
 ### Recent Fixes & Improvements
 - **🔧 Environmental Data Accuracy Fix:** Fixed timestamp selection logic to ensure accurate current weather data instead of stale forecast data
 - **🌡️ Improved Weather Integration:** Enhanced Open-Meteo API integration with better timezone handling and current conditions
@@ -85,21 +92,47 @@ See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues and solutions, 
 
 ## 🏗️ Architecture
 
+### 🎯 Modular Component Architecture (Refactored December 2024)
+
+**Main Application Structure:**
 ```
 roast-app/
 ├── frontend/          # React + Vite + Tailwind CSS
 │   ├── src/
-│   │   ├── App.jsx              # Main application component
+│   │   ├── App.jsx              # Main application (1007 lines, 47% reduction!)
 │   │   ├── App.css              # Component styles
 │   │   ├── main.jsx             # Application entry point
 │   │   ├── contexts/
-│   │   │   └── AuthContext.jsx  # Authentication state management
+│   │   │   ├── AuthContext.jsx  # Authentication state management
+│   │   │   └── ThemeContext.jsx # Theme management
 │   │   ├── components/
-│   │   │   ├── LoginForm.jsx    # Authentication UI
-│   │   │   ├── UserProfile.jsx  # User profile dropdown
-│   │   │   ├── SetupWizard.jsx  # New user onboarding
-│   │   │   ├── ProfilePage.jsx  # Profile settings modal
-│   │   │   └── EnvironmentalConditions.jsx # Weather data display
+│   │   │   ├── during_roast/    # 🆕 Roast workflow components
+│   │   │   │   ├── ActiveRoast.jsx      # Master wrapper component
+│   │   │   │   ├── RoastControls.jsx    # Fan/heat controls & temp logging
+│   │   │   │   ├── RoastTimer.jsx       # Timer with phase indicators
+│   │   │   │   ├── EventsTable.jsx     # Events table with editing
+│   │   │   │   └── AfterRoast.jsx       # Roast completion workflow
+│   │   │   ├── dashboard/       # 🆕 Dashboard components
+│   │   │   │   └── Dashboard.jsx        # Historical roasts & dashboard
+│   │   │   ├── shared/          # 🆕 Shared components
+│   │   │   │   ├── RoastCurveGraph.jsx  # Roast curve visualization
+│   │   │   │   └── EnvironmentalConditions.jsx # Weather data display
+│   │   │   ├── modals/          # Modal components
+│   │   │   │   ├── CompareRoasts.jsx    # Roast comparison modal
+│   │   │   │   ├── ConfirmationModal.jsx # Generic confirmation modal
+│   │   │   │   ├── TemperatureInputModal.jsx # Temperature input
+│   │   │   │   └── InitialRoasterSettings.jsx # Initial settings
+│   │   │   ├── user_profile/    # User management
+│   │   │   │   ├── LoginForm.jsx        # Authentication UI
+│   │   │   │   ├── UserProfile.jsx      # User profile dropdown
+│   │   │   │   ├── ProfilePage.jsx      # Profile settings modal
+│   │   │   │   └── ThemeToggle.jsx     # Theme toggle
+│   │   │   ├── wizards/         # Setup workflows
+│   │   │   │   ├── SetupWizard.jsx      # New user onboarding
+│   │   │   │   └── StartNewRoastModal.jsx # Roast setup
+│   │   │   ├── ux_ui/           # UI components
+│   │   │   │   └── CustomDropdown.jsx   # Custom dropdown component
+│   │   │   └── RoastDetailPage.jsx      # Individual roast details
 │   │   └── lib/
 │   │       └── supabase.js      # Supabase client configuration
 │   ├── package.json
@@ -108,9 +141,16 @@ roast-app/
 │   ├── main.py        # API server with Supabase integration
 │   ├── requirements.txt
 │   └── Procfile       # Railway deployment
-├── AUTH_SETUP.md      # Detailed authentication setup guide
+├── AUTH_SETUP.md    # Detailed authentication setup guide
 └── README.md
 ```
+
+### 🧩 Component Architecture Benefits
+- **Modular Design:** Each component has a single responsibility
+- **Reusable Components:** Components can be used across different parts of the app
+- **Easy Maintenance:** Changes to one component don't affect others
+- **Better Testing:** Individual components can be tested in isolation
+- **Scalable Architecture:** Easy to add new features and components
 
 ## 🛠️ Tech Stack
 

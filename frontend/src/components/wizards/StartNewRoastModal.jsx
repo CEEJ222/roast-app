@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { COFFEE_REGIONS } from '../../data/coffeeRegions';
 import CustomDropdown from '../ux_ui/CustomDropdown';
+import BeanProfileForm from '../bean_profile/BeanProfileForm';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'
@@ -29,10 +30,15 @@ const StartNewRoastModal = ({
     coffeeProcess: '',
     roastLevel: 'City',
     weightBefore: '',
-    notes: ''
+    notes: '',
+    selectedBeanProfile: null,
+    beanProfileMode: 'auto' // 'auto', 'select', 'create'
   });
+  const [beanProfiles, setBeanProfiles] = useState([]);
+  const [showBeanProfileForm, setShowBeanProfileForm] = useState(false);
+  const [enhancingBeanProfileId, setEnhancingBeanProfileId] = useState(null);
 
-  // Reset form when modal opens
+  // Load bean profiles when modal opens
   useEffect(() => {
     if (isOpen) {
       setRoastSetupStep('machine');
@@ -43,8 +49,27 @@ const StartNewRoastModal = ({
         coffeeProcess: userProfile?.coffee_process || '',
         selectedMachineId: userMachines.length > 0 ? userMachines[0].id : ''
       }));
+      loadBeanProfiles();
     }
   }, [isOpen]); // Only depend on isOpen to prevent infinite loops
+
+  const loadBeanProfiles = async () => {
+    try {
+      const token = await getAuthToken();
+      const response = await fetch(`${API_BASE}/bean-profiles`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const profiles = await response.json();
+        setBeanProfiles(profiles);
+      }
+    } catch (error) {
+      console.error('Error loading bean profiles:', error);
+    }
+  };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -84,7 +109,8 @@ const StartNewRoastModal = ({
       coffee_process: formData.coffeeProcess,
       desired_roast_level: formData.roastLevel,
       weight_before_g: parseFloat(formData.weightBefore) || null,
-      notes: formData.notes
+      notes: formData.notes,
+      bean_profile_id: formData.selectedBeanProfile || null
     };
     console.log('Starting roast with data:', requestData);
     
@@ -356,17 +382,89 @@ const StartNewRoastModal = ({
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
-                      Coffee Type
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.coffeeType}
-                      onChange={(e) => handleInputChange('coffeeType', e.target.value)}
-                      placeholder="e.g., Bourbon, Typica, Gesha"
-                      className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
-                    />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
+                    Coffee Type
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.coffeeType}
+                    onChange={(e) => handleInputChange('coffeeType', e.target.value)}
+                    placeholder="e.g., Bourbon, Typica, Gesha"
+                    className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
+                  />
+                </div>
+
+                  {/* Create Detailed Bean Profile Card */}
+                  <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <span className="text-2xl mr-3">✨</span>
+                      <div>
+                        <h4 className="text-sm font-medium text-purple-800 dark:text-purple-200">Create Detailed Bean Profile</h4>
+                        <p className="text-sm text-purple-700 dark:text-purple-300 mt-1">
+                          Add detailed bean information for better AI coaching and roast recommendations.
+                        </p>
+                      <button
+                        onClick={async () => {
+                          console.log('DEBUG: Create Bean Profile clicked');
+                          console.log('DEBUG: Current formData:', formData);
+                          console.log('DEBUG: selectedBeanProfile:', formData.selectedBeanProfile);
+                          
+                          // Check if required fields are filled
+                          if (!formData.coffeeRegion || !formData.coffeeProcess) {
+                            alert('Please fill in Coffee Region and Processing Method before creating a detailed bean profile.');
+                            return;
+                          }
+
+                          // If we don't have a selected bean profile, create a basic one first
+                          if (!formData.selectedBeanProfile) {
+                            console.log('DEBUG: Creating new basic bean profile');
+                            try {
+                              const token = await getAuthToken();
+                              const response = await fetch(`${API_BASE}/bean-profiles`, {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({
+                                  name: `${formData.coffeeRegion} ${formData.coffeeProcess} - ${new Date().toLocaleDateString()}`,
+                                  origin: formData.coffeeRegion,
+                                  variety: formData.coffeeType,
+                                  process_method: formData.coffeeProcess,
+                                  recommended_roast_levels: formData.roastLevel ? [formData.roastLevel] : [],
+                                  profile_completeness: 'basic'
+                                })
+                              });
+
+                              if (response.ok) {
+                                const newProfile = await response.json();
+                                setFormData(prev => ({
+                                  ...prev,
+                                  selectedBeanProfile: newProfile.id
+                                }));
+                                setEnhancingBeanProfileId(newProfile.id);
+                              } else {
+                                console.error('Failed to create basic bean profile');
+                                alert('Failed to create basic bean profile');
+                                return;
+                              }
+                            } catch (error) {
+                              console.error('Error creating basic bean profile:', error);
+                              alert('Error creating basic bean profile');
+                              return;
+                            }
+                          } else {
+                            setEnhancingBeanProfileId(formData.selectedBeanProfile);
+                          }
+                          setShowBeanProfileForm(true);
+                        }}
+                        className="mt-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                      >
+                        {formData.selectedBeanProfile ? 'Enhance Bean Profile' : '+ Create Bean Profile'}
+                      </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -481,6 +579,15 @@ const StartNewRoastModal = ({
                           {formData.weightBefore ? `${formData.weightBefore}g` : 'Not specified'}
                         </span>
                       </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-dark-text-secondary">Bean Profile:</span>
+                        <span className="text-gray-900 dark:text-dark-text-primary">
+                          {formData.beanProfileMode === 'auto' && '🚀 Quick Start (auto-create)'}
+                          {formData.beanProfileMode === 'select' && formData.selectedBeanProfile && '📋 Selected Profile'}
+                          {formData.beanProfileMode === 'select' && !formData.selectedBeanProfile && '📋 No Profile Selected'}
+                          {formData.beanProfileMode === 'create' && '✨ Create New Profile'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -547,6 +654,36 @@ const StartNewRoastModal = ({
           </div>
         </div>
       </div>
+
+      {/* Bean Profile Form Modal */}
+      {showBeanProfileForm && (
+        <BeanProfileForm
+          isOpen={showBeanProfileForm}
+          onClose={() => {
+            setShowBeanProfileForm(false);
+            setEnhancingBeanProfileId(null);
+          }}
+          onSave={(profile) => {
+            // If we were enhancing an existing profile, update it in the list
+            if (enhancingBeanProfileId) {
+              setBeanProfiles(prev => prev.map(p => 
+                p.id === enhancingBeanProfileId ? profile : p
+              ));
+            } else {
+              // This is a new profile creation
+              setBeanProfiles(prev => [profile, ...prev]);
+              setFormData(prev => ({
+                ...prev,
+                selectedBeanProfile: profile.id
+              }));
+            }
+            setShowBeanProfileForm(false);
+            setEnhancingBeanProfileId(null);
+          }}
+          getAuthToken={getAuthToken}
+          beanProfileId={enhancingBeanProfileId}
+        />
+      )}
     </div>
   );
 };

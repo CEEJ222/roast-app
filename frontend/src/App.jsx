@@ -813,6 +813,7 @@ function RoastAssistant() {
               setShowHistoricalRoasts={setShowHistoricalRoasts}
               handleRoastResume={handleRoastResume}
               selectedRoasts={selectedRoasts}
+              getAuthToken={getAuthToken}
               setSelectedRoasts={setSelectedRoasts}
               roastDetails={roastDetails}
               setRoastDetails={setRoastDetails}

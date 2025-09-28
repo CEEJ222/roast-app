@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import RoastCurveGraph from '../shared/RoastCurveGraph';
+import StandardTable from '../shared/StandardTable';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'  // Local development
@@ -138,6 +139,52 @@ const DashboardHistoricalRoasts = ({
     
     return 'N/A';
   };
+
+  const columns = [
+    {
+      header: 'Date/Time',
+      key: 'created_at',
+      render: (roast) => formatDate(roast.created_at)
+    },
+    {
+      header: 'Coffee',
+      key: 'coffee',
+      render: (roast) => (
+        <div>
+          <div className="font-medium">
+            {roast.coffee_region && roast.coffee_type 
+              ? `${roast.coffee_region} ${roast.coffee_type}` 
+              : roast.coffee_type || roast.coffee_region || 'Unknown Coffee'
+            }
+          </div>
+        </div>
+      )
+    },
+    {
+      header: 'Machine',
+      key: 'machine_label',
+      render: (roast) => roast.machine_label || 'Unknown'
+    },
+    {
+      header: 'Duration',
+      key: 'duration',
+      render: (roast) => formatDuration(roast)
+    },
+    {
+      header: 'Weight Loss',
+      key: 'weight_loss_pct',
+      render: (roast) => roast.weight_loss_pct ? `${roast.weight_loss_pct.toFixed(1)}%` : 'N/A'
+    },
+    {
+      header: 'Roast Level',
+      key: 'desired_roast_level',
+      render: (roast) => (
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+          {roast.desired_roast_level}
+        </span>
+      )
+    }
+  ];
 
   const getSelectedRoastsData = () => {
     const result = selectedRoasts.map(roastId => {
@@ -311,172 +358,37 @@ const DashboardHistoricalRoasts = ({
         </div>
       ) : (
         /* List View */
-        <div className="bg-white dark:bg-dark-card rounded-lg shadow dark:shadow-dark-glow">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-border-primary">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">
-                All Roasts ({roasts.length} roasts)
-              </h3>
-              <div className="flex gap-3">
+        <StandardTable
+            data={roasts}
+            columns={columns}
+            onRowClick={(roast) => toggleRoastSelection(roast.id)}
+            onDelete={(roast) => setShowDeleteConfirm(roast.id)}
+            onBulkDelete={(roastIds) => {
+              setSelectedRoasts(roastIds);
+              setShowBulkDeleteConfirm(true);
+            }}
+            selectedItems={new Set(selectedRoasts)}
+            onSelectionChange={(newSelection) => setSelectedRoasts(Array.from(newSelection))}
+            onSelectAll={(allIds) => setSelectedRoasts(allIds)}
+            showSelection={true}
+            showBulkDelete={true}
+            loading={loading}
+            emptyMessage="No roasts found. Start roasting to see your history here!"
+            className=""
+            title={`All Roasts (${roasts.length} roasts)`}
+            onView={(roast) => onRoastResume(roast)}
+            customHeaderActions={
+              !hideCompareButton && (
                 <button
-                  onClick={() => {
-                    if (selectedRoasts.length === roasts.length) {
-                      // If all are selected, deselect all
-                      setSelectedRoasts([]);
-                    } else {
-                      // If not all are selected, select all
-                      setSelectedRoasts(roasts.map(r => r.id));
-                    }
-                  }}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                  onClick={() => setShowGraph(true)}
+                  disabled={selectedRoasts.length === 0}
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                 >
-                  {selectedRoasts.length === roasts.length ? '✗ Deselect All' : '✓ Select All'}
+                  📊 Compare Selected ({selectedRoasts.length})
                 </button>
-                {!hideCompareButton && (
-                  <button
-                    onClick={() => setShowGraph(true)}
-                    disabled={selectedRoasts.length === 0}
-                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                  >
-                    📊 Compare Selected ({selectedRoasts.length})
-                  </button>
-                )}
-                <button
-                  onClick={deleteSelectedRoasts}
-                  disabled={selectedRoasts.length === 0 || deletingRoast === 'bulk'}
-                  className="bg-gradient-to-r from-red-600 to-pink-600 text-white px-4 py-2 rounded-lg hover:from-red-700 hover:to-pink-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                >
-                  {deletingRoast === 'bulk' ? '🗑️ Deleting...' : `🗑️ Delete Selected (${selectedRoasts.length})`}
-                </button>
-                <button
-                  onClick={() => setSelectedRoasts([])}
-                  className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition"
-                >
-                  Clear Selection
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            {roasts.length === 0 ? (
-              <div className="p-12 text-center text-gray-500 dark:text-dark-text-tertiary">
-                <div className="text-6xl mb-4">☕</div>
-                <p className="text-lg dark:text-dark-text-primary">No roasts found</p>
-                <p className="text-sm dark:text-dark-text-secondary">Start roasting to see your history here!</p>
-              </div>
-            ) : (
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-dark-border-primary">
-                <thead className="bg-gray-50 dark:bg-dark-bg-tertiary">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">
-                      Select
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">
-                      Date/Time
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">
-                      Coffee
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">
-                      Machine
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">
-                      Duration
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">
-                      Weight Loss
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">
-                      Roast Level
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-dark-bg-secondary divide-y divide-gray-200 dark:divide-dark-border-primary">
-                  {roasts.map((roast) => (
-                    <tr 
-                      key={roast.id} 
-                      className={`hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary cursor-pointer ${
-                        selectedRoasts.includes(roast.id) ? 'bg-orange-50 dark:bg-dark-accent-primary/20' : ''
-                      }`}
-                      onClick={() => toggleRoastSelection(roast.id)}
-                    >
-                      <td className="px-4 py-3">
-                        <input
-                          type="checkbox"
-                          checked={selectedRoasts.includes(roast.id)}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            toggleRoastSelection(roast.id);
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-dark-border-primary rounded"
-                        />
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-dark-text-primary">
-                        {formatDate(roast.created_at)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-dark-text-primary">
-                        <div>
-                          <div className="font-medium">
-                            {roast.coffee_region && roast.coffee_type 
-                              ? `${roast.coffee_region} ${roast.coffee_type}` 
-                              : roast.coffee_type || roast.coffee_region || 'Unknown Coffee'
-                            }
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-dark-text-primary">
-                        {roast.machine_label || 'Unknown'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-dark-text-primary">
-                        {formatDuration(roast)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-dark-text-primary">
-                        {roast.weight_loss_pct ? `${roast.weight_loss_pct.toFixed(1)}%` : 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-dark-text-primary">
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-                          {roast.desired_roast_level}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-dark-text-primary">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onRoastResume(roast);
-                            }}
-                            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-xs font-medium"
-                            title="Resume or view roast"
-                          >
-                            👁️
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowDeleteConfirm(roast.id);
-                            }}
-                            disabled={deletingRoast === roast.id}
-                            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
-                            title="Delete roast"
-                          >
-                            {deletingRoast === roast.id ? '🗑️' : '🗑️'}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
+              )
+            }
+          />
       )}
 
       {/* Delete Confirmation Modal */}

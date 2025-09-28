@@ -420,7 +420,7 @@ const HistoricalRoasts = ({ onClose }) => {
                                 className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Delete roast"
                               >
-                                {deletingRoast === roast.id ? '🗑️' : '🗑️'}
+                                {deletingRoast === roast.id ? '🗑️ Delete' : '🗑️ Delete'}
                               </button>
                             </td>
                           </tr>

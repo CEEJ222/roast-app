@@ -1,6 +1,7 @@
 import React from 'react';
 import RoastCurveGraph from '../shared/RoastCurveGraph';
 import DashboardHistoricalRoasts from './DashboardHistoricalRoasts';
+import BeanProfiles from './BeanProfiles';
 
 const Dashboard = ({
   historicalRoasts,
@@ -16,7 +17,8 @@ const Dashboard = ({
   setSelectedRoasts,
   roastDetails,
   setRoastDetails,
-  roastId
+  roastId,
+  getAuthToken
 }) => {
   return (
     <div className="space-y-6">
@@ -183,6 +185,9 @@ const Dashboard = ({
           </div>
         )}
       </div>
+
+      {/* Bean Profiles */}
+      <BeanProfiles getAuthToken={getAuthToken} />
     </div>
   );
 };

@@ -3,8 +3,8 @@
 ## 1. Overview
 **Product Name:** FreshRoast CoPilot  
 **Owner:** CJ Britz  
-**Version:** Draft v0.4 (Living Document)  
-**Last Updated:** December 19, 2024
+**Version:** Draft v0.5 (Living Document)  
+**Last Updated:** December 2024
 
 The FreshRoast CoPilot is an intelligent roasting assistant designed to help home roasters (starting with FreshRoast SR540/SR800 models) record, analyze, and improve their coffee roasts. It will capture environmental conditions, machine parameters, temperature data, and roast outcomes, then provide AI-powered recommendations and visual roast curve analysis to improve consistency and quality over time.
 
@@ -314,6 +314,22 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - ✅ Removed clutter-causing success messages
 - **Timeline:** Completed December 19, 2024
 
+### Phase 2.5: Major Architecture Refactoring ✅ **COMPLETED**
+- ✅ **App.jsx Refactoring:** Reduced from 1902 lines to 1007 lines (47% reduction)
+- ✅ **Component Extraction:** Created 7 major reusable components:
+  - ActiveRoast: Master wrapper component for roast workflow
+  - RoastControls: Fan/heat controls and temperature logging
+  - RoastTimer: Timer display with phase indicators
+  - EventsTable: Events table with editing capabilities
+  - AfterRoast: Roast completion workflow
+  - Dashboard: Historical roasts and dashboard functionality
+  - Shared components: RoastCurveGraph, EnvironmentalConditions
+- ✅ **Modular Architecture:** Clean component separation with focused responsibilities
+- ✅ **Improved Maintainability:** Better code organization and debugging capabilities
+- ✅ **Enhanced Developer Experience:** Easier to modify, test, and extend components
+- ✅ **Scalable Design:** Foundation for future feature additions
+- **Timeline:** Completed December 2024
+
 ### Phase 3: Core Curve Visualization (Current)
 - ✅ Fixed environmental data collection bug (field name mismatch resolved)
 - Implement historical roast curve charts (Recharts)
@@ -415,7 +431,12 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 
 📌 **This is a living document. All sections are open for refinement as the product evolves with user feedback and technical discoveries.**
 
-**Recent Updates (v0.4):**
+**Recent Updates (v0.5):**
+- ✅ **MAJOR:** Complete App.jsx refactoring - 47% size reduction (1902 → 1007 lines)
+- ✅ **MAJOR:** Extracted 7 major reusable components from monolithic architecture
+- ✅ **MAJOR:** Created modular component architecture with focused responsibilities
+- ✅ **MAJOR:** Improved maintainability and developer experience
+- ✅ **MAJOR:** Enhanced code organization and debugging capabilities
 - ✅ Added comprehensive authentication system
 - ✅ Implemented user data isolation and security
 - ✅ Updated data models for user-specific data

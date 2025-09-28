@@ -10,6 +10,7 @@ import datetime
 from jose import jwt, JWTError
 from supabase import create_client, Client
 from dotenv import load_dotenv
+from bean_parser import parse_sweet_marias_url
 
 # Coffee regions validation
 COFFEE_REGIONS = [
@@ -120,6 +121,54 @@ class CreateRoastRequest(BaseModel):
     desired_roast_level: str
     weight_before_g: Optional[float] = None
     notes: Optional[str] = None
+    bean_profile_id: Optional[str] = None
+
+class CreateBeanProfileRequest(BaseModel):
+    # Basic Info
+    name: str
+    origin: Optional[str] = None
+    notes: Optional[str] = None
+    supplier_url: Optional[str] = None
+    supplier_name: Optional[str] = None
+    
+    # Tier 1: Must Have (Critical for AI Coaching)
+    moisture_content_pct: Optional[float] = None
+    density_g_ml: Optional[float] = None
+    process_method: Optional[str] = None
+    recommended_roast_levels: Optional[List[str]] = None
+    
+    # Tier 2: Very Important
+    screen_size: Optional[str] = None
+    variety: Optional[str] = None
+    altitude_m: Optional[int] = None
+    body_intensity: Optional[float] = None
+    
+    # Tier 3: Helpful
+    harvest_year: Optional[int] = None
+    acidity_intensity: Optional[float] = None
+    
+    # Flavor Profile (Additional)
+    flavor_notes: Optional[List[str]] = None
+    cupping_score: Optional[float] = None
+    fragrance_score: Optional[float] = None
+    floral_intensity: Optional[float] = None
+    honey_intensity: Optional[float] = None
+    sugars_intensity: Optional[float] = None
+    caramel_intensity: Optional[float] = None
+    fruits_intensity: Optional[float] = None
+    citrus_intensity: Optional[float] = None
+    berry_intensity: Optional[float] = None
+    cocoa_intensity: Optional[float] = None
+    nuts_intensity: Optional[float] = None
+    rustic_intensity: Optional[float] = None
+    spice_intensity: Optional[float] = None
+    
+    # Additional
+    roasting_notes: Optional[str] = None
+    qr_code_url: Optional[str] = None
+
+class ParseQRRequest(BaseModel):
+    url: str
 
 class LogEventRequest(BaseModel):
     kind: str
@@ -161,6 +210,29 @@ def get_or_create_machine_id(label: str) -> str:
         "has_extension": has_et
     }).execute()
     return created.data[0]["id"]
+
+def create_basic_bean_profile(user_id: str, coffee_region: str, coffee_type: str, coffee_process: str, desired_roast_level: str) -> str:
+    """Auto-create a basic bean profile from roast form data"""
+    sb = get_supabase()
+    
+    # Generate a simple name for the bean profile
+    from datetime import datetime
+    current_date = datetime.now().strftime("%m/%d/%Y")
+    bean_name = f"{coffee_region} {coffee_process} - {current_date}"
+    
+    # Create basic bean profile
+    bean_data = {
+        "user_id": user_id,
+        "name": bean_name,
+        "origin": coffee_region,
+        "variety": coffee_type,
+        "process_method": coffee_process,
+        "recommended_roast_levels": [desired_roast_level],
+        "profile_completeness": "basic"
+    }
+    
+    result = sb.table("bean_profiles").insert(bean_data).execute()
+    return result.data[0]["id"]
 
 def get_environmental_conditions(address: str, unit: str = "C") -> Dict[str, Any]:
     """
@@ -352,6 +424,18 @@ async def create_roast(request: CreateRoastRequest, user_id: str = Depends(verif
                 "timezone_abbreviation": None
             }
         
+        # Auto-create basic bean profile if not provided
+        bean_profile_id = request.bean_profile_id
+        if not bean_profile_id:
+            bean_profile_id = create_basic_bean_profile(
+                user_id, 
+                request.coffee_region, 
+                request.coffee_type, 
+                request.coffee_process, 
+                request.desired_roast_level
+            )
+            print(f"DEBUG: Auto-created basic bean profile: {bean_profile_id}")
+        
         # Create roast entry
         roast_data = {
             "user_id": user_id,
@@ -375,6 +459,7 @@ async def create_roast(request: CreateRoastRequest, user_id: str = Depends(verif
             "desired_roast_level": request.desired_roast_level,
             "weight_before_g": request.weight_before_g,
             "notes": request.notes,
+            "bean_profile_id": bean_profile_id,
         }
         
         # Remove None values
@@ -388,7 +473,8 @@ async def create_roast(request: CreateRoastRequest, user_id: str = Depends(verif
             "roast_id": roast_id,
             "start_ts": start_ts,
             "env": env,
-            "weight_before_g": request.weight_before_g
+            "weight_before_g": request.weight_before_g,
+            "bean_profile_id": bean_profile_id
         }
         print(f"DEBUG: Returning response with weight_before_g: {request.weight_before_g}")
         return response_data
@@ -738,6 +824,186 @@ async def delete_user_machine(machine_id: str, user_id: str = Depends(verify_jwt
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# Bean Profile endpoints
+@app.post("/bean-profiles")
+async def create_bean_profile(request: CreateBeanProfileRequest, user_id: str = Depends(verify_jwt_token)):
+    try:
+        sb = get_supabase()
+        
+        bean_data = {
+            "user_id": user_id,
+            "name": request.name,
+            "origin": request.origin,
+            "notes": request.notes,
+            "supplier_url": request.supplier_url,
+            "supplier_name": request.supplier_name,
+            
+            # Tier 1: Must Have
+            "moisture_content_pct": request.moisture_content_pct,
+            "density_g_ml": request.density_g_ml,
+            "process_method": request.process_method,
+            "recommended_roast_levels": request.recommended_roast_levels,
+            
+            # Tier 2: Very Important
+            "screen_size": request.screen_size,
+            "variety": request.variety,
+            "altitude_m": request.altitude_m,
+            "body_intensity": request.body_intensity,
+            
+            # Tier 3: Helpful
+            "harvest_year": request.harvest_year,
+            "acidity_intensity": request.acidity_intensity,
+            
+            # Flavor Profile
+            "flavor_notes": request.flavor_notes,
+            "cupping_score": request.cupping_score,
+            "fragrance_score": request.fragrance_score,
+            "floral_intensity": request.floral_intensity,
+            "honey_intensity": request.honey_intensity,
+            "sugars_intensity": request.sugars_intensity,
+            "caramel_intensity": request.caramel_intensity,
+            "fruits_intensity": request.fruits_intensity,
+            "citrus_intensity": request.citrus_intensity,
+            "berry_intensity": request.berry_intensity,
+            "cocoa_intensity": request.cocoa_intensity,
+            "nuts_intensity": request.nuts_intensity,
+            "rustic_intensity": request.rustic_intensity,
+            "spice_intensity": request.spice_intensity,
+            
+            # Additional
+            "roasting_notes": request.roasting_notes,
+            "qr_code_url": request.qr_code_url
+        }
+        
+        # Remove None values
+        bean_data = {k: v for k, v in bean_data.items() if v is not None}
+        
+        result = sb.table("bean_profiles").insert(bean_data).execute()
+        return {"id": result.data[0]["id"], "message": "Bean profile created successfully"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/bean-profiles")
+async def get_bean_profiles(user_id: str = Depends(verify_jwt_token)):
+    try:
+        sb = get_supabase()
+        result = sb.table("bean_profiles").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
+        return result.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/bean-profiles/{bean_profile_id}")
+async def get_bean_profile(bean_profile_id: str, user_id: str = Depends(verify_jwt_token)):
+    """Get a single bean profile by ID"""
+    try:
+        sb = get_supabase()
+        
+        # Get the bean profile
+        result = sb.table("bean_profiles").select("*").eq("id", bean_profile_id).eq("user_id", user_id).execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Bean profile not found")
+        
+        return result.data[0]
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.patch("/bean-profiles/{bean_profile_id}")
+async def enhance_bean_profile(bean_profile_id: str, request: CreateBeanProfileRequest, user_id: str = Depends(verify_jwt_token)):
+    """Enhance an existing bean profile with AI-optimized data"""
+    try:
+        sb = get_supabase()
+        
+        # Verify bean profile ownership
+        existing = sb.table("bean_profiles").select("id").eq("id", bean_profile_id).eq("user_id", user_id).execute()
+        if not existing.data:
+            raise HTTPException(status_code=404, detail="Bean profile not found")
+        
+        # Prepare update data (only include fields that are provided)
+        update_data = {}
+        for field, value in request.dict().items():
+            if value is not None:  # Allow updating all fields including name
+                update_data[field] = value
+        
+        # Remove None values
+        update_data = {k: v for k, v in update_data.items() if v is not None}
+        
+        if not update_data:
+            return {"message": "No changes to update"}
+        
+        # Update the bean profile
+        sb.table("bean_profiles").update(update_data).eq("id", bean_profile_id).execute()
+        
+        # Return the updated profile data
+        updated_profile = sb.table("bean_profiles").select("*").eq("id", bean_profile_id).execute()
+        return updated_profile.data[0]
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/bean-profiles/{bean_profile_id}")
+async def delete_bean_profile(bean_profile_id: str, user_id: str = Depends(verify_jwt_token)):
+    """Delete a bean profile by ID"""
+    try:
+        sb = get_supabase()
+        
+        # Verify bean profile ownership first
+        profile_result = sb.table("bean_profiles").select("id").eq("id", bean_profile_id).eq("user_id", user_id).execute()
+        if not profile_result.data:
+            raise HTTPException(status_code=404, detail="Bean profile not found")
+        
+        # Delete the bean profile
+        sb.table("bean_profiles").delete().eq("id", bean_profile_id).execute()
+        
+        return {"success": True, "message": "Bean profile deleted"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/bean-profiles/parse-qr")
+async def parse_bean_qr(request: ParseQRRequest, user_id: str = Depends(verify_jwt_token)):
+    try:
+        # Parse the Sweet Maria's URL to extract bean data
+        bean_data = parse_sweet_marias_url(request.url)
+        
+        # Create bean profile from parsed data
+        sb = get_supabase()
+        
+        profile_data = {
+            "user_id": user_id,
+            "name": bean_data.get("name", "Unknown Bean"),
+            "origin": bean_data.get("origin", "Unknown Origin"),
+            "variety": bean_data.get("variety", "Unknown Variety"),
+            "process_method": bean_data.get("process_method", "Unknown Process"),
+            "altitude_m": bean_data.get("altitude"),
+            "harvest_year": bean_data.get("harvest_year"),
+            "flavor_notes": bean_data.get("flavor_notes", []),
+            "recommended_roast_levels": bean_data.get("recommended_roast_levels", ["City", "City+"]),
+            "density_g_ml": bean_data.get("density"),
+            "moisture_content_pct": bean_data.get("moisture_content"),
+            "supplier_url": bean_data.get("supplier_url"),
+            "supplier_name": bean_data.get("supplier_name", "Sweet Maria's"),
+            "roasting_notes": bean_data.get("roasting_notes", ""),
+            "raw_data": bean_data.get("raw_data", {})
+        }
+        
+        # Remove None values
+        profile_data = {k: v for k, v in profile_data.items() if v is not None}
+        
+        result = sb.table("bean_profiles").insert(profile_data).execute()
+        return {"id": result.data[0]["id"], "bean_data": bean_data, "message": "Bean profile created from QR code"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to parse QR code: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
