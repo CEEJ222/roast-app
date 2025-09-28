@@ -17,6 +17,10 @@ import ConfirmationModal from './components/modals/ConfirmationModal';
 import TemperatureInputModal from './components/modals/TemperatureInputModal';
 import ThemeToggle from './components/user_profile/ThemeToggle';
 import InitialRoasterSettings from './components/modals/InitialRoasterSettings';
+import RoastControls from './components/during_roast/RoastControls';
+import EventsTable from './components/during_roast/EventsTable';
+import RoastTimer from './components/during_roast/RoastTimer';
+import Dashboard from './components/dashboard/Dashboard';
 import { Analytics } from '@vercel/analytics/react';
 
 const API_BASE = import.meta.env.DEV 
@@ -81,6 +85,7 @@ function RoastAssistant() {
   const [isPaused, setIsPaused] = useState(false);
   const [pauseStartTime, setPauseStartTime] = useState(null);
   const [totalPausedTime, setTotalPausedTime] = useState(0);
+  
 
   // Form state
   const [formData, setFormData] = useState({
@@ -795,172 +800,22 @@ function RoastAssistant() {
 
           {/* Dashboard - Show when no active roast */}
           {!roastId && (
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <div className="flex-1">
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Roast Dashboard</h2>
-                  <p className="text-gray-600 dark:text-dark-text-secondary text-sm sm:text-base">Your roasting history and quick actions</p>
-                </div>
-                <button
-                  onClick={() => setShowStartRoastWizard(true)}
-                  className="w-full sm:w-auto bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant text-white px-4 sm:px-6 py-3 rounded-lg hover:from-indigo-800 hover:via-purple-700 hover:to-purple-800 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-bold shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105 flex items-center justify-center gap-2"
-                >
-                  🏁 Start New Roast
-                </button>
-              </div>
-
-
-              {/* Roast Curve Visualization */}
-              {historicalRoasts?.length > 0 && (
-                <div className="bg-white dark:bg-dark-bg-tertiary rounded-lg shadow dark:shadow-dark-lg border dark:border-dark-border-primary">
-                  <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-border-primary">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">All Roast Curves</h3>
-                      <button
-                        onClick={() => setShowHistoricalRoasts(true)}
-                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
-                      >
-                        Compare Roasts →
-                      </button>
-                    </div>
-                  </div>
-                  <RoastCurveGraph
-                      data={historicalRoasts.map(roast => ({
-                        id: roast.id,
-                        name: roast.coffee_type || 'Unknown',
-                        fullName: `${roast.coffee_type || 'Unknown'} - ${new Date(roast.created_at).toLocaleDateString()}`,
-                        events: recentRoastDetails[roast.id] || []
-                      }))}
-                      mode="historical"
-                      showROR={true}
-                      showMilestones={true}
-                      height={500}
-                      title=""
-                      units={{ temperature: userProfile?.units?.temperature === 'celsius' ? 'C' : 'F', time: 'min' }}
-                      className=""
-                      showLegend={true}
-                      showGrid={true}
-                      showTooltip={true}
-                      enableZoom={true}
-                      enablePan={true}
-                      compact={false}
-                      interactive={true}
-                      showRoastLabels={true}
-                    />
-                </div>
-              )}
-
-              {/* Historical Roasts Table */}
-              <div className="bg-white dark:bg-dark-bg-tertiary rounded-lg shadow dark:shadow-dark-lg border dark:border-dark-border-primary">
-                <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-border-primary">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">
-                      {showFullHistoricalRoasts ? 'All Roasts' : 'Recent Roasts'}
-                    </h3>
-                    {historicalRoasts?.length > 0 && (
-                      <button
-                        onClick={() => setShowFullHistoricalRoasts(!showFullHistoricalRoasts)}
-                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
-                      >
-                        {showFullHistoricalRoasts ? 'Show Recent Only →' : 'View All Roasts →'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-                {showFullHistoricalRoasts ? (
-                  <div className="p-0">
-                    <DashboardHistoricalRoasts
-                      selectedRoasts={selectedRoasts}
-                      setSelectedRoasts={setSelectedRoasts}
-                      roastDetails={roastDetails}
-                      setRoastDetails={setRoastDetails}
-                      onRoastResume={handleRoastResume}
-                      currentActiveRoastId={roastId}
-                      hideCompareButton={true}
-                    />
-                  </div>
-                ) : (
-                  <div className="p-6">
-                    {loadingHistoricalRoasts ? (
-                      <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 dark:border-dark-accent-primary mx-auto mb-4"></div>
-                        <p className="text-gray-600 dark:text-dark-text-secondary">Loading roast history...</p>
-                      </div>
-                    ) : historicalRoasts?.length === 0 ? (
-                      <div className="text-center py-12 text-gray-500 dark:text-dark-text-tertiary">
-                        <div className="text-6xl mb-4">☕</div>
-                        <p className="text-lg font-semibold mb-2 dark:text-dark-text-primary">Ready to start your roasting journey?</p>
-                        <p className="text-sm mb-6 dark:text-dark-text-secondary">Begin with your first roast to see your progress and curves here!</p>
-                        <button
-                          onClick={() => setShowStartRoastWizard(true)}
-                          className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-dark-accent-primary dark:to-dark-accent-secondary text-white px-6 py-3 rounded-lg hover:from-indigo-700 hover:to-purple-700 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-bold shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105"
-                        >
-                          🚦 Start Your First Roast
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {historicalRoasts.slice(0, 5).map((roast) => (
-                          <div 
-                            key={roast.id} 
-                            onClick={() => handleRoastResume(roast)}
-                            className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary cursor-pointer"
-                          >
-                            <div className="flex items-center space-x-4">
-                              <div className="w-10 h-10 bg-orange-100 dark:bg-dark-bg-tertiary rounded-full flex items-center justify-center border dark:border-dark-border-primary">
-                                <span className="text-orange-600 dark:text-dark-accent-primary font-bold">☕</span>
-                              </div>
-                              <div>
-                                <p className="font-medium text-gray-900 dark:text-dark-text-primary">
-                                  {roast.coffee_region && roast.coffee_type 
-                                    ? `${roast.coffee_region} ${roast.coffee_type}` 
-                                    : roast.coffee_type || roast.coffee_region || 'Unknown Coffee'
-                                  }
-                                </p>
-                                <p className="text-sm text-gray-500 dark:text-dark-text-tertiary">
-                                  {new Date(roast.created_at).toLocaleDateString()} • {roast.machine_label || 'Unknown Machine'}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-4 text-sm">
-                              <span className="px-2 py-1 bg-amber-100 dark:bg-dark-bg-tertiary text-amber-800 dark:text-dark-accent-warning rounded-full text-xs font-medium border dark:border-dark-border-primary">
-                                {roast.desired_roast_level}
-                              </span>
-                              {roast.weight_loss_pct && (
-                                <span className="text-gray-600 dark:text-dark-text-secondary">
-                                  {roast.weight_loss_pct.toFixed(1)}% loss
-                                </span>
-                              )}
-                              {/* Click indicator for all screen sizes */}
-                              <div className="text-indigo-600 dark:text-indigo-400">
-                                {(() => {
-                                  if (roast.id === roastId) {
-                                    return 'Currently Active →';
-                                  }
-                                  
-                                  const currentTime = new Date();
-                                  const roastTime = new Date(roast.created_at);
-                                  const timeDiff = (currentTime - roastTime) / (1000 * 60);
-                                  
-                                  if (timeDiff < 120 && !roast.weight_after_g) {
-                                    return 'Continue Roast →';
-                                  }
-                                  return (
-                                    <>
-                                      <span className="hidden sm:inline">View Details </span>→
-                                    </>
-                                  );
-                                })()}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
+            <Dashboard
+              historicalRoasts={historicalRoasts}
+              recentRoastDetails={recentRoastDetails}
+              userProfile={userProfile}
+              loadingHistoricalRoasts={loadingHistoricalRoasts}
+              showFullHistoricalRoasts={showFullHistoricalRoasts}
+              setShowFullHistoricalRoasts={setShowFullHistoricalRoasts}
+              setShowStartRoastWizard={setShowStartRoastWizard}
+              setShowHistoricalRoasts={setShowHistoricalRoasts}
+              handleRoastResume={handleRoastResume}
+              selectedRoasts={selectedRoasts}
+              setSelectedRoasts={setSelectedRoasts}
+              roastDetails={roastDetails}
+              setRoastDetails={setRoastDetails}
+              roastId={roastId}
+            />
           )}
 
           {/* Initial Settings Modal */}
@@ -1009,354 +864,27 @@ function RoastAssistant() {
                 {/* Responsive Layout - Stack on mobile, side-by-side on larger screens */}
                 <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-6 mb-6">
                   {/* Timer with Circular Progress Chart and Phase Indicators */}
-                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 lg:gap-8">
-                    {/* Circular Chart and Timer */}
-                    <div className="text-center flex-shrink-0">
-                      <div className="relative flex items-center justify-center w-64 h-64 sm:w-80 sm:h-80 lg:w-80 lg:h-80">
-                        {/* Circular Progress Chart */}
-                        <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 120 120">
-                          {/* Background circle */}
-                          <circle
-                            cx="60"
-                            cy="60"
-                            r="50"
-                            fill="none"
-                            stroke="#374151"
-                            strokeWidth="8"
-                          />
-                          
-                          {/* Progress segments drawn sequentially */}
-                          {(() => {
-                            const circumference = 2 * Math.PI * 50;
-                            const radius = 50;
-                            const centerX = 60;
-                            const centerY = 60;
-                            
-                            // Calculate phase angles
-                            const dryingAngle = (dryingTime / elapsedTime) * 2 * Math.PI;
-                            const developmentAngle = (developmentTime / elapsedTime) * 2 * Math.PI;
-                            const coolingAngle = (coolingTime / elapsedTime) * 2 * Math.PI;
-                            
-                            // Helper function to create arc path
-                            const createArcPath = (startAngle, endAngle, radius) => {
-                              const start = {
-                                x: centerX + radius * Math.cos(startAngle - Math.PI / 2),
-                                y: centerY + radius * Math.sin(startAngle - Math.PI / 2)
-                              };
-                              const end = {
-                                x: centerX + radius * Math.cos(endAngle - Math.PI / 2),
-                                y: centerY + radius * Math.sin(endAngle - Math.PI / 2)
-                              };
-                              
-                              const largeArcFlag = endAngle - startAngle <= Math.PI ? "0" : "1";
-                              
-                              return [
-                                `M ${start.x} ${start.y}`,
-                                `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`
-                              ].join(" ");
-                            };
-                            
-                            let currentAngle = 0;
-                            
-                            return (
-                              <>
-                                {/* Drying phase (green) */}
-                                {elapsedTime > 0 && dryingTime > 0 && (
-                                  <path
-                                    d={createArcPath(currentAngle, currentAngle + dryingAngle, radius)}
-                                    fill="none"
-                                    stroke="#10b981"
-                                    strokeWidth="8"
-                                    strokeLinecap="round"
-                                    style={{ transition: 'all 0.5s ease' }}
-                                  />
-                                )}
-                                
-                                {/* Development phase (orange) */}
-                                {elapsedTime > 0 && developmentTime > 0 && (
-                                  <path
-                                    d={createArcPath(
-                                      currentAngle + dryingAngle, 
-                                      currentAngle + dryingAngle + developmentAngle, 
-                                      radius
-                                    )}
-                                    fill="none"
-                                    stroke="#f59e0b"
-                                    strokeWidth="8"
-                                    strokeLinecap="round"
-                                    style={{ transition: 'all 0.5s ease' }}
-                                  />
-                                )}
-                                
-                                {/* Cooling phase (blue) */}
-                                {elapsedTime > 0 && coolingTime > 0 && (
-                                  <path
-                                    d={createArcPath(
-                                      currentAngle + dryingAngle + developmentAngle,
-                                      currentAngle + dryingAngle + developmentAngle + coolingAngle,
-                                      radius
-                                    )}
-                                    fill="none"
-                                    stroke="#06b6d4"
-                                    strokeWidth="8"
-                                    strokeLinecap="round"
-                                    style={{ transition: 'all 0.5s ease' }}
-                                  />
-                                )}
-                              </>
-                            );
-                          })()}
-                        </svg>
-                        
-                        {/* Timer in center - Responsive sizing */}
-                        <div className="p-4 sm:p-6 w-32 h-20 sm:w-44 sm:h-28 lg:w-48 lg:h-32">
-                          <div className="flex flex-col items-center justify-center gap-2 sm:gap-3">
-                            <div className="text-3xl sm:text-3xl md:text-4xl lg:text-4xl font-bold text-green-400 text-center" style={{
-                              fontFamily: '"Orbitron", "Seven Segment", "DS-Digital", monospace',
-                              letterSpacing: '0.1em',
-                              textShadow: '0 0 3px #22c55e',
-                              fontWeight: '900',
-                              fontVariantNumeric: 'tabular-nums',
-                              lineHeight: '1'
-                            }}>
-                              {formatTime(elapsedTime)}
-                            </div>
-                            
-                            {/* Pause/Resume Button - Below timer inside chart */}
-                            <button
-                              onClick={isPaused ? resumeRoast : pauseRoast}
-                              disabled={loading}
-                              className={`p-2 sm:p-3 rounded-full border-2 transition-all duration-200 hover:scale-105 ${
-                                isPaused 
-                                  ? 'border-green-500 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20'
-                                  : 'border-gray-400 text-gray-600 hover:border-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:border-gray-500 dark:hover:border-gray-300 dark:hover:bg-gray-800/20'
-                              } ${loading ? 'opacity-50' : ''}`}
-                            >
-                              {isPaused ? (
-                                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M8 5v14l11-7z"/>
-                                </svg>
-                              ) : (
-                                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-                                </svg>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                    </div>
-
-                    {/* Phase Indicators - Responsive layout */}
-                    <div className="flex flex-row md:flex-col gap-2 sm:gap-4 md:gap-4 pt-4 sm:pt-8">
-                      <div className={`flex items-center space-x-3 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition ${
-                        currentPhase === 'drying' 
-                          ? 'bg-indigo-100 dark:bg-dark-accent-primary/20 text-indigo-800 dark:text-dark-accent-primary' 
-                          : 'text-gray-500 dark:text-dark-text-tertiary'
-                      }`}>
-                        <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-green-500 flex-shrink-0"></div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="font-medium text-sm sm:text-base truncate">Drying</span>
-                          <span className="text-xs sm:text-sm font-mono">
-                            {formatTime(dryingTime)}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className={`flex items-center space-x-3 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition ${
-                        currentPhase === 'development' 
-                          ? 'bg-indigo-100 dark:bg-dark-accent-primary/20 text-indigo-800 dark:text-dark-accent-primary' 
-                          : 'text-gray-500 dark:text-dark-text-tertiary'
-                      }`}>
-                        <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-orange-500 flex-shrink-0"></div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="font-medium text-sm sm:text-base truncate">Development</span>
-                          <span className="text-xs sm:text-sm font-mono">
-                            {milestonesMarked.firstCrack ? formatTime(developmentTime) : '—'}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className={`flex items-center space-x-3 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition ${
-                        currentPhase === 'cooling' 
-                          ? 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-400' 
-                          : 'text-gray-500 dark:text-dark-text-tertiary'
-                      }`}>
-                        <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-cyan-500 flex-shrink-0"></div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="font-medium text-sm sm:text-base truncate">Cooling</span>
-                          <span className="text-xs sm:text-sm font-mono">
-                            {milestonesMarked.cool ? formatTime(coolingTime) : '—'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <RoastTimer
+                    elapsedTime={elapsedTime}
+                    formatTime={formatTime}
+                    currentPhase={currentPhase}
+                    dryingTime={dryingTime}
+                    developmentTime={developmentTime}
+                    coolingTime={coolingTime}
+                    milestonesMarked={milestonesMarked}
+                    isPaused={isPaused}
+                    pauseRoast={pauseRoast}
+                    resumeRoast={resumeRoast}
+                    loading={loading}
+                  />
 
                   {/* Roaster Controls - Improved layout */}
-                  <div className="w-full max-w-md lg:flex-1">
-                    <div className="bg-gray-900 border border-gray-700 rounded-xl p-4 sm:p-6">
-                      <h3 className="text-lg font-bold text-white mb-6 text-center">Roaster Controls</h3>
-                      
-                      <div className="space-y-6">
-                        {/* Left Side - Fan & Heat Controls */}
-                        <div className="space-y-4">
-                          {/* Fan Control */}
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                              <div className="text-xs font-semibold tracking-wide text-gray-300">
-                                FAN SPEED
-                              </div>
-                              <div className="text-sm font-bold text-white">
-                                {formData.fan}
-                              </div>
-                            </div>
-                            
-                            <div className="relative h-4 rounded-full overflow-hidden cursor-pointer"
-                                 onClick={(e) => {
-                                   const rect = e.currentTarget.getBoundingClientRect();
-                                   const x = e.clientX - rect.left;
-                                   const newValue = Math.round((x / rect.width) * 9);
-                                   handleInputChange('fan', Math.max(0, Math.min(9, newValue)));
-                                 }}>
-                              {/* Color spectrum background */}
-                              <div 
-                                className="absolute inset-0 rounded-full"
-                                style={{
-                                  background: 'linear-gradient(to right, #8b5cf6, #a855f7, #c084fc, #ddd6fe, #10b981, #34d399, #6ee7b7, #a7f3d0)'
-                                }}
-                              />
-                              
-                              {/* Overlay for inactive portion */}
-                              <div 
-                                className="absolute inset-0 bg-gray-800/60 rounded-full transition-all duration-300"
-                                style={{
-                                  clipPath: `polygon(${(formData.fan / 9) * 100}% 0%, 100% 0%, 100% 100%, ${(formData.fan / 9) * 100}% 100%)`
-                                }}
-                              />
-                              
-                              {/* Active indicator */}
-                              <div 
-                                className="absolute top-1/2 w-2 h-2 bg-white rounded-full border border-gray-900 transform -translate-y-1/2 transition-all duration-300 shadow-lg"
-                                style={{
-                                  left: `calc(${(formData.fan / 9) * 100}% - 4px)`
-                                }}
-                              />
-                            </div>
-                            
-                            <div className="flex justify-between text-xs text-gray-500">
-                              <span>0</span>
-                              <span>5</span>
-                              <span>9</span>
-                            </div>
-                          </div>
-
-                          {/* Heat Control */}
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                              <div className="text-xs font-semibold tracking-wide text-gray-300">
-                                HEAT LEVEL
-                              </div>
-                              <div className="text-sm font-bold text-white">
-                                {formData.heat}
-                              </div>
-                            </div>
-                            
-                            <div className="relative h-4 rounded-full overflow-hidden cursor-pointer"
-                                 onClick={(e) => {
-                                   const rect = e.currentTarget.getBoundingClientRect();
-                                   const x = e.clientX - rect.left;
-                                   const newValue = Math.round((x / rect.width) * 9);
-                                   handleInputChange('heat', Math.max(0, Math.min(9, newValue)));
-                                 }}>
-                              {/* Color spectrum background */}
-                              <div 
-                                className="absolute inset-0 rounded-full"
-                                style={{
-                                  background: 'linear-gradient(to right, #f97316, #fb923c, #fdba74, #fed7aa, #dc2626, #ef4444, #f87171, #fca5a5)'
-                                }}
-                              />
-                              
-                              {/* Overlay for inactive portion */}
-                              <div 
-                                className="absolute inset-0 bg-gray-800/60 rounded-full transition-all duration-300"
-                                style={{
-                                  clipPath: `polygon(${(formData.heat / 9) * 100}% 0%, 100% 0%, 100% 100%, ${(formData.heat / 9) * 100}% 100%)`
-                                }}
-                              />
-                              
-                              {/* Active indicator */}
-                              <div 
-                                className="absolute top-1/2 w-2 h-2 bg-white rounded-full border border-gray-900 transform -translate-y-1/2 transition-all duration-300 shadow-lg"
-                                style={{
-                                  left: `calc(${(formData.heat / 9) * 100}% - 4px)`
-                                }}
-                              />
-                            </div>
-                            
-                            <div className="flex justify-between text-xs text-gray-500">
-                              <span>0</span>
-                              <span>5</span>
-                              <span>9</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Temperature Input Section */}
-                        <div className="bg-gray-800 rounded-lg p-3 w-full border border-gray-600">
-                          <div className="text-sm font-semibold tracking-wide text-cyan-400 text-center mb-3">
-                            TEMP LOG
-                          </div>
-                          
-                          <div className="flex items-center gap-3 mb-3">
-                            <button
-                              onClick={() => {
-                                const currentValue = parseFloat(formData.tempF) || 0;
-                                handleInputChange('tempF', (currentValue - 1).toString());
-                              }}
-                              className="bg-gray-700 hover:bg-gray-600 text-white text-lg font-bold py-2 px-3 rounded transition-all duration-150"
-                            >
-                              −
-                            </button>
-                            
-                            <input
-                              type="number"
-                              step="1"
-                              value={formData.tempF}
-                              onChange={(e) => handleInputChange('tempF', e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  logChange();
-                                }
-                              }}
-                              placeholder="°F"
-                              className="flex-1 min-w-0 bg-gray-900 text-white text-lg font-bold text-center rounded px-3 py-2 border border-gray-600 focus:border-cyan-400 focus:outline-none"
-                            />
-                            
-                            <button
-                              onClick={() => {
-                                const currentValue = parseFloat(formData.tempF) || 0;
-                                handleInputChange('tempF', (currentValue + 1).toString());
-                              }}
-                              className="bg-gray-700 hover:bg-gray-600 text-white text-lg font-bold py-2 px-3 rounded transition-all duration-150"
-                            >
-                              +
-                            </button>
-                          </div>
-                          
-                          <button
-                            onClick={logChange}
-                            disabled={loading}
-                            className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-2 rounded-lg text-sm font-bold transition-all duration-150 disabled:opacity-50"
-                          >
-                            LOG
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <RoastControls 
+                    formData={formData}
+                    handleInputChange={handleInputChange}
+                    logChange={logChange}
+                    loading={loading}
+                  />
 
                 </div>
                 
@@ -1429,152 +957,17 @@ function RoastAssistant() {
               {/* Events Table and Weather Layout */}
               <div className="flex flex-col lg:flex-row gap-6">
                 {/* Events Table - Reduced Width */}
-                <div className="flex-1 max-w-4xl bg-white dark:bg-dark-card rounded-lg shadow dark:shadow-dark-glow overflow-hidden">
-                  <div className="px-4 py-3 bg-gray-50 dark:bg-dark-bg-tertiary border-b dark:border-dark-border-primary">
-                    <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text-primary">Roast Event Log</h3>
-                  </div>
-                <div className="overflow-x-auto text-sm sm:text-base">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50 dark:bg-dark-bg-tertiary">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-dark-text-primary">Time</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-dark-text-primary">Event</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-dark-text-primary">Fan</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-dark-text-primary">Heat</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-dark-text-primary">Temp °F</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-dark-text-primary">Note</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-dark-text-primary">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white dark:bg-dark-bg-secondary divide-y divide-gray-200 dark:divide-dark-border-primary">
-                      {events.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-dark-text-tertiary">
-                            No events logged yet. Start making adjustments!
-                          </td>
-                        </tr>
-                      ) : (
-                        events.map((event, index) => (
-                          <tr key={event.id} className={index % 2 === 0 ? 'bg-white dark:bg-dark-bg-secondary' : 'bg-gray-50 dark:bg-dark-bg-tertiary'}>
-                            <td className="px-4 py-2 text-sm font-mono text-gray-900 dark:text-dark-text-primary">{formatTime(event.t_offset_sec)}</td>
-                            <td className="px-4 py-2 text-sm">
-                              {editingEventId === event.id ? (
-                                <CustomDropdown
-                                  options={['SET', 'FIRST_CRACK', 'SECOND_CRACK', 'COOL', 'PAUSE', 'RESUME', 'END']}
-                                  value={editingFormData.kind}
-                                  onChange={(value) => setEditingFormData(prev => ({ ...prev, kind: value }))}
-                                  placeholder="Select event type..."
-                                  className="text-xs"
-                                />
-                              ) : (
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  event.kind === 'SET' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
-                                  event.kind === 'FIRST_CRACK' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
-                                  event.kind === 'SECOND_CRACK' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
-                                  event.kind === 'COOL' ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300' :
-                                  event.kind === 'END' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
-                                  event.kind === 'PAUSE' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
-                                  event.kind === 'RESUME' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                                  'bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-300'
-                                }`}>
-                                  {event.kind.replace('_', ' ')}
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-dark-text-primary">
-                              {editingEventId === event.id ? (
-                                <input
-                                  type="number"
-                                  min="0"
-                                  max="9"
-                                  value={editingFormData.fan_level}
-                                  onChange={(e) => setEditingFormData(prev => ({ ...prev, fan_level: e.target.value }))}
-                                  className="w-16 text-xs border border-gray-300 dark:border-dark-border-primary rounded px-2 py-1 bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
-                                />
-                              ) : (
-                                event.fan_level ?? '—'
-                              )}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-dark-text-primary">
-                              {editingEventId === event.id ? (
-                                <input
-                                  type="number"
-                                  min="0"
-                                  max="9"
-                                  value={editingFormData.heat_level}
-                                  onChange={(e) => setEditingFormData(prev => ({ ...prev, heat_level: e.target.value }))}
-                                  className="w-16 text-xs border border-gray-300 dark:border-dark-border-primary rounded px-2 py-1 bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
-                                />
-                              ) : (
-                                event.heat_level ?? '—'
-                              )}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-dark-text-primary">
-                              {editingEventId === event.id ? (
-                                <input
-                                  type="number"
-                                  step="0.1"
-                                  value={editingFormData.temp_f}
-                                  onChange={(e) => setEditingFormData(prev => ({ ...prev, temp_f: e.target.value }))}
-                                  className="w-20 text-xs border border-gray-300 dark:border-dark-border-primary rounded px-2 py-1 bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
-                                />
-                              ) : (
-                                event.temp_f ?? '—'
-                              )}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-dark-text-primary">
-                              {editingEventId === event.id ? (
-                                <input
-                                  type="text"
-                                  value={editingFormData.note}
-                                  onChange={(e) => setEditingFormData(prev => ({ ...prev, note: e.target.value }))}
-                                  className="w-full text-xs border border-gray-300 dark:border-dark-border-primary rounded px-2 py-1 bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
-                                  placeholder="Note"
-                                />
-                              ) : (
-                                event.note || '—'
-                              )}
-                            </td>
-                            <td className="px-4 py-2 text-sm">
-                              {editingEventId === event.id ? (
-                                <div className="flex space-x-1">
-                                  <button
-                                    onClick={() => saveEditedEvent(event.id)}
-                                    className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-xs font-medium"
-                                  >
-                                    ✅ Save
-                                  </button>
-                                  <button
-                                    onClick={cancelEdit}
-                                    className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 text-xs font-medium"
-                                  >
-                                    ❌ Cancel
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="flex space-x-2">
-                                  <button
-                                    onClick={() => startEditEvent(event)}
-                                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-xs font-medium"
-                                  >
-                                    ✏️ Edit
-                                  </button>
-                                  <button
-                                    onClick={() => deleteEvent(event.id)}
-                                    className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-xs font-medium"
-                                  >
-                                    🗑️ Delete
-                                  </button>
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                </div>
+                <EventsTable
+                  events={events}
+                  formatTime={formatTime}
+                  editingEventId={editingEventId}
+                  editingFormData={editingFormData}
+                  setEditingFormData={setEditingFormData}
+                  startEditEvent={startEditEvent}
+                  saveEditedEvent={saveEditedEvent}
+                  cancelEdit={cancelEdit}
+                  deleteEvent={deleteEvent}
+                />
                 
                 {/* Weather Component - Bottom Right */}
                 <div className="flex-shrink-0">

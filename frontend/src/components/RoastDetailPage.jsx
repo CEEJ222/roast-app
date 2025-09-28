@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import RoastCurveGraph from './shared/RoastCurveGraph';
 import EnvironmentalConditions from './shared/EnvironmentalConditions';
+import EventsTable from './during_roast/EventsTable';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'  // Local development
@@ -23,6 +24,10 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
     weight_after_g: roast?.weight_after_g || '',
     notes: roast?.notes || ''
   });
+  
+  // Event editing state
+  const [editingEventId, setEditingEventId] = useState(null);
+  const [editingEventFormData, setEditingEventFormData] = useState({});
 
   useEffect(() => {
     if (roast) {
@@ -155,6 +160,75 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  // Event editing functions
+  const startEditEvent = (event) => {
+    setEditingEventId(event.id);
+    setEditingEventFormData({
+      kind: event.kind,
+      fan_level: event.fan_level || '',
+      heat_level: event.heat_level || '',
+      temp_f: event.temp_f || '',
+      note: event.note || ''
+    });
+  };
+
+  const cancelEditEvent = () => {
+    setEditingEventId(null);
+    setEditingEventFormData({});
+  };
+
+  const saveEditedEvent = async (eventId) => {
+    try {
+      const token = await getAuthToken();
+      const response = await fetch(`${API_BASE}/roasts/${roast.id}/events/${eventId}`, {
+        method: 'PUT',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          kind: editingEventFormData.kind,
+          fan_level: editingEventFormData.fan_level ? parseInt(editingEventFormData.fan_level) : null,
+          heat_level: editingEventFormData.heat_level ? parseInt(editingEventFormData.heat_level) : null,
+          temp_f: editingEventFormData.temp_f ? parseFloat(editingEventFormData.temp_f) : null,
+          note: editingEventFormData.note || null
+        })
+      });
+
+      if (response.ok) {
+        setEditingEventId(null);
+        setEditingEventFormData({});
+        // Reload events to get updated data
+        loadRoastEvents();
+      } else {
+        throw new Error('Failed to update event');
+      }
+    } catch (error) {
+      console.error('Error updating event:', error);
+      setError(`Failed to update event: ${error.message}`);
+    }
+  };
+
+  const deleteEvent = async (eventId) => {
+    try {
+      const token = await getAuthToken();
+      const response = await fetch(`${API_BASE}/roasts/${roast.id}/events/${eventId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        // Reload events to get updated data
+        loadRoastEvents();
+      } else {
+        throw new Error('Failed to delete event');
+      }
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      setError(`Failed to delete event: ${error.message}`);
+    }
   };
 
   if (loading) {
@@ -462,53 +536,20 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
                 <div className="px-4 py-3 border-b dark:border-dark-border-primary">
                   <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">Roast Events</h3>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200 dark:divide-dark-border-primary">
-                    <thead className="bg-gray-50 dark:bg-dark-bg-tertiary">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">Time</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">Event</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">Fan</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">Heat</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">Temp</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">Note</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white dark:bg-dark-bg-secondary divide-y divide-gray-200 dark:divide-dark-border-primary">
-                      {events.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="px-4 py-8 text-center text-gray-500 dark:text-dark-text-tertiary">
-                            No events recorded for this roast.
-                          </td>
-                        </tr>
-                      ) : (
-                        events.map((event, index) => (
-                          <tr key={`event-${event.id || index}`} className={index % 2 === 0 ? 'bg-white dark:bg-dark-bg-secondary' : 'bg-gray-50 dark:bg-dark-bg-tertiary'}>
-                            <td className="px-4 py-2 text-sm font-mono text-gray-900 dark:text-dark-text-primary">{formatTime(event.t_offset_sec)}</td>
-                            <td className="px-4 py-2 text-sm">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                event.kind === 'SET' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
-                                event.kind === 'FIRST_CRACK' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
-                                event.kind === 'SECOND_CRACK' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
-                                event.kind === 'COOL' ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300' :
-                                event.kind === 'END' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
-                                'bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-300'
-                              }`}>
-                                {event.kind.replace('_', ' ')}
-                              </span>
-                            </td>
-                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-dark-text-primary">{event.fan_level || '—'}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-dark-text-primary">{event.heat_level || '—'}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-dark-text-primary">
-                              {event.temp_f ? `${event.temp_f}°F` : '—'}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-dark-text-primary">{event.note || '—'}</td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                <EventsTable
+                  events={events}
+                  formatTime={formatTime}
+                  editingEventId={isEditing ? editingEventId : null}
+                  editingFormData={editingEventFormData}
+                  setEditingFormData={setEditingEventFormData}
+                  startEditEvent={startEditEvent}
+                  saveEditedEvent={saveEditedEvent}
+                  cancelEdit={cancelEditEvent}
+                  deleteEvent={deleteEvent}
+                  readOnly={!isEditing}
+                  showActions={isEditing}
+                  className=""
+                />
               </div>
             </div>
           </div>
