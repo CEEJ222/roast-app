@@ -11,45 +11,53 @@ import logging
 logger = logging.getLogger(__name__)
 
 class EmbeddingGenerator:
-    """Generate embeddings for semantic search"""
+    """Generate embeddings for semantic search using FastEmbed"""
     
     def __init__(self):
-        self.openai_api_key = os.getenv("OPENAI_API_KEY")
-        self.embedding_model = "text-embedding-ada-002"
+        self.fastembed_model = None
+        self._initialize_fastembed()
+    
+    def _initialize_fastembed(self):
+        """Initialize FastEmbed model"""
+        try:
+            from fastembed import TextEmbedding
+            # Use a lightweight, free embedding model
+            self.fastembed_model = TextEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
+            logger.info("✅ FastEmbed initialized successfully")
+        except ImportError:
+            logger.warning("⚠️ FastEmbed not installed - install with: pip install fastembed")
+            self.fastembed_model = None
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize FastEmbed: {e}")
+            self.fastembed_model = None
     
     def generate_embedding(self, text: str) -> Optional[List[float]]:
-        """Generate embedding for a single text"""
-        if not self.openai_api_key:
-            logger.warning("⚠️ OpenAI API key not found - embeddings disabled")
+        """Generate embedding for a single text using FastEmbed"""
+        if not self.fastembed_model:
+            logger.warning("⚠️ FastEmbed not available - embeddings disabled")
             return None
         
         try:
-            import openai
-            openai.api_key = self.openai_api_key
-            
-            response = openai.embeddings.create(
-                model=self.embedding_model,
-                input=text
-            )
-            return response.data[0].embedding
+            # Generate embedding using FastEmbed
+            embeddings = list(self.fastembed_model.embed([text]))
+            if embeddings:
+                return embeddings[0].tolist()
+            return None
         except Exception as e:
-            logger.error(f"❌ Failed to generate embedding: {e}")
+            logger.error(f"❌ Failed to generate FastEmbed embedding: {e}")
             return None
     
+    
     def generate_embeddings_batch(self, texts: List[str]) -> List[Optional[List[float]]]:
-        """Generate embeddings for multiple texts"""
-        if not self.openai_api_key:
+        """Generate embeddings for multiple texts using FastEmbed"""
+        if not self.fastembed_model:
+            logger.warning("⚠️ FastEmbed not available - embeddings disabled")
             return [None] * len(texts)
         
         try:
-            import openai
-            openai.api_key = self.openai_api_key
-            
-            response = openai.embeddings.create(
-                model=self.embedding_model,
-                input=texts
-            )
-            return [data.embedding for data in response.data]
+            # Generate embeddings in batch for efficiency
+            embeddings = list(self.fastembed_model.embed(texts))
+            return [embedding.tolist() for embedding in embeddings]
         except Exception as e:
             logger.error(f"❌ Failed to generate batch embeddings: {e}")
             return [None] * len(texts)

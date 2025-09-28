@@ -10,12 +10,12 @@ def get_bean_profile_schema() -> Dict[str, Any]:
     return {
         "class": "BeanProfile",
         "description": "Coffee bean profiles with detailed characteristics for semantic search",
-        "vectorizer": "text2vec-openai",  # Use OpenAI embeddings
+        "vectorizer": "text2vec-transformers",  # Use local transformers
         "moduleConfig": {
-            "text2vec-openai": {
-                "model": "ada-002",
-                "modelVersion": "002",
-                "type": "text"
+            "text2vec-transformers": {
+                "model": "sentence-transformers/all-MiniLM-L6-v2",
+                "passageModel": "sentence-transformers/all-MiniLM-L6-v2",
+                "queryModel": "sentence-transformers/all-MiniLM-L6-v2"
             }
         },
         "properties": [
@@ -137,12 +137,12 @@ def get_roast_profile_schema() -> Dict[str, Any]:
     return {
         "class": "RoastProfile",
         "description": "Coffee roast profiles with detailed characteristics for semantic search",
-        "vectorizer": "text2vec-openai",
+        "vectorizer": "text2vec-transformers",
         "moduleConfig": {
-            "text2vec-openai": {
-                "model": "ada-002",
-                "modelVersion": "002",
-                "type": "text"
+            "text2vec-transformers": {
+                "model": "sentence-transformers/all-MiniLM-L6-v2",
+                "passageModel": "sentence-transformers/all-MiniLM-L6-v2",
+                "queryModel": "sentence-transformers/all-MiniLM-L6-v2"
             }
         },
         "properties": [
@@ -274,12 +274,12 @@ def get_roast_event_schema() -> Dict[str, Any]:
     return {
         "class": "RoastEvent",
         "description": "Individual roast events with temperature and time data",
-        "vectorizer": "text2vec-openai",
+        "vectorizer": "text2vec-transformers",
         "moduleConfig": {
-            "text2vec-openai": {
-                "model": "ada-002",
-                "modelVersion": "002",
-                "type": "text"
+            "text2vec-transformers": {
+                "model": "sentence-transformers/all-MiniLM-L6-v2",
+                "passageModel": "sentence-transformers/all-MiniLM-L6-v2",
+                "queryModel": "sentence-transformers/all-MiniLM-L6-v2"
             }
         },
         "properties": [

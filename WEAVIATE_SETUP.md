@@ -57,16 +57,16 @@ Create a `.env` file in the backend directory:
 WEAVIATE_URL=http://localhost:8080
 WEAVIATE_API_KEY=  # Optional, leave empty for local development
 
-# OpenAI Configuration (for embeddings)
-OPENAI_API_KEY=your_openai_api_key_here
+# FastEmbed Configuration (for embeddings - FREE!)
+# No API key needed - FastEmbed uses local models
 ```
 
 ### Weaviate Settings
 
 The Docker Compose file configures Weaviate with:
 - **Port**: 8080
-- **Modules**: text2vec-openai, text2vec-cohere, text2vec-huggingface
-- **Default vectorizer**: text2vec-openai
+- **Modules**: text2vec-transformers, text2vec-openai, text2vec-cohere, text2vec-huggingface
+- **Default vectorizer**: text2vec-transformers (FREE local model)
 - **Anonymous access**: Enabled (for local development)
 
 ## 📊 Schema Overview
@@ -222,9 +222,9 @@ const findSimilar = async (beanId) => {
    ```
 
 4. **Embeddings not working**:
-   - Check OPENAI_API_KEY is set
-   - Verify OpenAI API quota
-   - Check network connectivity
+   - Check FastEmbed is installed: `pip install fastembed`
+   - Verify model downloads correctly
+   - Check local disk space for model storage
 
 ### Debug Mode
 
@@ -265,11 +265,13 @@ WEAVIATE_API_KEY=your-secure-api-key
 
 ## 🎉 Next Steps
 
-1. **Set up OpenAI API key** for embeddings
+1. **Start Weaviate** with Docker Compose
 2. **Test semantic search** with your bean data
 3. **Integrate frontend** search interface
 4. **Add recommendation features**
 5. **Optimize for production** deployment
+
+**No API keys needed - FastEmbed is completely free!** 🎉
 
 ---
 
