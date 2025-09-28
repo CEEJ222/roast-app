@@ -5,6 +5,7 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [detectedQR, setDetectedQR] = useState(null);
   const videoRef = useRef(null);
   const readerRef = useRef(null);
 
@@ -41,6 +42,7 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
         (result, error) => {
           if (result) {
             console.log('QR Code detected:', result.getText());
+            // Auto-process the QR code
             handleQRCodeData(result.getText());
           }
           if (error && !error.message.includes('No MultiFormat Readers')) {
