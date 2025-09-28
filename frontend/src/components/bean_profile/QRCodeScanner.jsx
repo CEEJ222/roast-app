@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 
 const QRCodeScanner = ({ onScanSuccess, onClose }) => {
   const [scanning, setScanning] = useState(false);
@@ -7,7 +7,7 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
-  const scannerRef = useRef(null);
+  const qrCodeRef = useRef(null);
 
   useEffect(() => {
     if (scanning && permissionGranted) {
@@ -21,50 +21,76 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
 
   const startCamera = async () => {
     try {
-      // Create QR scanner with simple config
-      const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0,
-        videoConstraints: {
-          facingMode: 'environment',
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment', // Use back camera by default
           width: { ideal: 1280 },
           height: { ideal: 720 },
           frameRate: { ideal: 30 }
-        }
-      };
-
-      scannerRef.current = new Html5QrcodeScanner(
-        'qr-reader',
-        config,
-        false // verbose
-      );
-
-      // Start scanning
-      await scannerRef.current.render(
-        (decodedText) => {
-          handleQRCodeData(decodedText);
-        },
-        (errorMessage) => {
-          // Ignore common scanning errors
-          if (errorMessage && !errorMessage.includes('No QR code found')) {
-            console.log('QR scan error:', errorMessage);
+        } 
+      });
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        streamRef.current = stream;
+        
+        // Apply focus constraints to the video track
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack && videoTrack.getCapabilities) {
+          const capabilities = videoTrack.getCapabilities();
+          if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+            videoTrack.applyConstraints({
+              focusMode: 'continuous'
+            }).catch(err => console.log('Focus mode not supported:', err));
           }
         }
-      );
 
+        // Start QR code detection
+        startQRDetection();
+      }
     } catch (err) {
       setError('Camera access denied. Please allow camera permissions and try again.');
       setScanning(false);
     }
   };
 
+  const startQRDetection = () => {
+    if (qrCodeRef.current) {
+      qrCodeRef.current.clear();
+    }
+
+    qrCodeRef.current = new Html5Qrcode('qr-reader');
+    
+    const config = {
+      fps: 10,
+      qrbox: { width: 250, height: 250 }
+    };
+
+    qrCodeRef.current.start(
+      { facingMode: 'environment' },
+      config,
+      (decodedText) => {
+        handleQRCodeData(decodedText);
+      },
+      (errorMessage) => {
+        // Ignore common scanning errors
+        if (errorMessage && !errorMessage.includes('No QR code found')) {
+          console.log('QR scan error:', errorMessage);
+        }
+      }
+    ).catch(err => {
+      console.error('QR detection start error:', err);
+    });
+  };
+
   const stopCamera = () => {
-    if (scannerRef.current) {
-      scannerRef.current.clear().catch(err => {
-        console.error('Error stopping scanner:', err);
+    if (qrCodeRef.current) {
+      qrCodeRef.current.stop().then(() => {
+        qrCodeRef.current.clear();
+        qrCodeRef.current = null;
+      }).catch(err => {
+        console.error('Error stopping QR detection:', err);
       });
-      scannerRef.current = null;
     }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
@@ -110,6 +136,7 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
   const handleQRCodeData = async (qrData) => {
     try {
       setError(null);
+      stopCamera(); // Stop scanning once we get a result
       
       // Check if it's a Sweet Maria's URL
       if (qrData.includes('sweetmarias.com')) {
@@ -134,9 +161,19 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
         }
       } else {
         setError('This QR code is not from Sweet Maria\'s. Please scan a Sweet Maria\'s coffee bag.');
+        // Restart scanning after showing error
+        setTimeout(() => {
+          setError(null);
+          startCamera();
+        }, 3000);
       }
     } catch (err) {
       setError('Failed to parse QR code data: ' + err.message);
+      // Restart scanning after showing error
+      setTimeout(() => {
+        setError(null);
+        startCamera();
+      }, 3000);
     }
   };
 
@@ -184,11 +221,22 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
           </div>
         ) : (
           <div>
-            {/* QR Code Scanner Container */}
-            <div 
-              id="qr-reader" 
-              className="w-full mb-4 rounded-lg overflow-hidden"
-            />
+            <div className="relative mb-4">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className="w-full h-64 bg-gray-900 rounded-lg object-cover"
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-48 h-48 border-2 border-white border-dashed rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm">Point camera at QR code</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Hidden QR detection container */}
+            <div id="qr-reader" style={{ display: 'none' }}></div>
             
             {error && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
