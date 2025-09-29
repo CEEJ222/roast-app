@@ -1250,13 +1250,13 @@ try:
 except ImportError as e:
     print(f"⚠️ Could not import RAG API router: {e}")
 
-# Include HTML Parser router
+# Include AI Bean Analyzer router
 try:
-    from vendor_parsers.html_parser import router as html_parser_router
-    app.include_router(html_parser_router, prefix="/api", tags=["HTML Parser"])
-    print("✅ HTML Parser router included successfully")
+    from ai_bean_endpoints import router as ai_bean_router
+    app.include_router(ai_bean_router, prefix="/api", tags=["AI Bean Analyzer"])
+    print("✅ AI Bean Analyzer router included successfully")
 except ImportError as e:
-    print(f"⚠️ Could not import HTML Parser router: {e}")
+    print(f"⚠️ Could not import AI Bean Analyzer router: {e}")
 
 if __name__ == "__main__":
     import uvicorn

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import CustomDropdown from '../ux_ui/CustomDropdown';
 import URLInputModal from '../modals/URLInputModal';
-import HTMLParser from './HTMLParser';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'
@@ -57,7 +56,6 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
   const [loading, setLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [showURLModal, setShowURLModal] = useState(false);
-  const [showHTMLParser, setShowHTMLParser] = useState(false);
 
   // Reset dataLoaded when beanProfileId or initialData changes
   useEffect(() => {
@@ -116,8 +114,75 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
     setShowURLModal(true);
   };
 
-  const handleHTMLParser = () => {
-    setShowHTMLParser(true);
+  const handleAIAnalysis = async () => {
+    if (!formData.notes || formData.notes.trim().length < 10) {
+      alert('Please provide a detailed description of the coffee (at least 10 characters) for AI analysis');
+      return;
+    }
+    
+    try {
+      const token = await getAuthToken();
+      const response = await fetch(`${API_BASE}/api/ai/analyze-bean`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          description: formData.notes,
+          name: formData.name || '',
+          supplier_url: formData.supplier_url || '',
+          supplier_name: formData.supplier_name || ''
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          // Update form with AI analysis results
+          setFormData(prev => ({
+            ...prev,
+            name: data.bean_profile.name || prev.name,
+            origin: data.bean_profile.origin || prev.origin,
+            variety: data.bean_profile.variety || prev.variety,
+            process_method: data.bean_profile.process_method || prev.process_method,
+            bean_type: data.bean_profile.bean_type || prev.bean_type,
+            recommended_roast_levels: data.bean_profile.recommended_roast_levels || prev.recommended_roast_levels,
+            cupping_score: data.bean_profile.cupping_score || prev.cupping_score,
+            body_intensity: data.bean_profile.body_intensity || prev.body_intensity,
+            acidity_intensity: data.bean_profile.acidity_intensity || prev.acidity_intensity,
+            floral_intensity: data.bean_profile.floral_intensity || prev.floral_intensity,
+            honey_intensity: data.bean_profile.honey_intensity || prev.honey_intensity,
+            sugars_intensity: data.bean_profile.sugars_intensity || prev.sugars_intensity,
+            caramel_intensity: data.bean_profile.caramel_intensity || prev.caramel_intensity,
+            fruits_intensity: data.bean_profile.fruits_intensity || prev.fruits_intensity,
+            citrus_intensity: data.bean_profile.citrus_intensity || prev.citrus_intensity,
+            berry_intensity: data.bean_profile.berry_intensity || prev.berry_intensity,
+            cocoa_intensity: data.bean_profile.cocoa_intensity || prev.cocoa_intensity,
+            nuts_intensity: data.bean_profile.nuts_intensity || prev.nuts_intensity,
+            rustic_intensity: data.bean_profile.rustic_intensity || prev.rustic_intensity,
+            spice_intensity: data.bean_profile.spice_intensity || prev.spice_intensity,
+            flavor_notes: data.bean_profile.flavor_notes || prev.flavor_notes,
+            notes: data.bean_profile.notes || prev.notes
+          }));
+          
+          // Show AI recommendations
+          if (data.recommendations && data.recommendations.length > 0) {
+            alert(`🤖 AI Analysis Complete!\n\n✅ Extracted characteristics:\n• Origin: ${data.bean_profile.origin || 'Not detected'}\n• Variety: ${data.bean_profile.variety || 'Not detected'}\n• Process: ${data.bean_profile.process_method || 'Not detected'}\n• Bean Type: ${data.bean_profile.bean_type || 'Regular'}\n• Roast Levels: ${data.bean_profile.recommended_roast_levels?.join(', ') || 'Not detected'}\n\n💡 Recommendations:\n${data.recommendations.join('\n')}`);
+          } else {
+            alert(`🤖 AI Analysis Complete!\n\n✅ Extracted characteristics:\n• Origin: ${data.bean_profile.origin || 'Not detected'}\n• Variety: ${data.bean_profile.variety || 'Not detected'}\n• Process: ${data.bean_profile.process_method || 'Not detected'}\n• Bean Type: ${data.bean_profile.bean_type || 'Regular'}\n• Roast Levels: ${data.bean_profile.recommended_roast_levels?.join(', ') || 'Not detected'}\n\nForm updated with extracted characteristics!`);
+          }
+        } else {
+          alert(`AI analysis failed: ${data.error || 'Unknown error'}`);
+        }
+      } else {
+        const errorData = await response.json();
+        alert(`AI analysis failed: ${errorData.detail || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('AI analysis error:', error);
+      alert('Failed to analyze bean description. Please try again.');
+    }
   };
 
   const handleParseSupplierURL = async () => {
@@ -197,7 +262,6 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
       onDataUpdate(parsedData);
     }
     
-    setShowHTMLParser(false);
   };
 
   const handleURLSubmit = (url) => {
@@ -384,23 +448,40 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
           </div>
 
 
-          {/* Data Import Options - Moved to top */}
-          <div className="mb-6">
+          {/* AI Bean Analysis Section */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">🤖</span>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">AI Bean Analysis</h3>
+            </div>
+            
+            {/* Bean Description Field */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
+                Bean Description *
+              </label>
+              <textarea
+                value={formData.notes}
+                onChange={(e) => handleInputChange('notes', e.target.value)}
+                placeholder="Describe your coffee: origin, variety, process method, flavor notes, roast recommendations, etc. The more detail you provide, the better the AI analysis will be."
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-card dark:text-dark-text-primary"
+                rows={4}
+              />
+            </div>
+            
             <div className="flex justify-center">
-              {/* HTML Parser Button */}
+              {/* AI Analysis Button */}
               <button
-                onClick={handleHTMLParser}
-                className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-8 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+                onClick={handleAIAnalysis}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
               >
-                📄 Parse HTML Source
+                🤖 Analyze with AI
               </button>
             </div>
             
-            {formData.supplier_url && (
-              <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-2 text-center">
-                Supplier URL: {formData.supplier_url}
-              </p>
-            )}
+            <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-2 text-center">
+              AI will extract characteristics like origin, variety, process method, and flavor profile from your description
+            </p>
           </div>
 
           {/* Core Bean Characteristics */}
@@ -819,12 +900,6 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
         onSubmit={handleURLSubmit}
       />
 
-      {/* HTML Parser Modal */}
-      <HTMLParser
-        isOpen={showHTMLParser}
-        onClose={() => setShowHTMLParser(false)}
-        onParseComplete={handleHTMLParseComplete}
-      />
     </div>
   );
 };
