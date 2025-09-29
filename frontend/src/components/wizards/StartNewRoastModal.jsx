@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { COFFEE_REGIONS } from '../../data/coffeeRegions';
 import CustomDropdown from '../ux_ui/CustomDropdown';
 import BeanProfileForm from '../bean_profile/BeanProfileForm';
+import BeanProfileSearch from '../bean_profile/BeanProfileSearch';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'
@@ -18,25 +19,20 @@ const StartNewRoastModal = ({
   setLoading,
   setShowProfilePage
 }) => {
-  const [roastSetupStep, setRoastSetupStep] = useState('machine'); // 'machine', 'coffee', 'review'
+  const [roastSetupStep, setRoastSetupStep] = useState('machine'); // 'machine', 'bean-profile', 'roast-parameters', 'review'
+  const [beanProfileScreen, setBeanProfileScreen] = useState('choice'); // 'choice', 'select', 'create'
   const [formData, setFormData] = useState({
     selectedMachineId: '',
     model: 'SR800',
     hasExtension: false,
     address: '',
-    coffeeRegion: '',
-    coffeeSubregion: '',
-    coffeeType: '',
-    coffeeProcess: '',
     roastLevel: 'City',
     weightBefore: '',
     notes: '',
     selectedBeanProfile: null,
-    beanProfileMode: 'auto' // 'auto', 'select', 'create'
+    beanProfileMode: 'select' // 'select', 'create' - removed 'auto'
   });
   const [beanProfiles, setBeanProfiles] = useState([]);
-  const [showBeanProfileForm, setShowBeanProfileForm] = useState(false);
-  const [enhancingBeanProfileId, setEnhancingBeanProfileId] = useState(null);
 
   // Load bean profiles when modal opens
   useEffect(() => {
@@ -45,8 +41,6 @@ const StartNewRoastModal = ({
       setFormData(prev => ({
         ...prev,
         address: userProfile?.address || '',
-        coffeeRegion: userProfile?.coffee_region || '',
-        coffeeProcess: userProfile?.coffee_process || '',
         selectedMachineId: userMachines.length > 0 ? userMachines[0].id : ''
       }));
       loadBeanProfiles();
@@ -80,18 +74,40 @@ const StartNewRoastModal = ({
       setShowProfilePage(true);
       return;
     }
-    setRoastSetupStep('coffee');
+    setRoastSetupStep('bean-profile');
   };
 
-  const handleCoffeeSetup = () => {
-    if (!formData.coffeeRegion || !formData.coffeeProcess || !formData.weightBefore) {
+  const handleBeanProfileSetup = () => {
+    setRoastSetupStep('roast-parameters');
+  };
+
+  const handleBeanProfileChoice = (choice) => {
+    if (choice === 'select') {
+      setBeanProfileScreen('select');
+    } else if (choice === 'create') {
+      setBeanProfileScreen('create');
+    }
+  };
+
+  const handleBeanProfileBack = () => {
+    if (beanProfileScreen === 'select' || beanProfileScreen === 'create') {
+      setBeanProfileScreen('choice');
+    } else {
+      setRoastSetupStep('machine');
+    }
+  };
+
+  // Removed handleCoffeeDetailsSetup - no longer needed
+
+  const handleRoastParametersSetup = () => {
+    if (!formData.weightBefore) {
       return;
     }
     setRoastSetupStep('review');
   };
 
   const handleStartRoast = async () => {
-    if (!formData.coffeeRegion || !formData.coffeeProcess || !formData.weightBefore || userMachines.length === 0) {
+    if (!formData.selectedBeanProfile || !formData.weightBefore || userMachines.length === 0) {
       return;
     }
 
@@ -103,14 +119,10 @@ const StartNewRoastModal = ({
     const requestData = {
       machine_label: machineLabel,
       address: formData.address,
-      coffee_region: formData.coffeeRegion,
-      coffee_subregion: formData.coffeeSubregion,
-      coffee_type: formData.coffeeType,
-      coffee_process: formData.coffeeProcess,
+      bean_profile_id: formData.selectedBeanProfile,
       desired_roast_level: formData.roastLevel,
       weight_before_g: parseFloat(formData.weightBefore) || null,
-      notes: formData.notes,
-      bean_profile_id: formData.selectedBeanProfile || null
+      notes: formData.notes || null
     };
     console.log('Starting roast with data:', requestData);
     
@@ -147,10 +159,12 @@ const StartNewRoastModal = ({
   };
 
   const handleBack = () => {
-    if (roastSetupStep === 'coffee') {
-      setRoastSetupStep('machine');
+    if (roastSetupStep === 'bean-profile') {
+      handleBeanProfileBack();
+    } else if (roastSetupStep === 'roast-parameters') {
+      setRoastSetupStep('bean-profile');
     } else if (roastSetupStep === 'review') {
-      setRoastSetupStep('coffee');
+      setRoastSetupStep('roast-parameters');
     }
   };
 
@@ -158,7 +172,7 @@ const StartNewRoastModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
+      <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl w-full max-w-5xl max-h-[98vh] sm:max-h-[98vh] overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-6 py-4 text-white">
           <div className="flex justify-between items-center">
@@ -177,50 +191,68 @@ const StartNewRoastModal = ({
 
         {/* Progress Steps */}
         <div className="bg-gray-50 dark:bg-dark-bg-tertiary px-6 py-4 border-b dark:border-dark-border-primary">
-          <div className="flex items-center justify-center space-x-8">
+          <div className="flex items-center justify-center space-x-4">
             <div className="flex items-center">
               <div className="flex items-center justify-center">
-                <span className={`text-2xl ${
+                <span className={`text-xl ${
                   roastSetupStep === 'machine' ? 'text-indigo-600' : 
-                  roastSetupStep === 'coffee' || roastSetupStep === 'review' ? 'text-green-600' : 'text-gray-400'
+                  ['bean-profile', 'coffee-details', 'roast-parameters', 'review'].includes(roastSetupStep) ? 'text-green-600' : 'text-gray-400'
                 }`}>
                   ⚙️
                 </span>
               </div>
-              <span className={`ml-2 text-sm font-medium ${
+              <span className={`ml-2 text-xs font-medium ${
                 roastSetupStep === 'machine' ? 'text-indigo-600' : 
-                roastSetupStep === 'coffee' || roastSetupStep === 'review' ? 'text-green-600' : 'text-gray-500'
+                ['bean-profile', 'coffee-details', 'roast-parameters', 'review'].includes(roastSetupStep) ? 'text-green-600' : 'text-gray-500'
               }`}>
-                Machine Setup
+                Machine
               </span>
             </div>
-            <div className="w-8 h-0.5 bg-gray-300"></div>
+            <div className="w-6 h-0.5 bg-gray-300"></div>
             <div className="flex items-center">
               <div className="flex items-center justify-center">
-                <span className={`text-2xl ${
-                  roastSetupStep === 'coffee' ? 'text-indigo-600' : 
-                  roastSetupStep === 'review' ? 'text-green-600' : 'text-gray-400'
+                <span className={`text-xl ${
+                  roastSetupStep === 'bean-profile' ? 'text-indigo-600' : 
+                  ['coffee-details', 'roast-parameters', 'review'].includes(roastSetupStep) ? 'text-green-600' : 'text-gray-400'
                 }`}>
                   ☕
                 </span>
               </div>
-              <span className={`ml-2 text-sm font-medium ${
-                roastSetupStep === 'coffee' ? 'text-indigo-600' : 
-                roastSetupStep === 'review' ? 'text-green-600' : 'text-gray-500'
+              <span className={`ml-2 text-xs font-medium ${
+                roastSetupStep === 'bean-profile' ? 'text-indigo-600' : 
+                ['coffee-details', 'roast-parameters', 'review'].includes(roastSetupStep) ? 'text-green-600' : 'text-gray-500'
               }`}>
-                Coffee Details
+                Bean Profile
               </span>
             </div>
-            <div className="w-8 h-0.5 bg-gray-300"></div>
+            <div className="w-6 h-0.5 bg-gray-300"></div>
+            <div className="w-6 h-0.5 bg-gray-300"></div>
             <div className="flex items-center">
               <div className="flex items-center justify-center">
-                <span className={`text-2xl ${
+                <span className={`text-xl ${
+                  roastSetupStep === 'roast-parameters' ? 'text-indigo-600' : 
+                  roastSetupStep === 'review' ? 'text-green-600' : 'text-gray-400'
+                }`}>
+                  ⚙️
+                </span>
+              </div>
+              <span className={`ml-2 text-xs font-medium ${
+                roastSetupStep === 'roast-parameters' ? 'text-indigo-600' : 
+                roastSetupStep === 'review' ? 'text-green-600' : 'text-gray-500'
+              }`}>
+                Roast Parameters
+              </span>
+            </div>
+            <div className="w-6 h-0.5 bg-gray-300"></div>
+            <div className="flex items-center">
+              <div className="flex items-center justify-center">
+                <span className={`text-xl ${
                   roastSetupStep === 'review' ? 'text-indigo-600' : 'text-gray-400'
                 }`}>
                   ✓
                 </span>
               </div>
-              <span className={`ml-2 text-sm font-medium ${
+              <span className={`ml-2 text-xs font-medium ${
                 roastSetupStep === 'review' ? 'text-indigo-600' : 'text-gray-500'
               }`}>
                 Review & Start
@@ -230,7 +262,7 @@ const StartNewRoastModal = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 max-h-[60vh] overflow-y-auto">
+        <div className="p-6 max-h-[80vh] overflow-y-auto">
           {roastSetupStep === 'machine' && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -338,140 +370,171 @@ const StartNewRoastModal = ({
             </div>
           )}
 
-          {roastSetupStep === 'coffee' && (
+          {/* Bean Profile Step */}
+          {roastSetupStep === 'bean-profile' && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Coffee Selection */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">Coffee Selection</h3>
+              {/* Choice Screen - Show when user has existing profiles */}
+              {beanProfileScreen === 'choice' && beanProfiles.length > 0 && (
+                <div className="space-y-8">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Bean Profile Selection</h3>
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-6">
+                      You have {beanProfiles.length} existing bean profile{beanProfiles.length !== 1 ? 's' : ''}. How would you like to proceed?
+                    </p>
+                  </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
-                      Coffee Region *
-                    </label>
-                    <CustomDropdown
-                      options={COFFEE_REGIONS}
-                      value={formData.coffeeRegion}
-                      onChange={(value) => handleInputChange('coffeeRegion', value)}
-                      placeholder="Select a region..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
-                      Processing Method *
-                    </label>
-                    <CustomDropdown
-                      options={['Washed', 'Natural', 'Honey', 'Anaerobic', 'Other']}
-                      value={formData.coffeeProcess}
-                      onChange={(value) => handleInputChange('coffeeProcess', value)}
-                      placeholder="Select process..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
-                      Origin (Subregion)
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.coffeeSubregion}
-                      onChange={(e) => handleInputChange('coffeeSubregion', e.target.value)}
-                      placeholder="e.g., Yirgacheffe, Sidama, etc."
-                      className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
-                    />
-                  </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
-                    Coffee Type
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.coffeeType}
-                    onChange={(e) => handleInputChange('coffeeType', e.target.value)}
-                    placeholder="e.g., Bourbon, Typica, Gesha"
-                    className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
-                  />
-                </div>
-
-                  {/* Create Detailed Bean Profile Card */}
-                  <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <span className="text-2xl mr-3">✨</span>
-                      <div>
-                        <h4 className="text-sm font-medium text-purple-800 dark:text-purple-200">Create Detailed Bean Profile</h4>
-                        <p className="text-sm text-purple-700 dark:text-purple-300 mt-1">
-                          Add detailed bean information for better AI coaching and roast recommendations.
-                        </p>
-                      <button
-                        onClick={async () => {
-                          console.log('DEBUG: Create Bean Profile clicked');
-                          console.log('DEBUG: Current formData:', formData);
-                          console.log('DEBUG: selectedBeanProfile:', formData.selectedBeanProfile);
-                          
-                          // Check if required fields are filled
-                          if (!formData.coffeeRegion || !formData.coffeeProcess) {
-                            alert('Please fill in Coffee Region and Processing Method before creating a detailed bean profile.');
-                            return;
-                          }
-
-                          // If we don't have a selected bean profile, create a basic one first
-                          if (!formData.selectedBeanProfile) {
-                            console.log('DEBUG: Creating new basic bean profile');
-                            try {
-                              const token = await getAuthToken();
-                              const response = await fetch(`${API_BASE}/bean-profiles`, {
-                                method: 'POST',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                  'Authorization': `Bearer ${token}`
-                                },
-                                body: JSON.stringify({
-                                  name: `${formData.coffeeRegion} ${formData.coffeeProcess} - ${new Date().toLocaleDateString()}`,
-                                  origin: formData.coffeeRegion,
-                                  variety: formData.coffeeType,
-                                  process_method: formData.coffeeProcess,
-                                  recommended_roast_levels: formData.roastLevel ? [formData.roastLevel] : [],
-                                  profile_completeness: 'basic'
-                                })
-                              });
-
-                              if (response.ok) {
-                                const newProfile = await response.json();
-                                setFormData(prev => ({
-                                  ...prev,
-                                  selectedBeanProfile: newProfile.id
-                                }));
-                                setEnhancingBeanProfileId(newProfile.id);
-                              } else {
-                                console.error('Failed to create basic bean profile');
-                                alert('Failed to create basic bean profile');
-                                return;
-                              }
-                            } catch (error) {
-                              console.error('Error creating basic bean profile:', error);
-                              alert('Error creating basic bean profile');
-                              return;
-                            }
-                          } else {
-                            setEnhancingBeanProfileId(formData.selectedBeanProfile);
-                          }
-                          setShowBeanProfileForm(true);
-                        }}
-                        className="mt-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-                      >
-                        {formData.selectedBeanProfile ? 'Enhance Bean Profile' : '+ Create Bean Profile'}
-                      </button>
+                  <div className="space-y-6">
+                    <button
+                      onClick={() => handleBeanProfileChoice('select')}
+                      className="w-full p-4 border-2 border-gray-200 dark:border-dark-border-primary rounded-lg hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors text-left"
+                    >
+                      <div className="flex items-center">
+                        <span className="text-2xl mr-3">📋</span>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-dark-text-primary">Select Existing Profile</div>
+                          <div className="text-sm text-gray-500 dark:text-dark-text-secondary">Choose from your saved bean profiles</div>
+                        </div>
                       </div>
-                    </div>
+                    </button>
+                    
+                    <button
+                      onClick={() => handleBeanProfileChoice('create')}
+                      className="w-full p-4 border-2 border-gray-200 dark:border-dark-border-primary rounded-lg hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors text-left"
+                    >
+                      <div className="flex items-center">
+                        <span className="text-2xl mr-3">✨</span>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-dark-text-primary">Create New Profile</div>
+                          <div className="text-sm text-gray-500 dark:text-dark-text-secondary">Add a new bean profile with detailed information</div>
+                        </div>
+                      </div>
+                    </button>
+                    
+                    {/* Quick Start option removed - bean profiles must be created explicitly */}
                   </div>
                 </div>
+              )}
 
-                {/* Roast Parameters */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">Roast Parameters</h3>
+              {/* Choice Screen - Show when user has no existing profiles */}
+              {beanProfileScreen === 'choice' && beanProfiles.length === 0 && (
+                <div className="space-y-8">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Bean Profile Selection</h3>
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-6">
+                      You don't have any saved bean profiles yet. How would you like to proceed?
+                    </p>
+                  </div>
                   
+                  <div className="space-y-6">
+                    <button
+                      onClick={() => handleBeanProfileChoice('create')}
+                      className="w-full p-4 border-2 border-gray-200 dark:border-dark-border-primary rounded-lg hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors text-left"
+                    >
+                      <div className="flex items-center">
+                        <span className="text-2xl mr-3">✨</span>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-dark-text-primary">Create New Profile</div>
+                          <div className="text-sm text-gray-500 dark:text-dark-text-secondary">Add a detailed bean profile for better AI coaching</div>
+                        </div>
+                      </div>
+                    </button>
+                    
+                    {/* Quick Start option removed - bean profiles must be created explicitly */}
+                  </div>
+                </div>
+              )}
+
+              {/* Select Existing Profile Screen */}
+              {beanProfileScreen === 'select' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Select Bean Profile</h3>
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-6">
+                      Choose from your existing bean profiles:
+                    </p>
+                  </div>
+                  
+                  <div className="min-h-[400px]">
+                  <BeanProfileSearch
+                    beanProfiles={beanProfiles}
+                    onSelect={(profile) => {
+                      if (profile) {
+                        setFormData(prev => ({
+                          ...prev,
+                          selectedBeanProfile: profile.id,
+                          beanProfileMode: 'select'
+                        }));
+                        // Go directly to roast parameters
+                        setRoastSetupStep('roast-parameters');
+                      } else {
+                        handleInputChange('selectedBeanProfile', null);
+                        handleInputChange('beanProfileMode', 'select');
+                      }
+                    }}
+                    selectedProfileId={formData.selectedBeanProfile}
+                    placeholder="Search bean profiles..."
+                    showDetails={true}
+                  />
+                  </div>
+                </div>
+              )}
+
+              {/* Create New Profile Screen */}
+              {beanProfileScreen === 'create' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Create New Bean Profile</h3>
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-6">
+                      Create a detailed bean profile for better AI coaching and roast recommendations.
+                    </p>
+                  </div>
+                  
+                  <div className="min-h-[500px]">
+                    <BeanProfileForm
+                      isOpen={true}
+                      onClose={() => {
+                        setBeanProfileScreen('choice');
+                      }}
+                      onSave={(profile) => {
+                        // Update the bean profiles list
+                        setBeanProfiles(prev => [profile, ...prev]);
+                        // Set the selected profile and advance to next step
+                        setFormData(prev => ({
+                          ...prev,
+                          selectedBeanProfile: profile.id,
+                          beanProfileMode: 'create'
+                        }));
+                        // Skip coffee details step and go directly to roast parameters
+                        setRoastSetupStep('roast-parameters');
+                      }}
+                      onDataUpdate={(updatedData) => {
+                        // Update the parent form data when HTML parsing completes
+                        setFormData(prev => ({
+                          ...prev,
+                          coffeeRegion: updatedData.origin || prev.coffeeRegion,
+                          coffeeType: updatedData.variety || prev.coffeeType,
+                          coffeeProcess: updatedData.process_method || prev.coffeeProcess,
+                          coffeeSubregion: updatedData.origin || prev.coffeeSubregion
+                        }));
+                      }}
+                      getAuthToken={getAuthToken}
+                      beanProfileId={null} // This is a new profile
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Coffee Details Step removed - data now comes from bean profiles */}
+
+          {/* Roast Parameters Step */}
+          {roastSetupStep === 'roast-parameters' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Roast Configuration</h3>
+                
+                <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
                       Desired Roast Level
@@ -497,30 +560,18 @@ const StartNewRoastModal = ({
                       step="1"
                       required
                       className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary ${
-                        !formData.weightBefore && roastSetupStep === 'coffee' 
+                        !formData.weightBefore && roastSetupStep === 'roast-parameters' 
                           ? 'border-red-500 focus:ring-red-500' 
                           : 'border-gray-300 dark:border-dark-border-primary focus:ring-indigo-500'
                       }`}
                     />
-                    {!formData.weightBefore && roastSetupStep === 'coffee' && (
+                    {!formData.weightBefore && roastSetupStep === 'roast-parameters' && (
                       <p className="text-sm text-red-500 dark:text-red-400 mt-1">
                         Weight is required to start the roast
                       </p>
                     )}
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
-                      Notes
-                    </label>
-                    <textarea
-                      value={formData.notes}
-                      onChange={(e) => handleInputChange('notes', e.target.value)}
-                      placeholder="Any special notes for this roast..."
-                      rows={3}
-                      className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
-                    />
-                  </div>
                 </div>
               </div>
             </div>
@@ -552,22 +603,34 @@ const StartNewRoastModal = ({
                   </div>
                 </div>
 
-                {/* Coffee Details */}
+                {/* Bean Profile Details */}
                 <div className="space-y-4">
                   <div className="bg-gray-50 dark:bg-dark-bg-tertiary rounded-lg p-4">
-                    <h4 className="font-medium text-gray-900 dark:text-dark-text-primary mb-3">Coffee Details</h4>
+                    <h4 className="font-medium text-gray-900 dark:text-dark-text-primary mb-3">Bean Profile</h4>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-dark-text-secondary">Region:</span>
-                        <span className="text-gray-900 dark:text-dark-text-primary">{formData.coffeeRegion || 'Not selected'}</span>
+                        <span className="text-gray-600 dark:text-dark-text-secondary">Profile:</span>
+                        <span className="text-gray-900 dark:text-dark-text-primary">
+                          {beanProfiles.find(p => p.id === formData.selectedBeanProfile)?.name || 'Not selected'}
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-dark-text-secondary">Type:</span>
-                        <span className="text-gray-900 dark:text-dark-text-primary">{formData.coffeeType || 'Not specified'}</span>
+                        <span className="text-gray-600 dark:text-dark-text-secondary">Origin:</span>
+                        <span className="text-gray-900 dark:text-dark-text-primary">
+                          {beanProfiles.find(p => p.id === formData.selectedBeanProfile)?.origin || 'Not specified'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-dark-text-secondary">Variety:</span>
+                        <span className="text-gray-900 dark:text-dark-text-primary">
+                          {beanProfiles.find(p => p.id === formData.selectedBeanProfile)?.variety || 'Not specified'}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600 dark:text-dark-text-secondary">Process:</span>
-                        <span className="text-gray-900 dark:text-dark-text-primary">{formData.coffeeProcess || 'Not selected'}</span>
+                        <span className="text-gray-900 dark:text-dark-text-primary">
+                          {beanProfiles.find(p => p.id === formData.selectedBeanProfile)?.process_method || 'Not specified'}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600 dark:text-dark-text-secondary">Roast Level:</span>
@@ -577,15 +640,6 @@ const StartNewRoastModal = ({
                         <span className="text-gray-600 dark:text-dark-text-secondary">Weight:</span>
                         <span className="text-gray-900 dark:text-dark-text-primary">
                           {formData.weightBefore ? `${formData.weightBefore}g` : 'Not specified'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-dark-text-secondary">Bean Profile:</span>
-                        <span className="text-gray-900 dark:text-dark-text-primary">
-                          {formData.beanProfileMode === 'auto' && '🚀 Quick Start (auto-create)'}
-                          {formData.beanProfileMode === 'select' && formData.selectedBeanProfile && '📋 Selected Profile'}
-                          {formData.beanProfileMode === 'select' && !formData.selectedBeanProfile && '📋 No Profile Selected'}
-                          {formData.beanProfileMode === 'create' && '✨ Create New Profile'}
                         </span>
                       </div>
                     </div>
@@ -628,14 +682,34 @@ const StartNewRoastModal = ({
                 disabled={userMachines.length === 0}
                 className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               >
-                Next: Coffee Details
+                Next: Bean Profile
               </button>
             )}
             
-            {roastSetupStep === 'coffee' && (
+            {roastSetupStep === 'bean-profile' && beanProfileScreen === 'choice' && (
+              <div className="text-sm text-gray-500 dark:text-dark-text-secondary">
+                Choose an option above to continue
+              </div>
+            )}
+            
+            {roastSetupStep === 'bean-profile' && beanProfileScreen === 'select' && (
+              <div className="text-sm text-gray-500 dark:text-dark-text-secondary">
+                Select a profile to continue
+              </div>
+            )}
+            
+            {roastSetupStep === 'bean-profile' && beanProfileScreen === 'create' && (
+              <div className="text-sm text-gray-500 dark:text-dark-text-secondary">
+                Click the button above to create a profile
+              </div>
+            )}
+            
+            {/* Coffee details step removed */}
+            
+            {roastSetupStep === 'roast-parameters' && (
               <button
-                onClick={handleCoffeeSetup}
-                disabled={!formData.coffeeRegion || !formData.coffeeProcess || !formData.weightBefore}
+                onClick={handleRoastParametersSetup}
+                disabled={!formData.weightBefore}
                 className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               >
                 Next: Review
@@ -645,7 +719,7 @@ const StartNewRoastModal = ({
             {roastSetupStep === 'review' && (
               <button
                 onClick={handleStartRoast}
-                disabled={!formData.coffeeRegion || !formData.coffeeProcess || !formData.weightBefore || userMachines.length === 0}
+                disabled={!formData.selectedBeanProfile || !formData.weightBefore || userMachines.length === 0}
                 className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               >
                 🏁 Start Roast Session
@@ -655,35 +729,6 @@ const StartNewRoastModal = ({
         </div>
       </div>
 
-      {/* Bean Profile Form Modal */}
-      {showBeanProfileForm && (
-        <BeanProfileForm
-          isOpen={showBeanProfileForm}
-          onClose={() => {
-            setShowBeanProfileForm(false);
-            setEnhancingBeanProfileId(null);
-          }}
-          onSave={(profile) => {
-            // If we were enhancing an existing profile, update it in the list
-            if (enhancingBeanProfileId) {
-              setBeanProfiles(prev => prev.map(p => 
-                p.id === enhancingBeanProfileId ? profile : p
-              ));
-            } else {
-              // This is a new profile creation
-              setBeanProfiles(prev => [profile, ...prev]);
-              setFormData(prev => ({
-                ...prev,
-                selectedBeanProfile: profile.id
-              }));
-            }
-            setShowBeanProfileForm(false);
-            setEnhancingBeanProfileId(null);
-          }}
-          getAuthToken={getAuthToken}
-          beanProfileId={enhancingBeanProfileId}
-        />
-      )}
     </div>
   );
 };

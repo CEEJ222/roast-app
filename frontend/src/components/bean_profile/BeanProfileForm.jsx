@@ -8,13 +8,14 @@ const API_BASE = import.meta.env.DEV
   ? 'http://localhost:8000'
   : 'https://roast-backend-production-8883.up.railway.app';
 
-const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthToken, beanProfileId = null }) => {
+const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthToken, beanProfileId = null, onDataUpdate = null }) => {
   const [formData, setFormData] = useState({
     // Basic Info (from roast form)
     name: '',
     origin: '', // This will be pre-populated from roast form
     variety: '', // This will be pre-populated from roast form  
     process_method: '', // This will be pre-populated from roast form
+    bean_type: '', // NEW: Bean type (Regular, Peaberry, Maragogype, etc.)
     recommended_roast_levels: [], // This will be pre-populated from roast form
     notes: '',
     supplier_url: '',
@@ -119,6 +120,44 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
     setShowHTMLParser(true);
   };
 
+  const handleParseSupplierURL = async () => {
+    if (!formData.supplier_url) {
+      alert('Please enter a supplier URL first');
+      return;
+    }
+    
+    try {
+      const token = await getAuthToken();
+      const response = await fetch(`${API_BASE}/bean-profiles/parse-supplier`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ url: formData.supplier_url })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to parse supplier URL');
+      }
+      
+      const result = await response.json();
+      if (result.success) {
+        // Update form with parsed data
+        setFormData(prev => ({
+          ...prev,
+          ...result.data
+        }));
+        alert('Successfully parsed supplier data!');
+      } else {
+        alert('Failed to parse supplier data');
+      }
+    } catch (error) {
+      console.error('Error parsing supplier URL:', error);
+      alert('Error parsing supplier URL: ' + error.message);
+    }
+  };
+
   const handleHTMLParseComplete = (parsedData) => {
     console.log('HTML parsed data:', parsedData);
     
@@ -129,6 +168,7 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
       origin: parsedData.origin || prev.origin,
       variety: parsedData.variety || prev.variety,
       process_method: parsedData.process_method || prev.process_method,
+      bean_type: parsedData.bean_type || prev.bean_type,  // NEW: Include bean_type
       screen_size: parsedData.screen_size || prev.screen_size,
       density_g_ml: parsedData.density_g_ml || prev.density_g_ml,
       altitude_m: parsedData.altitude_m || prev.altitude_m,
@@ -151,6 +191,11 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
       supplier_name: parsedData.supplier_name || prev.supplier_name,
       recommended_roast_levels: parsedData.recommended_roast_levels || prev.recommended_roast_levels
     }));
+    
+    // Notify parent component about the parsed data
+    if (onDataUpdate) {
+      onDataUpdate(parsedData);
+    }
     
     setShowHTMLParser(false);
   };
@@ -323,31 +368,6 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
         </div>
 
         <div className="p-6 overflow-y-auto flex-1">
-          {/* Basic Info from Roast Form */}
-          <div className="mb-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-2xl">📋</span>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">Basic Info (from Roast Form)</h3>
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="font-medium text-gray-700 dark:text-dark-text-primary">Origin:</span>
-                <span className="ml-2 text-gray-600 dark:text-dark-text-secondary">{formData.origin || 'Not specified'}</span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-700 dark:text-dark-text-primary">Variety:</span>
-                <span className="ml-2 text-gray-600 dark:text-dark-text-secondary">{formData.variety || 'Not specified'}</span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-700 dark:text-dark-text-primary">Process:</span>
-                <span className="ml-2 text-gray-600 dark:text-dark-text-secondary">{formData.process_method || 'Not specified'}</span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-700 dark:text-dark-text-primary">Roast Level:</span>
-                <span className="ml-2 text-gray-600 dark:text-dark-text-secondary">{formData.recommended_roast_levels[0] || 'Not specified'}</span>
-              </div>
-            </div>
-          </div>
 
           {/* Bean Name */}
           <div className="mb-6">
@@ -363,43 +383,180 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
             />
           </div>
 
-          {/* Data Import Options */}
+
+          {/* Data Import Options - Moved to top */}
           <div className="mb-6">
-            <div className="grid grid-cols-2 gap-4">
-              {/* Manual URL Input Button */}
-              <button
-                onClick={handleManualURLInput}
-                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
-              >
-                🔗 Enter Supplier URL
-              </button>
-              
+            <div className="flex justify-center">
               {/* HTML Parser Button */}
               <button
                 onClick={handleHTMLParser}
-                className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+                className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-8 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
               >
                 📄 Parse HTML Source
               </button>
             </div>
             
             {formData.supplier_url && (
-              <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-2">
+              <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-2 text-center">
                 Supplier URL: {formData.supplier_url}
               </p>
             )}
           </div>
+
+          {/* Core Bean Characteristics */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">☕</span>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">Core Bean Characteristics</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                    {/* Origin */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
+                            Origin (Country/Region) *
+                        </label>
+                        <CustomDropdown
+                            options={[
+                                { value: '', label: 'Select origin' },
+                                { value: 'Ethiopia', label: 'Ethiopia' },
+                                { value: 'Colombia', label: 'Colombia' },
+                                { value: 'Guatemala', label: 'Guatemala' },
+                                { value: 'Costa Rica', label: 'Costa Rica' },
+                                { value: 'Kenya', label: 'Kenya' },
+                                { value: 'Brazil', label: 'Brazil' },
+                                { value: 'Peru', label: 'Peru' },
+                                { value: 'Honduras', label: 'Honduras' },
+                                { value: 'Nicaragua', label: 'Nicaragua' },
+                                { value: 'El Salvador', label: 'El Salvador' },
+                                { value: 'Panama', label: 'Panama' },
+                                { value: 'Mexico', label: 'Mexico' },
+                                { value: 'Rwanda', label: 'Rwanda' },
+                                { value: 'Burundi', label: 'Burundi' },
+                                { value: 'Tanzania', label: 'Tanzania' },
+                                { value: 'Uganda', label: 'Uganda' },
+                                { value: 'Yemen', label: 'Yemen' },
+                                { value: 'Indonesia', label: 'Indonesia' },
+                                { value: 'Papua New Guinea', label: 'Papua New Guinea' },
+                                { value: 'Other', label: 'Other' }
+                            ]}
+                            value={formData.origin}
+                            onChange={(value) => handleInputChange('origin', value)}
+                            placeholder="Select origin..."
+                            className="w-full"
+                        />
+                    </div>
+
+              {/* Variety */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
+                  Variety/Cultivar *
+                </label>
+                <CustomDropdown
+                  options={[
+                    { value: '', label: 'Select variety' },
+                    { value: 'Bourbon', label: 'Bourbon' },
+                    { value: 'Typica', label: 'Typica' },
+                    { value: 'Caturra', label: 'Caturra' },
+                    { value: 'Catuai', label: 'Catuai' },
+                    { value: 'Pacamara', label: 'Pacamara' },
+                    { value: 'Maragogype', label: 'Maragogype' },
+                    { value: 'Geisha', label: 'Geisha' },
+                    { value: 'SL28', label: 'SL28' },
+                    { value: 'SL34', label: 'SL34' },
+                    { value: 'Heirloom', label: 'Heirloom' },
+                    { value: 'Other', label: 'Other' }
+                  ]}
+                  value={formData.variety}
+                  onChange={(value) => handleInputChange('variety', value)}
+                  placeholder="Select variety..."
+                  className="w-full"
+                />
+              </div>
+
+              {/* Process Method */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
+                  Process Method *
+                </label>
+                <CustomDropdown
+                  options={[
+                    { value: '', label: 'Select process' },
+                    { value: 'Washed', label: 'Washed (Fully Washed)' },
+                    { value: 'Natural', label: 'Natural (Dry Process)' },
+                    { value: 'Honey', label: 'Honey Process' },
+                    { value: 'Semi-Washed', label: 'Semi-Washed' },
+                    { value: 'Anaerobic', label: 'Anaerobic' },
+                    { value: 'Carbonic Maceration', label: 'Carbonic Maceration' },
+                    { value: 'Other', label: 'Other' }
+                  ]}
+                  value={formData.process_method}
+                  onChange={(value) => handleInputChange('process_method', value)}
+                  placeholder="Select process..."
+                  className="w-full"
+                />
+              </div>
+
+              {/* Bean Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
+                  Bean Type
+                </label>
+                <CustomDropdown
+                  options={[
+                    { value: '', label: 'Select bean type' },
+                    { value: 'Regular', label: 'Regular' },
+                    { value: 'Peaberry', label: 'Peaberry' },
+                    { value: 'Maragogype', label: 'Maragogype (Large)' },
+                    { value: 'Mixed', label: 'Mixed' }
+                  ]}
+                  value={formData.bean_type || ''}
+                  onChange={(value) => handleInputChange('bean_type', value)}
+                  placeholder="Select bean type..."
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Recommended Roast Levels */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
+              Recommended Roast Levels
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {['City', 'City+', 'Full City', 'Full City+'].map(level => (
+                <label key={level} className="flex items-center space-x-2 p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.recommended_roast_levels?.includes(level) || false}
+                    onChange={(e) => {
+                      const currentLevels = formData.recommended_roast_levels || [];
+                      if (e.target.checked) {
+                        handleInputChange('recommended_roast_levels', [...currentLevels, level]);
+                      } else {
+                        handleInputChange('recommended_roast_levels', currentLevels.filter(l => l !== level));
+                      }
+                    }}
+                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-dark-text-primary">{level}</span>
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-gray-600 dark:text-dark-text-secondary mt-1">Select the roast levels recommended for this bean</p>
+          </div>
+
 
           {/* Tier 1: Must Have - Critical for AI Coaching */}
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl">🎯</span>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">Tier 1: Critical for AI Coaching</h3>
-              <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Must Have</span>
+              <span className="bg-gray-200 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Must Have</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
               {/* Moisture Content */}
-              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-700">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-2xl">💧</span>
                   <span className="font-medium text-gray-800 dark:text-dark-text-primary">Moisture Content (%)</span>
@@ -418,7 +575,7 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
               </div>
 
               {/* Density */}
-              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-700">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-2xl">⚖️</span>
                   <span className="font-medium text-gray-800 dark:text-dark-text-primary">Density (g/ml)</span>
@@ -444,11 +601,11 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl">⭐</span>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">Tier 2: Very Important</h3>
-              <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">High Impact</span>
+              <span className="bg-gray-200 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">High Impact</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
               {/* Screen Size */}
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-700">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-2xl">📏</span>
                   <span className="font-medium text-gray-800 dark:text-dark-text-primary">Screen Size</span>
@@ -471,7 +628,7 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
 
 
               {/* Altitude */}
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-700">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-2xl">🏔️</span>
                   <span className="font-medium text-gray-800 dark:text-dark-text-primary">Altitude (meters)</span>
@@ -490,7 +647,7 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
               </div>
 
               {/* Body Intensity */}
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-700">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-2xl">💪</span>
                   <span className="font-medium text-gray-800 dark:text-dark-text-primary">Body Intensity (0-5)</span>
@@ -519,12 +676,12 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl">💡</span>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">Tier 3: Helpful</h3>
-              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Additional</span>
+              <span className="bg-gray-200 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Additional</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
 
               {/* Acidity Intensity */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-2xl">🍋</span>
                   <span className="font-medium text-gray-800 dark:text-dark-text-primary">Acidity Intensity (0-5)</span>
@@ -630,34 +787,6 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
                   </div>
                 </div>
 
-                {/* Traditional Flavor Notes */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
-                    Additional Flavor Notes
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      'Wine', 'Tobacco', 'Vanilla', 'Malt', 'Herbal', 'Bright',
-                      'Earthy', 'Clean', 'Complex', 'Uniform', 'Sweet', 'Balanced'
-                    ].map(flavor => (
-                      <label key={flavor} className="flex items-center space-x-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={formData.flavor_notes?.includes(flavor) || false}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              handleInputChange('flavor_notes', [...(formData.flavor_notes || []), flavor]);
-                            } else {
-                              handleInputChange('flavor_notes', (formData.flavor_notes || []).filter(f => f !== flavor));
-                            }
-                          }}
-                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span className="text-gray-700 dark:text-dark-text-primary">{flavor}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
           </div>

@@ -56,18 +56,148 @@ def parse_html_content(html_content: str) -> Dict[str, Any]:
     
     if vendor == 'sweet_marias':
         try:
+            # Get parser functions with development reload capability
+            from main import get_parser_functions
+            parse_func, ai_func = get_parser_functions()
+            
             # Parse with Sweet Maria's parser
-            raw_data = parse_sweet_marias_html(html_content)
-            ai_data = get_ai_optimized_data(html_content)
+            raw_data = parse_func(html_content)
+            ai_data = ai_func(html_content)
+            
+            # Apply mapping logic for dropdown compatibility
+            origin = raw_data.get('origin', '')
+            variety = raw_data.get('variety', '')
+            process_method = raw_data.get('process_method', '')
+            
+            # Map origin to dropdown values
+            print(f"DEBUG: Mapping origin '{origin}' to dropdown value")
+            if 'Sumatra' in origin or 'Kerinci' in origin or 'Gunung' in origin:
+                origin = 'Indonesia'
+                print(f"DEBUG: Mapped to Indonesia")
+            elif 'Ethiopia' in origin:
+                origin = 'Ethiopia'
+            elif 'Colombia' in origin:
+                origin = 'Colombia'
+            elif 'Guatemala' in origin:
+                origin = 'Guatemala'
+            elif 'Costa Rica' in origin:
+                origin = 'Costa Rica'
+            elif 'Kenya' in origin:
+                origin = 'Kenya'
+            elif 'Brazil' in origin:
+                origin = 'Brazil'
+            elif 'Peru' in origin:
+                origin = 'Peru'
+            elif 'Honduras' in origin:
+                origin = 'Honduras'
+            elif 'Nicaragua' in origin:
+                origin = 'Nicaragua'
+            elif 'El Salvador' in origin:
+                origin = 'El Salvador'
+            elif 'Panama' in origin:
+                origin = 'Panama'
+            elif 'Mexico' in origin:
+                origin = 'Mexico'
+            elif 'Rwanda' in origin:
+                origin = 'Rwanda'
+            elif 'Burundi' in origin:
+                origin = 'Burundi'
+            elif 'Tanzania' in origin:
+                origin = 'Tanzania'
+            elif 'Uganda' in origin:
+                origin = 'Uganda'
+            elif 'Yemen' in origin:
+                origin = 'Yemen'
+            elif origin and origin not in ['Ethiopia', 'Colombia', 'Guatemala', 'Costa Rica', 'Kenya', 'Brazil', 'Peru', 'Honduras', 'Nicaragua', 'El Salvador', 'Panama', 'Mexico', 'Rwanda', 'Burundi', 'Tanzania', 'Uganda', 'Yemen', 'Indonesia']:
+                origin = 'Other'
+            
+            # Map variety to dropdown values
+            if 'Ateng' in variety or 'Jember' in variety or 'Tim Tim' in variety:
+                variety = 'Other'  # These are specific Indonesian varieties
+            
+            # Map process method to dropdown values
+            if 'Dry Process' in process_method or 'Natural' in process_method:
+                process_method = 'Natural'
+            elif 'Washed' in process_method:
+                process_method = 'Washed'
+            elif 'Honey' in process_method:
+                process_method = 'Honey'
+            elif 'Semi-Washed' in process_method:
+                process_method = 'Semi-Washed'
+            elif 'Anaerobic' in process_method:
+                process_method = 'Anaerobic'
+            elif 'Carbonic Maceration' in process_method:
+                process_method = 'Carbonic Maceration'
+            elif process_method and process_method not in ['Washed', 'Natural', 'Honey', 'Semi-Washed', 'Anaerobic', 'Carbonic Maceration']:
+                process_method = 'Other'
+            
+            # Map recommended roast levels to all levels in range
+            recommended_roast_levels = raw_data.get('recommended_roast_levels', [])
+            if 'City to Full City+' in str(recommended_roast_levels) or 'City to Full City+' in raw_data.get('roast_recommendations', ''):
+                recommended_roast_levels = ['City', 'City+', 'Full City', 'Full City+']
+            
+            # Determine bean type with default to "Regular"
+            bean_type = 'Regular'  # Default to Regular unless otherwise specified
+            all_text = html_content.lower()
+            
+            # Check for specific bean type indicators with more precise matching
+            # Look for peaberry in specific contexts (not just anywhere)
+            peaberry_patterns = [
+                'peaberry coffee',
+                'peaberry beans',
+                'peaberry selection',
+                'peaberry lot',
+                'peaberry grade',
+                'peaberry screen',
+                'peaberry only',
+                '100% peaberry',
+                'pure peaberry'
+            ]
+            
+            # Look for maragogype in specific contexts
+            maragogype_patterns = [
+                'maragogype coffee',
+                'maragogype beans',
+                'maragogype selection',
+                'maragogype lot',
+                'maragogype grade',
+                'maragogype screen',
+                'maragogype only',
+                '100% maragogype',
+                'pure maragogype'
+            ]
+            
+            # Check for peaberry with more specific patterns
+            peaberry_found = any(pattern in all_text for pattern in peaberry_patterns)
+            maragogype_found = any(pattern in all_text for pattern in maragogype_patterns)
+            
+            # Also check for mixed content
+            mixed_content = 'mixed' in all_text and (peaberry_found or maragogype_found)
+            
+            if mixed_content:
+                bean_type = 'Mixed'
+                print("DEBUG: Detected Mixed bean type (contains mixed + specific bean type)")
+            elif peaberry_found:
+                bean_type = 'Peaberry'
+                print("DEBUG: Detected Peaberry bean type (found specific peaberry context)")
+            elif maragogype_found:
+                bean_type = 'Maragogype'
+                print("DEBUG: Detected Maragogype bean type (found specific maragogype context)")
+            else:
+                print("DEBUG: No specific bean type indicators found, defaulting to Regular")
+            
+            print(f"DEBUG: Bean type determined as: {bean_type}")
             
             # Combine and structure the data
             bean_profile = {
                 # Basic info
                 'name': raw_data.get('name', ''),
-                'origin': raw_data.get('origin', ''),
-                'variety': raw_data.get('variety', ''),
-                'process_method': raw_data.get('process_method', ''),
+                'origin': origin,
+                'variety': variety,
+                'process_method': process_method,
+                'bean_type': bean_type,  # NEW: Include mapped bean type
                 'description': raw_data.get('description', ''),
+                'recommended_roast_levels': recommended_roast_levels,
                 
                 # Technical specs
                 'screen_size': raw_data.get('screen_size', ''),
@@ -75,8 +205,8 @@ def parse_html_content(html_content: str) -> Dict[str, Any]:
                 'altitude_m': ai_data.get('altitude_m'),
                 'harvest_year': None,  # Not typically available
                 
-                # Cupping scores
-                'cupping_score': ai_data.get('cupping_score'),
+                # Cupping scores - prioritize raw data over AI data
+                'cupping_score': raw_data.get('total_score') or ai_data.get('cupping_score'),
                 'fragrance_score': None,  # Not directly available
                 
                 # Flavor profile

@@ -133,8 +133,20 @@ class SweetMariasParser:
         """Extract technical specifications from specs table"""
         specs_table = soup.find('table', class_='additional-attributes-table')
         if not specs_table:
+            # Try alternative selectors for specs table
+            specs_table = soup.find('table', class_='data table additional-attributes')
+            if not specs_table:
+                specs_table = soup.find('div', class_='additional-attributes-table')
+                if specs_table:
+                    # Handle div-based specs
+                    specs_table = specs_table.find('table')
+        
+        if not specs_table:
+            print("DEBUG: No specifications table found, trying fallback extraction")
+            self._extract_from_description(soup)
             return
         
+        print("DEBUG: Found specifications table")
         specs = {}
         rows = specs_table.find_all('tr')
         
@@ -144,16 +156,63 @@ class SweetMariasParser:
                 key = cells[0].get_text().strip()
                 value = cells[1].get_text().strip()
                 specs[key] = value
+                print(f"DEBUG: Found spec - {key}: {value}")
         
         self.parsed_data['specifications'] = specs
         
-        # Extract specific important fields
+        # Extract specific important fields - updated to match actual HTML field names
         if 'Processing' in specs:
             self.parsed_data['process_method'] = specs['Processing']
         if 'Region' in specs:
-            self.parsed_data['origin'] = specs['Region']
+            # Map specific regions to countries for dropdown compatibility
+            region = specs['Region']
+            print(f"DEBUG: Mapping region '{region}' to country")
+            if 'Sumatra' in region or 'Kerinci' in region or 'Gunung' in region:
+                self.parsed_data['origin'] = 'Indonesia'
+                print(f"DEBUG: Mapped to Indonesia")
+            elif 'Ethiopia' in region:
+                self.parsed_data['origin'] = 'Ethiopia'
+            elif 'Colombia' in region:
+                self.parsed_data['origin'] = 'Colombia'
+            elif 'Guatemala' in region:
+                self.parsed_data['origin'] = 'Guatemala'
+            elif 'Costa Rica' in region:
+                self.parsed_data['origin'] = 'Costa Rica'
+            elif 'Kenya' in region:
+                self.parsed_data['origin'] = 'Kenya'
+            elif 'Brazil' in region:
+                self.parsed_data['origin'] = 'Brazil'
+            elif 'Peru' in region:
+                self.parsed_data['origin'] = 'Peru'
+            elif 'Honduras' in region:
+                self.parsed_data['origin'] = 'Honduras'
+            elif 'Nicaragua' in region:
+                self.parsed_data['origin'] = 'Nicaragua'
+            elif 'El Salvador' in region:
+                self.parsed_data['origin'] = 'El Salvador'
+            elif 'Panama' in region:
+                self.parsed_data['origin'] = 'Panama'
+            elif 'Mexico' in region:
+                self.parsed_data['origin'] = 'Mexico'
+            elif 'Rwanda' in region:
+                self.parsed_data['origin'] = 'Rwanda'
+            elif 'Burundi' in region:
+                self.parsed_data['origin'] = 'Burundi'
+            elif 'Tanzania' in region:
+                self.parsed_data['origin'] = 'Tanzania'
+            elif 'Uganda' in region:
+                self.parsed_data['origin'] = 'Uganda'
+            elif 'Yemen' in region:
+                self.parsed_data['origin'] = 'Yemen'
+            else:
+                self.parsed_data['origin'] = 'Other'
         if 'Cultivar Detail' in specs:
-            self.parsed_data['variety'] = specs['Cultivar Detail']
+            # Map specific varieties to dropdown options
+            variety = specs['Cultivar Detail']
+            if 'Ateng' in variety or 'Jember' in variety or 'Tim Tim' in variety:
+                self.parsed_data['variety'] = 'Other'  # These are specific Indonesian varieties
+            else:
+                self.parsed_data['variety'] = variety
         if 'Appearance' in specs:
             # Extract screen size and density from appearance
             appearance = specs['Appearance']
@@ -192,9 +251,83 @@ class SweetMariasParser:
             else:
                 print("DEBUG: No density match found")
         if 'Roast Recommendations' in specs:
-            self.parsed_data['roast_recommendations'] = specs['Roast Recommendations']
+            # Parse roast recommendations properly
+            roast_rec = specs['Roast Recommendations']
+            print(f"DEBUG: Found roast recommendations: '{roast_rec}'")
+            self._parse_roast_recommendations(roast_rec)
         if 'Recommended for Espresso' in specs:
             self.parsed_data['espresso_suitable'] = specs['Recommended for Espresso'] == 'Yes'
+    
+    def _parse_roast_recommendations(self, roast_text: str):
+        """Parse roast recommendations text into individual roast levels"""
+        print(f"DEBUG: Parsing roast recommendations: '{roast_text}'")
+        
+        # Initialize the list if it doesn't exist
+        if 'recommended_roast_levels' not in self.parsed_data:
+            self.parsed_data['recommended_roast_levels'] = []
+        
+        roast_levels = []
+        
+        # Handle ranges first (they take priority)
+        if 'to' in roast_text.lower():
+            # Extract the range and add all levels in between
+            if 'City to Full City+' in roast_text:
+                roast_levels = ['City', 'City+', 'Full City', 'Full City+']
+            elif 'City to Full City' in roast_text:
+                roast_levels = ['City', 'City+', 'Full City']
+            elif 'City+ to Full City+' in roast_text:
+                roast_levels = ['City+', 'Full City', 'Full City+']
+            elif 'City+ to Full City' in roast_text:
+                roast_levels = ['City+', 'Full City']
+        else:
+            # Look for specific roast level mentions (only if no range found)
+            if 'City' in roast_text and 'City+' not in roast_text:
+                roast_levels.append('City')
+            if 'City+' in roast_text:
+                roast_levels.append('City+')
+            if 'Full City' in roast_text and 'Full City+' not in roast_text:
+                roast_levels.append('Full City')
+            if 'Full City+' in roast_text:
+                roast_levels.append('Full City+')
+        
+        self.parsed_data['recommended_roast_levels'] = roast_levels
+        print(f"DEBUG: Parsed roast levels: {roast_levels}")
+        print("DEBUG: DEVELOPMENT RELOAD TEST - Parser updated!")
+    
+    def _extract_from_description(self, soup: BeautifulSoup):
+        """Fallback method to extract data from description text"""
+        print("DEBUG: Using fallback extraction from description")
+        
+        # Get all text content
+        all_text = soup.get_text()
+        
+        # Look for origin/country
+        countries = ['Ethiopia', 'Colombia', 'Guatemala', 'Costa Rica', 'Kenya', 'Yemen', 'Brazil', 'Peru', 'Honduras', 'Nicaragua', 'El Salvador', 'Panama', 'Mexico', 'Rwanda', 'Burundi', 'Tanzania', 'India', 'Indonesia', 'Sumatra', 'Java', 'Sulawesi', 'Timor']
+        for country in countries:
+            if country.lower() in all_text.lower():
+                # Map Sumatra to Indonesia for dropdown compatibility
+                if country == 'Sumatra':
+                    self.parsed_data['origin'] = 'Indonesia'
+                else:
+                    self.parsed_data['origin'] = country
+                print(f"DEBUG: Found origin from description: {country}")
+                break
+        
+        # Look for variety/cultivar
+        varieties = ['Bourbon', 'Typica', 'Caturra', 'Catuai', 'Pacamara', 'Maragogype', 'Geisha', 'SL28', 'SL34', 'Heirloom', 'Ateng', 'Jember', 'Tim Tim', 'Modern Hybrids']
+        for variety in varieties:
+            if variety.lower() in all_text.lower():
+                self.parsed_data['variety'] = variety
+                print(f"DEBUG: Found variety from description: {variety}")
+                break
+        
+        # Look for process method
+        processes = ['Washed', 'Natural', 'Honey', 'Semi-Washed', 'Anaerobic', 'Carbonic Maceration', 'Dry Process']
+        for process in processes:
+            if process.lower() in all_text.lower():
+                self.parsed_data['process_method'] = process
+                print(f"DEBUG: Found process from description: {process}")
+                break
     
     def _extract_farm_info(self, soup: BeautifulSoup):
         """Extract farm information from content"""
@@ -258,7 +391,11 @@ class SweetMariasParser:
             ai_data['altitude_m'] = (self.parsed_data['altitude_min'] + self.parsed_data['altitude_max']) // 2
         
         # Cupping scores
-        if 'cupping_scores' in self.parsed_data:
+        if 'total_score' in self.parsed_data:
+            # Use the total score directly (already in 0-100 scale)
+            ai_data['cupping_score'] = self.parsed_data['total_score']
+            print(f"DEBUG: Using total_score: {self.parsed_data['total_score']}")
+        elif 'cupping_scores' in self.parsed_data:
             cupping = self.parsed_data['cupping_scores']
             if 'Body' in cupping:
                 ai_data['body_intensity'] = cupping['Body']

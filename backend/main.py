@@ -10,7 +10,24 @@ import datetime
 from jose import jwt, JWTError
 from supabase import create_client, Client
 from dotenv import load_dotenv
+# Import parser functions with development reload capability
+import sys
+import importlib
 from vendor_parsers.sweet_marias import parse_sweet_marias_html, get_ai_optimized_data
+
+# Development mode: reload parser modules on each request
+def get_parser_functions():
+    """Get parser functions with automatic reload in development"""
+    if os.getenv('ENVIRONMENT', 'development') == 'development':
+        # Force reload the parser module to pick up changes
+        import vendor_parsers.sweet_marias.sweet_marias_parser as parser_module
+        importlib.reload(parser_module)
+        # Also reload the parent module
+        import vendor_parsers.sweet_marias as parent_module
+        importlib.reload(parent_module)
+        return parser_module.parse_sweet_marias_html, parser_module.get_ai_optimized_data
+    else:
+        return parse_sweet_marias_html, get_ai_optimized_data
 from RAG_system.weaviate.weaviate_integration import (
     get_weaviate_integration, 
     sync_bean_to_weaviate, 
@@ -30,7 +47,7 @@ COFFEE_REGIONS = [
     'Colombia', 'Brazil', 'Peru', 'Ecuador', 'Bolivia', 'Venezuela', 
     'Guyana', 'Suriname', 'French Guiana',
     # Central America & Caribbean
-    'Guatemala', 'Costa Rica', 'Honduras', 'Nicaragua', 'El Salvador', 
+    'Guatemala', 'Acatenango', 'Costa Rica', 'Honduras', 'Nicaragua', 'El Salvador', 
     'Panama', 'Mexico', 'Jamaica', 'Cuba', 'Dominican Republic', 
     'Haiti', 'Puerto Rico',
     # Asia Pacific
@@ -124,19 +141,17 @@ def verify_jwt_token(credentials: HTTPAuthorizationCredentials = Depends(securit
 class CreateRoastRequest(BaseModel):
     machine_label: str
     address: str
-    coffee_region: str
-    coffee_subregion: Optional[str] = None
-    coffee_type: str
-    coffee_process: str
+    bean_profile_id: str  # Required - no more optional
     desired_roast_level: str
     weight_before_g: Optional[float] = None
     notes: Optional[str] = None
-    bean_profile_id: Optional[str] = None
+    # Removed: coffee_region, coffee_subregion, coffee_type, coffee_process
 
 class CreateBeanProfileRequest(BaseModel):
     # Basic Info
     name: str
     origin: Optional[str] = None
+    bean_type: Optional[str] = None  # NEW: Bean type (Regular, Peaberry, Maragogype, etc.)
     notes: Optional[str] = None
     supplier_url: Optional[str] = None
     supplier_name: Optional[str] = None
@@ -225,28 +240,7 @@ def get_or_create_machine_id(label: str) -> str:
     }).execute()
     return created.data[0]["id"]
 
-def create_basic_bean_profile(user_id: str, coffee_region: str, coffee_type: str, coffee_process: str, desired_roast_level: str) -> str:
-    """Auto-create a basic bean profile from roast form data"""
-    sb = get_supabase()
-    
-    # Generate a simple name for the bean profile
-    from datetime import datetime
-    current_date = datetime.now().strftime("%m/%d/%Y")
-    bean_name = f"{coffee_region} {coffee_process} - {current_date}"
-    
-    # Create basic bean profile
-    bean_data = {
-        "user_id": user_id,
-        "name": bean_name,
-        "origin": coffee_region,
-        "variety": coffee_type,
-        "process_method": coffee_process,
-        "recommended_roast_levels": [desired_roast_level],
-        "profile_completeness": "basic"
-    }
-    
-    result = sb.table("bean_profiles").insert(bean_data).execute()
-    return result.data[0]["id"]
+# Removed create_basic_bean_profile function - bean profiles must be created explicitly
 
 def get_environmental_conditions(address: str, unit: str = "C") -> Dict[str, Any]:
     """
@@ -387,14 +381,22 @@ async def get_coffee_regions():
 @app.post("/roasts")
 async def create_roast(request: CreateRoastRequest, user_id: str = Depends(verify_jwt_token)):
     try:
-        # Validate coffee region
-        if not validate_coffee_region(request.coffee_region):
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Invalid coffee region: {request.coffee_region}. Must be one of: {', '.join(COFFEE_REGIONS)}"
-            )
+        print(f"DEBUG: Starting create_roast with user_id: {user_id}")
+        print(f"DEBUG: Request data: {request}")
         
         sb = get_supabase()
+        
+        # Validate that the bean profile exists and belongs to the user
+        try:
+            profile_result = sb.table("bean_profiles").select("id, origin, variety, process_method").eq("id", request.bean_profile_id).eq("user_id", user_id).execute()
+            if not profile_result.data:
+                print(f"DEBUG: Bean profile {request.bean_profile_id} not found or doesn't belong to user {user_id}")
+                raise HTTPException(status_code=400, detail="Bean profile not found or doesn't belong to user")
+            print(f"DEBUG: Bean profile {request.bean_profile_id} validated successfully")
+            bean_profile = profile_result.data[0]
+        except Exception as e:
+            print(f"DEBUG: Error validating bean profile: {e}")
+            raise e
         
         # Get machine ID
         machine_id = get_or_create_machine_id(request.machine_label)
@@ -438,18 +440,6 @@ async def create_roast(request: CreateRoastRequest, user_id: str = Depends(verif
                 "timezone_abbreviation": None
             }
         
-        # Auto-create basic bean profile if not provided
-        bean_profile_id = request.bean_profile_id
-        if not bean_profile_id:
-            bean_profile_id = create_basic_bean_profile(
-                user_id, 
-                request.coffee_region, 
-                request.coffee_type, 
-                request.coffee_process, 
-                request.desired_roast_level
-            )
-            print(f"DEBUG: Auto-created basic bean profile: {bean_profile_id}")
-        
         # Create roast entry
         roast_data = {
             "user_id": user_id,
@@ -466,20 +456,24 @@ async def create_roast(request: CreateRoastRequest, user_id: str = Depends(verif
             "as_of": env.get("as_of"),
             "timezone": env.get("timezone"),
             "timezone_abbreviation": env.get("timezone_abbreviation"),
-            "coffee_region": request.coffee_region,
-            "coffee_subregion": request.coffee_subregion,
-            "coffee_type": request.coffee_type,
-            "coffee_process": request.coffee_process,
             "desired_roast_level": request.desired_roast_level,
             "weight_before_g": request.weight_before_g,
-            "notes": request.notes,
-            "bean_profile_id": bean_profile_id,
+            "notes": request.notes if request.notes else None,
+            "bean_profile_id": request.bean_profile_id,
+            "roast_status": "in_progress",  # Set initial status
         }
         
         # Remove None values
         roast_data = {k: v for k, v in roast_data.items() if v is not None}
         
-        result = sb.table("roast_entries").insert(roast_data).execute()
+        print(f"DEBUG: Inserting roast data: {roast_data}")
+        
+        try:
+            result = sb.table("roast_entries").insert(roast_data).execute()
+            print(f"DEBUG: Insert successful: {result}")
+        except Exception as e:
+            print(f"DEBUG: Insert failed with error: {e}")
+            raise e
         roast_id = result.data[0]["id"]
         start_ts = time.time()
         
@@ -488,7 +482,7 @@ async def create_roast(request: CreateRoastRequest, user_id: str = Depends(verif
             "start_ts": start_ts,
             "env": env,
             "weight_before_g": request.weight_before_g,
-            "bean_profile_id": bean_profile_id
+            "bean_profile_id": request.bean_profile_id
         }
         print(f"DEBUG: Returning response with weight_before_g: {request.weight_before_g}")
         return response_data
@@ -859,6 +853,7 @@ async def create_bean_profile(request: CreateBeanProfileRequest, user_id: str = 
             "user_id": user_id,
             "name": request.name,
             "origin": request.origin,
+            "bean_type": request.bean_type,  # NEW: Include bean type
             "notes": request.notes,
             "supplier_url": request.supplier_url,
             "supplier_name": request.supplier_name,
@@ -983,7 +978,17 @@ async def delete_bean_profile(bean_profile_id: str, user_id: str = Depends(verif
         if not profile_result.data:
             raise HTTPException(status_code=404, detail="Bean profile not found")
         
-        # Delete the bean profile
+        # Check if there are any roast entries that reference this bean profile
+        roast_check = sb.table("roast_entries").select("id").eq("bean_profile_id", bean_profile_id).execute()
+        if roast_check.data:
+            # There are roast entries using this bean profile
+            roast_count = len(roast_check.data)
+            raise HTTPException(
+                status_code=409, 
+                detail=f"Cannot delete bean profile. It is currently being used by {roast_count} roast{'s' if roast_count > 1 else ''}. Please delete the associated roast entries first or update them to use a different bean profile."
+            )
+        
+        # Delete the bean profile (no foreign key constraints to worry about)
         sb.table("bean_profiles").delete().eq("id", bean_profile_id).execute()
         
         return {"success": True, "message": "Bean profile deleted"}
@@ -991,6 +996,12 @@ async def delete_bean_profile(bean_profile_id: str, user_id: str = Depends(verif
     except HTTPException:
         raise
     except Exception as e:
+        # Handle foreign key constraint errors specifically
+        if "violates foreign key constraint" in str(e) or "23503" in str(e):
+            raise HTTPException(
+                status_code=409, 
+                detail="Cannot delete bean profile. It is currently being used by one or more roast entries. Please delete the associated roast entries first or update them to use a different bean profile."
+            )
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -998,9 +1009,12 @@ async def delete_bean_profile(bean_profile_id: str, user_id: str = Depends(verif
 async def parse_bean_html(request: ParseHTMLRequest, user_id: str = Depends(verify_jwt_token)):
     """Parse Sweet Maria's HTML content and create bean profile"""
     try:
+        # Get parser functions with development reload capability
+        parse_func, ai_func = get_parser_functions()
+        
         # Parse the HTML content
-        parsed_data = parse_sweet_marias_html(request.html_content)
-        ai_data = get_ai_optimized_data(request.html_content)
+        parsed_data = parse_func(request.html_content)
+        ai_data = ai_func(request.html_content)
         
         # Create bean profile from parsed data
         sb = get_supabase()
@@ -1050,6 +1064,61 @@ async def parse_bean_html(request: ParseHTMLRequest, user_id: str = Depends(veri
         result = sb.table("bean_profiles").insert(profile_data).execute()
         return result.data[0]
         
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/bean-profiles/parse-supplier")
+async def parse_supplier_url(request: Dict[str, str], user_id: str = Depends(verify_jwt_token)):
+    """
+    Parse a supplier URL (like Sweet Maria's) to extract bean information.
+    This helps users quickly populate bean profiles with data from suppliers.
+    """
+    try:
+        url = request.get('url')
+        if not url:
+            raise HTTPException(status_code=400, detail="URL is required")
+        
+        # Check if it's a Sweet Maria's URL
+        if 'sweetmarias.com' in url:
+            # Reload the enhanced parser module in development
+            if os.getenv('ENVIRONMENT', 'development') == 'development':
+                import vendor_parsers.sweet_marias.enhanced_parser as enhanced_parser_module
+                importlib.reload(enhanced_parser_module)
+                parser = enhanced_parser_module.SweetMariasEnhancedParser()
+            else:
+                from vendor_parsers.sweet_marias.enhanced_parser import SweetMariasEnhancedParser
+                parser = SweetMariasEnhancedParser()
+            parsed_data = parser.parse_product_page(url)
+            
+            if 'error' in parsed_data:
+                raise HTTPException(status_code=400, detail=f"Failed to parse URL: {parsed_data['error']}")
+            
+            # Convert parsed data to CreateBeanProfileRequest format
+            bean_data = {
+                'name': parsed_data.get('name', ''),
+                'origin': parsed_data.get('origin', ''),
+                'subregion': parsed_data.get('subregion', ''),
+                'variety': parsed_data.get('variety', ''),
+                'process_method': parsed_data.get('process_method', ''),
+                'recommended_roast_levels': parsed_data.get('recommended_roast_levels', []),
+                'notes': parsed_data.get('description', ''),
+                'supplier_url': url,
+                'supplier_name': 'Sweet Maria\'s',
+                'flavor_notes': parsed_data.get('flavor_notes', []),
+                'cupping_score': parsed_data.get('cupping_scores', {}).get('total_score'),
+                'fragrance_score': parsed_data.get('cupping_scores', {}).get('fragrance')
+            }
+            
+            return {
+                'success': True,
+                'data': bean_data,
+                'message': 'Successfully parsed supplier data'
+            }
+        else:
+            raise HTTPException(status_code=400, detail="Only Sweet Maria's URLs are currently supported")
+            
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1183,7 +1252,7 @@ except ImportError as e:
 
 # Include HTML Parser router
 try:
-    from html_parser import router as html_parser_router
+    from vendor_parsers.html_parser import router as html_parser_router
     app.include_router(html_parser_router, prefix="/api", tags=["HTML Parser"])
     print("✅ HTML Parser router included successfully")
 except ImportError as e:

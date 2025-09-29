@@ -2,9 +2,25 @@
 
 echo "🛑 Stopping all development servers..."
 
-# Kill all related processes
+# Kill all related processes with multiple approaches
+echo "🔍 Killing Python processes..."
+pkill -f "python3 main.py"
 pkill -f uvicorn
+pkill -f "ENVIRONMENT=development"
+
+echo "🔍 Killing Node/Vite processes..."
 pkill -f vite  
 pkill -f "npm run dev"
+pkill -f "node.*vite"
+
+echo "🔍 Force killing processes on ports..."
+# Force kill anything on port 8000 (backend)
+lsof -ti:8000 | xargs kill -9 2>/dev/null || true
+
+# Force kill anything on port 5173 (frontend)
+lsof -ti:5173 | xargs kill -9 2>/dev/null || true
+
+# Force kill anything on port 5174 (frontend fallback)
+lsof -ti:5174 | xargs kill -9 2>/dev/null || true
 
 echo "✅ All servers stopped"

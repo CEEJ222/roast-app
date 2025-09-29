@@ -44,6 +44,7 @@ const HTMLParser = ({ isOpen, onParseComplete, onClose }) => {
       
       if (data.success) {
         console.log('DEBUG: Parse successful, calling onParseComplete');
+        console.log('DEBUG: Bean profile data:', data.bean_profile);
         onParseComplete(data.bean_profile);
         onClose();
       } else {

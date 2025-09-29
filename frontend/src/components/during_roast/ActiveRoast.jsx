@@ -36,7 +36,7 @@ const ActiveRoast = ({
   environmentalConditions,
   userProfile,
   finishRoast,
-  cancelRoast,
+  cancelRoast = () => {},
   endRoastSession,
   getAuthToken,
   // Reset function props
@@ -231,7 +231,7 @@ const ActiveRoast = ({
           formData={formData}
           handleInputChange={handleInputChange}
           finishRoast={finishRoast}
-          cancelRoast={cancelRoast}
+          cancelRoast={cancelRoast || (() => {})}
           endRoastSession={endRoastSession}
           loading={loading}
           events={events}

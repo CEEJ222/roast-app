@@ -211,7 +211,9 @@ const AfterRoast = ({
         onClose={() => setShowCancelModal(false)}
         onConfirm={() => {
           setShowCancelModal(false);
-          cancelRoast();
+          if (cancelRoast) {
+            cancelRoast();
+          }
         }}
         title="Delete Roast"
         message="Are you sure you want to delete this roast? This will permanently delete the roast and all its data. This action cannot be undone."

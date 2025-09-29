@@ -18,6 +18,8 @@ const BeanProfiles = ({ getAuthToken }) => {
   const [selectedProfiles, setSelectedProfiles] = useState(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const loadBeanProfiles = async () => {
     setLoading(true);
@@ -98,10 +100,18 @@ const BeanProfiles = ({ getAuthToken }) => {
         setShowDeleteConfirm(false);
         setProfileToDelete(null);
       } else {
-        throw new Error('Failed to delete bean profile');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.detail || 'Failed to delete bean profile';
+        
+        if (response.status === 409) {
+          showError(`${errorMessage}\n\nThis usually happens when the bean profile is being used by existing roast records. Please delete the associated roast entries first.`);
+        } else {
+          showError(`Failed to delete bean profile: ${errorMessage}`);
+        }
       }
     } catch (error) {
       console.error('Error deleting bean profile:', error);
+      showError('An unexpected error occurred while deleting the bean profile. Please try again.');
     }
   };
 
@@ -137,27 +147,63 @@ const BeanProfiles = ({ getAuthToken }) => {
   const handleBulkDeleteConfirm = async () => {
     try {
       const token = await getAuthToken();
-      const deletePromises = Array.from(selectedProfiles).map(profileId => 
-        fetch(`${API_BASE}/bean-profiles/${profileId}`, {
+      const deletePromises = Array.from(selectedProfiles).map(async (profileId) => {
+        const response = await fetch(`${API_BASE}/bean-profiles/${profileId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
           }
-        })
-      );
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          return {
+            profileId,
+            success: false,
+            error: errorData.detail || `HTTP ${response.status}`,
+            status: response.status
+          };
+        }
+        
+        return {
+          profileId,
+          success: true
+        };
+      });
 
       const results = await Promise.all(deletePromises);
-      const successful = results.filter(response => response.ok);
+      const successful = results.filter(result => result.success);
+      const failed = results.filter(result => !result.success);
       
       if (successful.length === selectedProfiles.size) {
+        // All deletions successful
         setBeanProfiles(prev => prev.filter(profile => !selectedProfiles.has(profile.id)));
         setSelectedProfiles(new Set());
         setShowBulkDeleteConfirm(false);
+      } else if (successful.length > 0) {
+        // Some deletions successful, some failed
+        setBeanProfiles(prev => prev.filter(profile => 
+          !selectedProfiles.has(profile.id) || 
+          failed.some(f => f.profileId === profile.id)
+        ));
+        
+        const failedProfiles = failed.map(f => {
+          const profile = beanProfiles.find(p => p.id === f.profileId);
+          return profile ? profile.name : f.profileId;
+        }).join(', ');
+        
+        showError(`Some deletions failed: ${failedProfiles}\n\nThis usually happens when the bean profile is being used by existing roast records. Please delete the associated roast entries first.`);
+        
+        setSelectedProfiles(new Set());
+        setShowBulkDeleteConfirm(false);
       } else {
-        console.error('Some deletions failed');
+        // All deletions failed
+        const errorMessages = failed.map(f => f.error).join('; ');
+        showError(`Failed to delete bean profiles: ${errorMessages}\n\nThis usually happens when the bean profiles are being used by existing roast records. Please delete the associated roast entries first.`);
       }
     } catch (error) {
       console.error('Error deleting bean profiles:', error);
+      showError('An unexpected error occurred while deleting bean profiles. Please try again.');
     }
   };
 
@@ -177,6 +223,16 @@ const BeanProfiles = ({ getAuthToken }) => {
 
   const handleCreateClose = () => {
     setShowCreateForm(false);
+  };
+
+  const showError = (message) => {
+    setErrorMessage(message);
+    setShowErrorModal(true);
+  };
+
+  const handleErrorModalClose = () => {
+    setShowErrorModal(false);
+    setErrorMessage('');
   };
 
   const getCompletenessBadge = (completeness) => {
@@ -570,6 +626,35 @@ const BeanProfiles = ({ getAuthToken }) => {
                   className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
                 >
                   Delete {selectedProfiles.size} Profile{selectedProfiles.size > 1 ? 's' : ''}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Modal */}
+      {showErrorModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+          <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-lg w-full p-6">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center">
+                <span className="text-2xl">⚠️</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary mb-4">
+                Deletion Failed
+              </h3>
+              <div className="text-left">
+                <p className="text-gray-600 dark:text-dark-text-secondary whitespace-pre-line leading-relaxed">
+                  {errorMessage}
+                </p>
+              </div>
+              <div className="mt-6">
+                <button
+                  onClick={handleErrorModalClose}
+                  className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium rounded-lg transition-colors"
+                >
+                  Got it
                 </button>
               </div>
             </div>
