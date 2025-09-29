@@ -77,10 +77,14 @@ const RecentRoasts = ({
                     </div>
                     <div>
                       <p className="font-medium text-gray-900 dark:text-dark-text-primary">
-                        {roast.coffee_type}
+                        {roast.bean_profile_name || 
+                         (roast.coffee_region && roast.coffee_type 
+                          ? `${roast.coffee_region} ${roast.coffee_type}` 
+                          : roast.coffee_type || roast.coffee_region || 'Unknown Coffee')
+                        }
                       </p>
                       <p className="text-sm text-gray-500 dark:text-dark-text-tertiary">
-                        {formatDate(roast.created_at)} • {roast.roaster_model}
+                        {formatDate(roast.created_at)} • {roast.machine_label || roast.roaster_model}
                       </p>
                     </div>
                   </div>

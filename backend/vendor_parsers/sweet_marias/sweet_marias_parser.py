@@ -155,11 +155,42 @@ class SweetMariasParser:
         if 'Cultivar Detail' in specs:
             self.parsed_data['variety'] = specs['Cultivar Detail']
         if 'Appearance' in specs:
-            # Extract screen size from appearance
+            # Extract screen size and density from appearance
             appearance = specs['Appearance']
-            screen_match = re.search(r'(\d+)\+?\s*screen', appearance)
+            
+            # Extract screen size
+            screen_match = re.search(r'(\d+)\+?\s*(?:Peaberry\s+)?screen', appearance, re.IGNORECASE)
             if screen_match:
-                self.parsed_data['screen_size'] = screen_match.group(1) + '+'
+                screen_size = int(screen_match.group(1))
+                # Convert to frontend format (ranges)
+                if screen_size == 14:
+                    self.parsed_data['screen_size'] = '14-15'
+                elif screen_size == 15:
+                    self.parsed_data['screen_size'] = '15-16'
+                elif screen_size == 16:
+                    self.parsed_data['screen_size'] = '16-17'
+                elif screen_size == 17:
+                    self.parsed_data['screen_size'] = '17-18'
+                else:
+                    # For other sizes, use the closest range
+                    if screen_size < 15:
+                        self.parsed_data['screen_size'] = '14-15'
+                    elif screen_size < 16:
+                        self.parsed_data['screen_size'] = '15-16'
+                    elif screen_size < 17:
+                        self.parsed_data['screen_size'] = '16-17'
+                    else:
+                        self.parsed_data['screen_size'] = '17-18'
+            
+            # Extract density (e.g., ".4 d/300gr" -> 0.4)
+            print(f"DEBUG: Extracting density from appearance: '{appearance}'")
+            density_match = re.search(r'(\d+\.?\d*)\s*d/', appearance)
+            if density_match:
+                density = float(density_match.group(1))
+                print(f"DEBUG: Found density: {density}")
+                self.parsed_data['density_g_ml'] = density
+            else:
+                print("DEBUG: No density match found")
         if 'Roast Recommendations' in specs:
             self.parsed_data['roast_recommendations'] = specs['Roast Recommendations']
         if 'Recommended for Espresso' in specs:
@@ -221,6 +252,8 @@ class SweetMariasParser:
         # Technical specs
         if 'screen_size' in self.parsed_data:
             ai_data['screen_size'] = self.parsed_data['screen_size']
+        if 'density_g_ml' in self.parsed_data:
+            ai_data['density_g_ml'] = self.parsed_data['density_g_ml']
         if 'altitude_min' in self.parsed_data and 'altitude_max' in self.parsed_data:
             ai_data['altitude_m'] = (self.parsed_data['altitude_min'] + self.parsed_data['altitude_max']) // 2
         

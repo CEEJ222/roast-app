@@ -101,7 +101,7 @@ async def pre_roast_planning(
     """
     try:
         from main import get_supabase, verify_jwt_token
-        from weaviate_integration import get_weaviate_integration
+        from .weaviate.weaviate_integration import get_weaviate_integration
         
         sb = get_supabase()
         

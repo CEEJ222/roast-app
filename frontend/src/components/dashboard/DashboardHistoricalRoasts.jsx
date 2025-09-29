@@ -152,9 +152,10 @@ const DashboardHistoricalRoasts = ({
       render: (roast) => (
         <div>
           <div className="font-medium">
-            {roast.coffee_region && roast.coffee_type 
+            {roast.bean_profile_name || 
+             (roast.coffee_region && roast.coffee_type 
               ? `${roast.coffee_region} ${roast.coffee_type}` 
-              : roast.coffee_type || roast.coffee_region || 'Unknown Coffee'
+              : roast.coffee_type || roast.coffee_region || 'Unknown Coffee')
             }
           </div>
         </div>
@@ -190,14 +191,14 @@ const DashboardHistoricalRoasts = ({
     const result = selectedRoasts.map(roastId => {
       const roast = roasts.find(r => r.id === roastId);
       const events = roastDetails[roastId] || [];
+      const coffeeName = roast?.bean_profile_name || 
+                        (roast?.coffee_region && roast?.coffee_type 
+                         ? `${roast.coffee_region} ${roast.coffee_type}` 
+                         : roast?.coffee_type || roast?.coffee_region || 'Unknown Coffee');
       return {
         id: roastId,
-        name: roast?.coffee_region && roast?.coffee_type 
-          ? `${roast.coffee_region} ${roast.coffee_type}` 
-          : roast?.coffee_type || roast?.coffee_region || 'Unknown Coffee',
-        fullName: roast?.coffee_region && roast?.coffee_type 
-          ? `${roast.coffee_region} ${roast.coffee_type} - ${formatDate(roast?.created_at)}`
-          : `${roast?.coffee_type || roast?.coffee_region || 'Unknown Coffee'} - ${formatDate(roast?.created_at)}`,
+        name: coffeeName,
+        fullName: `${coffeeName} - ${formatDate(roast?.created_at)}`,
         events: events
       };
     });

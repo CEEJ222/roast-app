@@ -11,8 +11,8 @@ from datetime import datetime
 # Add current directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from weaviate_schemas import get_all_schemas, get_schema_by_class
-from weaviate_embeddings import get_bean_embedder, get_roast_embedder
+from .weaviate_schemas import get_all_schemas, get_schema_by_class
+from .weaviate_embeddings import get_bean_embedder, get_roast_embedder
 
 def test_schema_definitions():
     """Test schema definitions"""
@@ -118,7 +118,7 @@ def test_data_preparation():
     print("\n🔍 Testing data preparation...")
     
     try:
-        from weaviate_integration import WeaviateIntegration
+        from .weaviate_integration import WeaviateIntegration
         
         # Sample bean profile
         sample_bean = {

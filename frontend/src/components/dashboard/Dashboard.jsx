@@ -47,12 +47,18 @@ const Dashboard = ({
             </div>
           </div>
           <RoastCurveGraph
-            data={historicalRoasts.map(roast => ({
-              id: roast.id,
-              name: roast.coffee_type || 'Unknown',
-              fullName: `${roast.coffee_type || 'Unknown'} - ${new Date(roast.created_at).toLocaleDateString()}`,
-              events: recentRoastDetails[roast.id] || []
-            }))}
+            data={historicalRoasts.map(roast => {
+              const coffeeName = roast.bean_profile_name || 
+                                (roast.coffee_region && roast.coffee_type 
+                                 ? `${roast.coffee_region} ${roast.coffee_type}` 
+                                 : roast.coffee_type || roast.coffee_region || 'Unknown Coffee');
+              return {
+                id: roast.id,
+                name: coffeeName,
+                fullName: `${coffeeName} - ${new Date(roast.created_at).toLocaleDateString()}`,
+                events: recentRoastDetails[roast.id] || []
+              };
+            })}
             mode="historical"
             showROR={true}
             showMilestones={true}

@@ -46,30 +46,12 @@ class WeaviateClient:
             # Import here to avoid dependency conflicts
             import weaviate
             
-            # Configure client with timeout and retry
-            if hasattr(weaviate, 'WeaviateClient'):
-                # Newer version of weaviate-client (v4+)
-                self.client = weaviate.WeaviateClient(
-                    url=self.config.url,
-                    api_key=self.config.api_key
-                )
-            elif hasattr(weaviate, 'ClientConfig'):
-                # Version 3.x with ClientConfig
-                client_config = weaviate.ClientConfig(
-                    url=self.config.url,
-                    api_key=self.config.api_key,
-                    timeout_config=self.config.timeout_config
-                )
-                self.client = weaviate.Client(client_config)
-            else:
-                # Older version of weaviate-client (v3)
-                self.client = weaviate.Client(
-                    url=self.config.url,
-                    api_key=self.config.api_key
-                )
+            # Use Weaviate Client (v3) with correct API
+            self.client = weaviate.Client(url=self.config.url)
+            logger.info("✅ Using Weaviate Client (v3)")
             
             # Test connection
-            if self.client.is_ready():
+            if self.client and self.client.is_ready():
                 logger.info("✅ Weaviate client connected successfully")
             else:
                 logger.warning("⚠️ Weaviate client not ready")
@@ -98,7 +80,7 @@ class WeaviateClient:
             return False
         
         try:
-            self.client.schema.create(schema)
+            self.client.schema.create_class(schema)
             logger.info("✅ Schema created successfully")
             return True
         except Exception as e:
@@ -133,7 +115,7 @@ class WeaviateClient:
             return []
         
         try:
-            # Build search query
+            # Build search query using v4 API
             search_query = self.client.query.get(class_name, properties or ["*"])
             
             # Add semantic search

@@ -11,10 +11,10 @@ from datetime import datetime
 # Add current directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from weaviate_config import get_weaviate_client, initialize_weaviate
-from weaviate_schemas import get_all_schemas
-from weaviate_integration import get_weaviate_integration
-from weaviate_embeddings import get_bean_embedder, get_roast_embedder
+from .weaviate_config import get_weaviate_client, initialize_weaviate
+from .weaviate_schemas import get_all_schemas
+from .weaviate_integration import get_weaviate_integration
+from .weaviate_embeddings import get_bean_embedder, get_roast_embedder
 
 def test_weaviate_connection():
     """Test basic Weaviate connection"""

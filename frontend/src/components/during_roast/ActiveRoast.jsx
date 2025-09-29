@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import RoastTimer from './RoastTimer';
 import RoastControls from './RoastControls';
 import EventsTable from './EventsTable';
 import AfterRoast from './AfterRoast';
 import RoastCurveGraph from '../shared/RoastCurveGraph';
 import EnvironmentalConditions from '../shared/EnvironmentalConditions';
+import RoastChat from './RoastChat';
 
 const ActiveRoast = ({
   roastId,
@@ -36,6 +37,7 @@ const ActiveRoast = ({
   userProfile,
   finishRoast,
   endRoastSession,
+  getAuthToken,
   // Reset function props
   setRoastId,
   setStartTs,
@@ -50,6 +52,7 @@ const ActiveRoast = ({
   showEndRoastConfirm,
   setShowEndRoastConfirm
 }) => {
+  const [showChat, setShowChat] = useState(false);
   const handleBackToDashboard = () => {
     setRoastId(null);
     setStartTs(null);
@@ -81,7 +84,17 @@ const ActiveRoast = ({
             <div className="text-center flex-1">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Active Roast Session</h2>
             </div>
-            <div className="w-full sm:w-32"></div> {/* Spacer for centering */}
+            <div className="flex items-center gap-2 w-full sm:w-32">
+              <button
+                onClick={() => setShowChat(!showChat)}
+                className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                AI Copilot
+              </button>
+            </div>
           </div>
 
           {/* Clean Header Layout */}
@@ -233,6 +246,19 @@ const ActiveRoast = ({
           setMilestonesMarked={setMilestonesMarked}
         />
       )}
+
+      {/* AI Roasting Copilot Chat */}
+      <RoastChat
+        roastId={roastId}
+        formData={formData}
+        events={events}
+        elapsedTime={elapsedTime}
+        currentPhase={currentPhase}
+        environmentalConditions={environmentalConditions}
+        getAuthToken={getAuthToken}
+        isOpen={showChat}
+        onClose={() => setShowChat(false)}
+      />
     </>
   );
 };

@@ -114,7 +114,7 @@ const RoastTimer = ({
           </svg>
           
           {/* Timer in center - Responsive sizing */}
-          <div className="p-4 sm:p-6 w-32 h-20 sm:w-44 sm:h-28 lg:w-48 lg:h-32">
+          <div className="absolute inset-0 flex items-center justify-center">
             <div className="flex flex-col items-center justify-center gap-2 sm:gap-3">
               <div className="text-3xl sm:text-3xl md:text-4xl lg:text-4xl font-bold text-green-400 text-center" style={{
                 fontFamily: '"Orbitron", "Seven Segment", "DS-Digital", monospace',
@@ -127,11 +127,11 @@ const RoastTimer = ({
                 {formatTime(elapsedTime)}
               </div>
               
-              {/* Pause/Resume Button - Below timer inside chart */}
+              {/* Pause/Resume Button - Below timer inside chart - HIDDEN */}
               <button
                 onClick={isPaused ? resumeRoast : pauseRoast}
                 disabled={loading}
-                className={`p-2 sm:p-3 rounded-full border-2 transition-all duration-200 hover:scale-105 ${
+                className={`hidden p-2 sm:p-3 rounded-full border-2 transition-all duration-200 hover:scale-105 ${
                   isPaused 
                     ? 'border-green-500 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20'
                     : 'border-gray-400 text-gray-600 hover:border-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:border-gray-500 dark:hover:border-gray-300 dark:hover:bg-gray-800/20'

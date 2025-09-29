@@ -111,7 +111,7 @@ def initialize_schemas():
     try:
         # Import and run schema initialization
         sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-        from weaviate_integration import get_weaviate_integration
+        from .weaviate_integration import get_weaviate_integration
         
         integration = get_weaviate_integration()
         success = integration.initialize_schemas()

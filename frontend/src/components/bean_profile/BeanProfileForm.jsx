@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import CustomDropdown from '../ux_ui/CustomDropdown';
 import URLInputModal from '../modals/URLInputModal';
+import HTMLParser from './HTMLParser';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'
@@ -29,7 +30,6 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
     body_intensity: 0,
     
     // Tier 3: Helpful
-    harvest_year: '',
     acidity_intensity: 0,
     
     // Flavor Profile (Additional)
@@ -56,6 +56,7 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
   const [loading, setLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [showURLModal, setShowURLModal] = useState(false);
+  const [showHTMLParser, setShowHTMLParser] = useState(false);
 
   // Reset dataLoaded when beanProfileId or initialData changes
   useEffect(() => {
@@ -112,6 +113,46 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
 
   const handleManualURLInput = () => {
     setShowURLModal(true);
+  };
+
+  const handleHTMLParser = () => {
+    setShowHTMLParser(true);
+  };
+
+  const handleHTMLParseComplete = (parsedData) => {
+    console.log('HTML parsed data:', parsedData);
+    
+    // Update form data with parsed information
+    setFormData(prev => ({
+      ...prev,
+      name: parsedData.name || prev.name,
+      origin: parsedData.origin || prev.origin,
+      variety: parsedData.variety || prev.variety,
+      process_method: parsedData.process_method || prev.process_method,
+      screen_size: parsedData.screen_size || prev.screen_size,
+      density_g_ml: parsedData.density_g_ml || prev.density_g_ml,
+      altitude_m: parsedData.altitude_m || prev.altitude_m,
+      cupping_score: parsedData.cupping_score || prev.cupping_score,
+      body_intensity: parsedData.body_intensity || prev.body_intensity,
+      acidity_intensity: parsedData.acidity_intensity || prev.acidity_intensity,
+      floral_intensity: parsedData.floral_intensity || prev.floral_intensity,
+      honey_intensity: parsedData.honey_intensity || prev.honey_intensity,
+      sugars_intensity: parsedData.sugars_intensity || prev.sugars_intensity,
+      caramel_intensity: parsedData.caramel_intensity || prev.caramel_intensity,
+      fruits_intensity: parsedData.fruits_intensity || prev.fruits_intensity,
+      citrus_intensity: parsedData.citrus_intensity || prev.citrus_intensity,
+      berry_intensity: parsedData.berry_intensity || prev.berry_intensity,
+      cocoa_intensity: parsedData.cocoa_intensity || prev.cocoa_intensity,
+      nuts_intensity: parsedData.nuts_intensity || prev.nuts_intensity,
+      rustic_intensity: parsedData.rustic_intensity || prev.rustic_intensity,
+      spice_intensity: parsedData.spice_intensity || prev.spice_intensity,
+      notes: parsedData.notes || prev.notes,
+      roasting_notes: parsedData.roasting_notes || prev.roasting_notes,
+      supplier_name: parsedData.supplier_name || prev.supplier_name,
+      recommended_roast_levels: parsedData.recommended_roast_levels || prev.recommended_roast_levels
+    }));
+    
+    setShowHTMLParser(false);
   };
 
   const handleURLSubmit = (url) => {
@@ -185,7 +226,6 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
         moisture_content_pct: formData.moisture_content_pct ? parseFloat(formData.moisture_content_pct) : null,
         density_g_ml: formData.density_g_ml ? parseFloat(formData.density_g_ml) : null,
         altitude_m: formData.altitude_m ? parseInt(formData.altitude_m) : null,
-        harvest_year: formData.harvest_year ? parseInt(formData.harvest_year) : null,
         cupping_score: formData.cupping_score ? parseFloat(formData.cupping_score) : null,
         fragrance_score: formData.fragrance_score ? parseFloat(formData.fragrance_score) : null,
         // Convert empty strings to null for optional fields
@@ -254,7 +294,6 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
       origin: '🌍',
       variety: '☕',
       process_method: '🔄',
-      harvest_year: '📅',
       altitude: '🏔️',
       moisture_content: '💧',
       density: '⚖️'
@@ -324,14 +363,26 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
             />
           </div>
 
-          {/* Manual URL Input Button */}
+          {/* Data Import Options */}
           <div className="mb-6">
-            <button
-              onClick={handleManualURLInput}
-              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
-            >
-              🔗 Enter Supplier URL
-            </button>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Manual URL Input Button */}
+              <button
+                onClick={handleManualURLInput}
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+              >
+                🔗 Enter Supplier URL
+              </button>
+              
+              {/* HTML Parser Button */}
+              <button
+                onClick={handleHTMLParser}
+                className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+              >
+                📄 Parse HTML Source
+              </button>
+            </div>
+            
             {formData.supplier_url && (
               <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-2">
                 Supplier URL: {formData.supplier_url}
@@ -471,23 +522,6 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
               <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Additional</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              {/* Harvest Year */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl">📅</span>
-                  <span className="font-medium text-gray-800 dark:text-dark-text-primary">Harvest Year</span>
-                </div>
-                <input
-                  type="number"
-                  value={formData.harvest_year || ''}
-                  onChange={(e) => handleInputChange('harvest_year', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 dark:bg-dark-bg-secondary dark:text-dark-text-primary"
-                  placeholder="2024"
-                  min="2020"
-                  max="2025"
-                />
-                <p className="text-xs text-gray-600 dark:text-dark-text-secondary mt-1">Freshness impacts moisture</p>
-              </div>
 
               {/* Acidity Intensity */}
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
@@ -654,6 +688,13 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
         isOpen={showURLModal}
         onClose={() => setShowURLModal(false)}
         onSubmit={handleURLSubmit}
+      />
+
+      {/* HTML Parser Modal */}
+      <HTMLParser
+        isOpen={showHTMLParser}
+        onClose={() => setShowHTMLParser(false)}
+        onParseComplete={handleHTMLParseComplete}
       />
     </div>
   );

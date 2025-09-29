@@ -8,9 +8,9 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 import uuid
 
-from weaviate_config import get_weaviate_client
-from weaviate_schemas import get_all_schemas, get_schema_by_class
-from weaviate_embeddings import get_bean_embedder, get_roast_embedder
+from .weaviate_config import get_weaviate_client
+from .weaviate_schemas import get_all_schemas, get_schema_by_class
+from .weaviate_embeddings import get_bean_embedder, get_roast_embedder
 
 logger = logging.getLogger(__name__)
 

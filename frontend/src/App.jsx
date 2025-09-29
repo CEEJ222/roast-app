@@ -876,6 +876,7 @@ function RoastAssistant() {
               setMilestonesMarked={setMilestonesMarked}
               showEndRoastConfirm={showEndRoastConfirm}
               setShowEndRoastConfirm={setShowEndRoastConfirm}
+              getAuthToken={getAuthToken}
             />
           )}
         </div>

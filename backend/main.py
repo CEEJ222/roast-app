@@ -11,14 +11,14 @@ from jose import jwt, JWTError
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from vendor_parsers.sweet_marias import parse_sweet_marias_url, parse_sweet_marias_html, get_ai_optimized_data
-from weaviate_integration import (
+from RAG_system.weaviate.weaviate_integration import (
     get_weaviate_integration, 
     sync_bean_to_weaviate, 
     sync_roast_to_weaviate,
     search_beans_semantic,
     search_roasts_semantic
 )
-from weaviate_config import initialize_weaviate
+from RAG_system.weaviate.weaviate_config import initialize_weaviate
 
 # Coffee regions validation
 COFFEE_REGIONS = [
@@ -669,10 +669,10 @@ async def update_roast(roast_id: int, request: UpdateRoastRequest, user_id: str 
 async def get_roasts(limit: int = 100, user_id: str = Depends(verify_jwt_token)):
     try:
         sb = get_supabase()
-        # Join with machines table to get machine name
-        result = sb.table("roast_entries").select("*, machines(name)").eq("user_id", user_id).order("created_at", desc=True).limit(limit).execute()
+        # Join with machines and bean_profiles tables to get machine name and bean profile name
+        result = sb.table("roast_entries").select("*, machines(name), bean_profiles(name)").eq("user_id", user_id).order("created_at", desc=True).limit(limit).execute()
         
-        # Flatten the machine name into the roast data
+        # Flatten the machine name and bean profile name into the roast data
         roasts = []
         for roast in result.data:
             roast_data = roast.copy()
@@ -680,10 +680,20 @@ async def get_roasts(limit: int = 100, user_id: str = Depends(verify_jwt_token))
                 roast_data['machine_label'] = roast['machines']['name']
             else:
                 roast_data['machine_label'] = None
-            # Remove the nested machines object
+            
+            if roast.get('bean_profiles') and roast['bean_profiles'].get('name'):
+                roast_data['bean_profile_name'] = roast['bean_profiles']['name']
+                print(f"DEBUG: Roast {roast.get('id')} linked to bean profile: {roast['bean_profiles']['name']}")
+            else:
+                roast_data['bean_profile_name'] = None
+                print(f"DEBUG: Roast {roast.get('id')} has no linked bean profile")
+            
+            # Remove the nested objects
             roast_data.pop('machines', None)
+            roast_data.pop('bean_profiles', None)
             roasts.append(roast_data)
         
+        print(f"DEBUG: Returning {len(roasts)} roasts with bean profile names")
         return roasts
         
     except Exception as e:
@@ -1182,11 +1192,19 @@ async def sync_bean_to_weaviate_endpoint(bean_profile_id: str, user_id: str = De
 
 # Include RAG API router (imported here to avoid circular dependency)
 try:
-    from rag_endpoints import router as rag_router
+    from RAG_system.rag_endpoints import router as rag_router
     app.include_router(rag_router, prefix="/api", tags=["RAG Copilot"])
     print("✅ RAG API router included successfully")
 except ImportError as e:
     print(f"⚠️ Could not import RAG API router: {e}")
+
+# Include HTML Parser router
+try:
+    from html_parser import router as html_parser_router
+    app.include_router(html_parser_router, prefix="/api", tags=["HTML Parser"])
+    print("✅ HTML Parser router included successfully")
+except ImportError as e:
+    print(f"⚠️ Could not import HTML Parser router: {e}")
 
 if __name__ == "__main__":
     import uvicorn
