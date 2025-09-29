@@ -203,8 +203,8 @@ class SweetMariasParser:
         
         for div in content_divs:
             text = div.get_text()
-            # Look for altitude information
-            altitude_match = re.search(r'(\d+)\s*to\s*(\d+)\s*meters?', text, re.IGNORECASE)
+            # Look for altitude information (various formats)
+            altitude_match = re.search(r'(?:between\s+)?(\d+)\s*(?:to|-)\s*(\d+)\s*meters?', text, re.IGNORECASE)
             if altitude_match:
                 self.parsed_data['altitude_min'] = int(altitude_match.group(1))
                 self.parsed_data['altitude_max'] = int(altitude_match.group(2))
@@ -220,7 +220,7 @@ class SweetMariasParser:
         
         # Also look in all text content for altitude
         all_text = soup.get_text()
-        altitude_match = re.search(r'(\d+)\s*to\s*(\d+)\s*meters?', all_text, re.IGNORECASE)
+        altitude_match = re.search(r'(?:between\s+)?(\d+)\s*(?:to|-)\s*(\d+)\s*meters?', all_text, re.IGNORECASE)
         if altitude_match and 'altitude_min' not in self.parsed_data:
             self.parsed_data['altitude_min'] = int(altitude_match.group(1))
             self.parsed_data['altitude_max'] = int(altitude_match.group(2))

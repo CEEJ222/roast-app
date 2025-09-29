@@ -10,7 +10,7 @@ import datetime
 from jose import jwt, JWTError
 from supabase import create_client, Client
 from dotenv import load_dotenv
-from vendor_parsers.sweet_marias import parse_sweet_marias_url, parse_sweet_marias_html, get_ai_optimized_data
+from vendor_parsers.sweet_marias import parse_sweet_marias_html, get_ai_optimized_data
 from RAG_system.weaviate.weaviate_integration import (
     get_weaviate_integration, 
     sync_bean_to_weaviate, 
@@ -176,9 +176,6 @@ class CreateBeanProfileRequest(BaseModel):
     # Additional
     roasting_notes: Optional[str] = None
     qr_code_url: Optional[str] = None
-
-class ParseQRRequest(BaseModel):
-    url: str
 
 class ParseHTMLRequest(BaseModel):
     html_content: str
@@ -996,20 +993,6 @@ async def delete_bean_profile(bean_profile_id: str, user_id: str = Depends(verif
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/bean-profiles/parse-qr")
-async def parse_bean_qr(request: ParseQRRequest, user_id: str = Depends(verify_jwt_token)):
-    try:
-        # Parse the Sweet Maria's URL to extract bean data
-        bean_data = parse_sweet_marias_url(request.url)
-        
-        # Return the parsed data without creating a profile
-        return {
-            "bean_data": bean_data,
-            "message": "URL parsed successfully"
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to parse QR code: {str(e)}")
 
 @app.post("/bean-profiles/parse-html")
 async def parse_bean_html(request: ParseHTMLRequest, user_id: str = Depends(verify_jwt_token)):

@@ -17,6 +17,7 @@ const BeanProfiles = ({ getAuthToken }) => {
   const [profileToDelete, setProfileToDelete] = useState(null);
   const [selectedProfiles, setSelectedProfiles] = useState(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   const loadBeanProfiles = async () => {
     setLoading(true);
@@ -164,6 +165,20 @@ const BeanProfiles = ({ getAuthToken }) => {
     setShowBulkDeleteConfirm(false);
   };
 
+  const handleCreateProfile = () => {
+    setShowCreateForm(true);
+  };
+
+  const handleCreateSave = (newProfile) => {
+    // Add the new profile to the list
+    setBeanProfiles(prev => [newProfile, ...prev]);
+    setShowCreateForm(false);
+  };
+
+  const handleCreateClose = () => {
+    setShowCreateForm(false);
+  };
+
   const getCompletenessBadge = (completeness) => {
     const badges = {
       'basic': { text: 'Basic', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
@@ -239,14 +254,22 @@ const BeanProfiles = ({ getAuthToken }) => {
       <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-border-primary">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">Bean Profiles</h3>
-          {beanProfiles.length > 0 && (
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => setShowAll(!showAll)}
-              className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
+              onClick={handleCreateProfile}
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-dark-accent-primary dark:to-dark-accent-secondary text-white px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-medium shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105 flex items-center gap-2"
             >
-              {showAll ? 'Show Recent Only →' : 'View All Profiles →'}
+              📝 Create New
             </button>
-          )}
+            {beanProfiles.length > 0 && (
+              <button
+                onClick={() => setShowAll(!showAll)}
+                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
+              >
+                {showAll ? 'Show Recent Only →' : 'View All Profiles →'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
       
@@ -281,7 +304,7 @@ const BeanProfiles = ({ getAuthToken }) => {
                 Create your first bean profile to track detailed coffee information for better AI coaching!
               </p>
               <button
-                onClick={() => {/* This will be handled by parent component */}}
+                onClick={handleCreateProfile}
                 className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-dark-accent-primary dark:to-dark-accent-secondary text-white px-6 py-3 rounded-lg hover:from-indigo-700 hover:to-purple-700 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-bold shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105"
               >
                 📝 Create Bean Profile
@@ -475,6 +498,16 @@ const BeanProfiles = ({ getAuthToken }) => {
           getAuthToken={getAuthToken}
           beanProfileId={selectedProfile.id}
           initialData={selectedProfile}
+        />
+      )}
+
+      {/* Bean Profile Create Form */}
+      {showCreateForm && (
+        <BeanProfileForm
+          isOpen={showCreateForm}
+          onClose={handleCreateClose}
+          onSave={handleCreateSave}
+          getAuthToken={getAuthToken}
         />
       )}
 

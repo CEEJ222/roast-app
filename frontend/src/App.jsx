@@ -648,6 +648,47 @@ function RoastAssistant() {
     }
   };
 
+  const cancelRoast = async () => {
+    if (!roastId) return;
+
+    try {
+      await apiCall(`${API_BASE}/roasts/${roastId}`, {
+        method: 'DELETE'
+      });
+
+      setStatus(`🗑️ Roast deleted`);
+      
+      // Reset roast state and redirect to dashboard
+      setRoastId(null);
+      setStartTs(null);
+      setRoastEnded(false);
+      setEvents([]);
+      setEnvironmentalConditions(null);
+      setIsPaused(false);
+      setPauseStartTime(null);
+      setTotalPausedTime(0);
+      setFormData({
+        beanType: '',
+        weightBefore: '',
+        weightAfter: '',
+        notes: '',
+        fan: 8,
+        heat: 4,
+        temp: ''
+      });
+      setMilestonesMarked({
+        firstCrack: false,
+        secondCrack: false,
+        cool: false
+      });
+      
+      // Refresh historical roasts data
+      loadHistoricalRoasts();
+    } catch (error) {
+      // Error already handled in apiCall
+    }
+  };
+
   const deleteEvent = async (eventId) => {
     if (!roastId || !eventId) return;
 
@@ -864,6 +905,7 @@ function RoastAssistant() {
               environmentalConditions={environmentalConditions}
               userProfile={userProfile}
               finishRoast={finishRoast}
+              cancelRoast={cancelRoast}
               endRoastSession={endRoastSession}
               setRoastId={setRoastId}
               setStartTs={setStartTs}

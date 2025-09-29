@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import RoastCurveGraph from '../shared/RoastCurveGraph';
+import ConfirmationModal from '../modals/ConfirmationModal';
 
 const AfterRoast = ({
   roastEnded,
   formData,
   handleInputChange,
   finishRoast,
+  cancelRoast,
   endRoastSession,
   loading,
   events,
@@ -22,6 +24,7 @@ const AfterRoast = ({
   setTotalPausedTime,
   setMilestonesMarked
 }) => {
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const handleBackToDashboard = () => {
     setRoastId(null);
     setStartTs(null);
@@ -51,7 +54,13 @@ const AfterRoast = ({
           <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Complete Your Roast</h2>
           <p className="text-gray-600 dark:text-dark-text-secondary">Record final measurements and notes</p>
         </div>
-        <div className="w-32"></div> {/* Spacer for centering */}
+        <button
+          onClick={() => setShowCancelModal(true)}
+          disabled={loading}
+          className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          🗑️ Delete
+        </button>
       </div>
       
       {!roastEnded && (
@@ -195,6 +204,22 @@ const AfterRoast = ({
           </table>
         </div>
       </div>
+
+      {/* Delete Roast Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={() => {
+          setShowCancelModal(false);
+          cancelRoast();
+        }}
+        title="Delete Roast"
+        message="Are you sure you want to delete this roast? This will permanently delete the roast and all its data. This action cannot be undone."
+        confirmText="Yes, Delete Roast"
+        cancelText="Keep Roast"
+        confirmButtonColor="bg-red-600 hover:bg-red-700"
+        icon="⚠️"
+      />
     </div>
   );
 };

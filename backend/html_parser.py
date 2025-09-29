@@ -27,17 +27,31 @@ def detect_vendor(html_content: str) -> str:
     """Detect which vendor the HTML content is from"""
     html_lower = html_content.lower()
     
-    if 'sweetmarias.com' in html_lower or 'sweet maria' in html_lower:
+    print(f"DEBUG: Checking vendor detection...")
+    print(f"DEBUG: HTML contains 'sweetmarias.com': {'sweetmarias.com' in html_lower}")
+    print(f"DEBUG: HTML contains 'sweet maria': {'sweet maria' in html_lower}")
+    sweet_maria_check = "sweet maria's" in html_lower
+    print(f"DEBUG: HTML contains 'sweet maria's': {sweet_maria_check}")
+    print(f"DEBUG: HTML contains 'additional-attributes-table': {'additional-attributes-table' in html_lower}")
+    
+    # Check for Sweet Maria's indicators
+    if ('sweetmarias.com' in html_lower or 
+        'sweet maria' in html_lower or 
+        "sweet maria's" in html_lower or
+        'additional-attributes-table' in html_lower):  # Sweet Maria's specific table class
+        print("DEBUG: Detected Sweet Maria's vendor")
         return 'sweet_marias'
     elif 'bluebottlecoffee.com' in html_lower or 'blue bottle' in html_lower:
         return 'blue_bottle'
     elif 'counterculturecoffee.com' in html_lower or 'counter culture' in html_lower:
         return 'counter_culture'
     else:
+        print("DEBUG: No vendor detected, using unknown")
         return 'unknown'
 
 def parse_html_content(html_content: str) -> Dict[str, Any]:
     """Parse HTML content and return structured bean profile data"""
+    print("DEBUG: Using updated html_parser.py version 2.0")
     vendor = detect_vendor(html_content)
     
     if vendor == 'sweet_marias':
@@ -47,10 +61,6 @@ def parse_html_content(html_content: str) -> Dict[str, Any]:
             ai_data = get_ai_optimized_data(html_content)
             
             # Combine and structure the data
-            # Debug: Check what's in raw_data
-            print(f"DEBUG: raw_data contains: {raw_data}")
-            print(f"DEBUG: density from raw_data: {raw_data.get('density_g_ml')}")
-            
             bean_profile = {
                 # Basic info
                 'name': raw_data.get('name', ''),
@@ -95,7 +105,6 @@ def parse_html_content(html_content: str) -> Dict[str, Any]:
                 
                 # Critical AI coaching data (will need manual input)
                 'moisture_content_pct': None,
-                'density_g_ml': None,
                 
                 # Metadata
                 'vendor_detected': vendor,

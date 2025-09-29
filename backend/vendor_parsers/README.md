@@ -11,7 +11,6 @@ vendor_parsers/
 └── sweet_marias/
     ├── __init__.py
     ├── sweet_marias_parser.py    # Main HTML parser
-    ├── bean_parser.py            # URL parser
     ├── test_parser.py            # Test scripts
     └── test_real_html.py        # Real HTML tests
 ```
@@ -21,7 +20,6 @@ vendor_parsers/
 The Sweet Maria's parser handles:
 - **HTML Parsing**: Extracts bean data from Sweet Maria's product pages
 - **AI Optimization**: Uses AI to enhance and structure the data
-- **URL Parsing**: Direct URL parsing for QR code integration
 - **Data Validation**: Ensures data quality and completeness
 
 ### Usage
@@ -29,16 +27,12 @@ The Sweet Maria's parser handles:
 ```python
 from vendor_parsers.sweet_marias import (
     parse_sweet_marias_html,
-    get_ai_optimized_data,
-    parse_sweet_marias_url
+    get_ai_optimized_data
 )
 
 # Parse HTML content
 html_data = parse_sweet_marias_html(html_content)
 ai_data = get_ai_optimized_data(html_content)
-
-# Parse URL directly
-url_data = parse_sweet_marias_url(url)
 ```
 
 ## Adding New Vendors
