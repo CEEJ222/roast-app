@@ -178,7 +178,7 @@ class SweetMariasParser:
                 self.parsed_data['origin'] = 'Guatemala'
             elif 'Costa Rica' in region:
                 self.parsed_data['origin'] = 'Costa Rica'
-            elif 'Kenya' in region:
+            elif 'Kenya' in region or 'Nyeri' in region or 'Karima' in region:
                 self.parsed_data['origin'] = 'Kenya'
             elif 'Brazil' in region:
                 self.parsed_data['origin'] = 'Brazil'

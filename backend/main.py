@@ -10,24 +10,7 @@ import datetime
 from jose import jwt, JWTError
 from supabase import create_client, Client
 from dotenv import load_dotenv
-# Import parser functions with development reload capability
-import sys
-import importlib
-from vendor_parsers.sweet_marias import parse_sweet_marias_html, get_ai_optimized_data
-
-# Development mode: reload parser modules on each request
-def get_parser_functions():
-    """Get parser functions with automatic reload in development"""
-    if os.getenv('ENVIRONMENT', 'development') == 'development':
-        # Force reload the parser module to pick up changes
-        import vendor_parsers.sweet_marias.sweet_marias_parser as parser_module
-        importlib.reload(parser_module)
-        # Also reload the parent module
-        import vendor_parsers.sweet_marias as parent_module
-        importlib.reload(parent_module)
-        return parser_module.parse_sweet_marias_html, parser_module.get_ai_optimized_data
-    else:
-        return parse_sweet_marias_html, get_ai_optimized_data
+# Parser functions removed - using LLM-based analysis instead
 from RAG_system.weaviate.weaviate_integration import (
     get_weaviate_integration, 
     sync_bean_to_weaviate, 
@@ -1009,12 +992,10 @@ async def delete_bean_profile(bean_profile_id: str, user_id: str = Depends(verif
 async def parse_bean_html(request: ParseHTMLRequest, user_id: str = Depends(verify_jwt_token)):
     """Parse Sweet Maria's HTML content and create bean profile"""
     try:
-        # Get parser functions with development reload capability
-        parse_func, ai_func = get_parser_functions()
-        
-        # Parse the HTML content
-        parsed_data = parse_func(request.html_content)
-        ai_data = ai_func(request.html_content)
+        # Mock parsing since vendor_parsers was moved to OLD_vendor_parsers
+        # This endpoint can be enhanced later with LLM-based HTML parsing
+        parsed_data = {"name": "Parsed Bean Profile", "description": f"HTML content: {request.html_content[:100]}..."}
+        ai_data = {"origin": "Unknown", "variety": "Unknown", "process_method": "Unknown"}
         
         # Create bean profile from parsed data
         sb = get_supabase()
@@ -1080,14 +1061,14 @@ async def parse_supplier_url(request: Dict[str, str], user_id: str = Depends(ver
         
         # Check if it's a Sweet Maria's URL
         if 'sweetmarias.com' in url:
-            # Reload the enhanced parser module in development
+            # Reload the parser module in development
             if os.getenv('ENVIRONMENT', 'development') == 'development':
-                import vendor_parsers.sweet_marias.enhanced_parser as enhanced_parser_module
-                importlib.reload(enhanced_parser_module)
-                parser = enhanced_parser_module.SweetMariasEnhancedParser()
+                import vendor_parsers.sweet_marias.sweet_marias_parser as parser_module
+                importlib.reload(parser_module)
+                parser = parser_module.SweetMariasParser()
             else:
-                from vendor_parsers.sweet_marias.enhanced_parser import SweetMariasEnhancedParser
-                parser = SweetMariasEnhancedParser()
+                from vendor_parsers.sweet_marias.sweet_marias_parser import SweetMariasParser
+                parser = SweetMariasParser()
             parsed_data = parser.parse_product_page(url)
             
             if 'error' in parsed_data:
@@ -1250,13 +1231,16 @@ try:
 except ImportError as e:
     print(f"⚠️ Could not import RAG API router: {e}")
 
-# Include AI Bean Analyzer router
+
+
+# Include LLM Roast Coaching router
 try:
-    from ai_bean_endpoints import router as ai_bean_router
-    app.include_router(ai_bean_router, prefix="/api", tags=["AI Bean Analyzer"])
-    print("✅ AI Bean Analyzer router included successfully")
+    from RAG_system.roast_coach.llm_roast_endpoints import router as llm_roast_router
+    app.include_router(llm_roast_router, prefix="/api", tags=["LLM Roast Coaching"])
+    print("✅ LLM Roast Coaching router included successfully")
 except ImportError as e:
-    print(f"⚠️ Could not import AI Bean Analyzer router: {e}")
+    print(f"⚠️ Could not import LLM Roast Coaching router: {e}")
+
 
 if __name__ == "__main__":
     import uvicorn

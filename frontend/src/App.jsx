@@ -859,6 +859,7 @@ function RoastAssistant() {
               roastDetails={roastDetails}
               setRoastDetails={setRoastDetails}
               roastId={roastId}
+              onDataChange={loadHistoricalRoasts}
             />
           )}
 

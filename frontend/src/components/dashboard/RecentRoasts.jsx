@@ -8,7 +8,8 @@ const RecentRoasts = ({
   roastDetails, 
   setRoastDetails, 
   onRoastResume, 
-  roastId 
+  roastId,
+  onDataChange = null
 }) => {
   const [showFullHistoricalRoasts, setShowFullHistoricalRoasts] = useState(false);
 
@@ -47,6 +48,7 @@ const RecentRoasts = ({
             onRoastResume={onRoastResume}
             currentActiveRoastId={roastId}
             hideCompareButton={true}
+            onDataChange={onDataChange}
           />
         </div>
       ) : (

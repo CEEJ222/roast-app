@@ -34,11 +34,20 @@ def detect_vendor(html_content: str) -> str:
     print(f"DEBUG: HTML contains 'sweet maria's': {sweet_maria_check}")
     print(f"DEBUG: HTML contains 'additional-attributes-table': {'additional-attributes-table' in html_lower}")
     
-    # Check for Sweet Maria's indicators
-    if ('sweetmarias.com' in html_lower or 
-        'sweet maria' in html_lower or 
-        "sweet maria's" in html_lower or
-        'additional-attributes-table' in html_lower):  # Sweet Maria's specific table class
+    # Check for Sweet Maria's indicators - expanded detection
+    sweet_maria_indicators = [
+        'sweetmarias.com',
+        'sweet maria',
+        "sweet maria's",
+        'additional-attributes-table',
+        'forix-chartjs',  # Sweet Maria's chart class
+        'data-chart-value',  # Sweet Maria's chart data
+        'cupping-notes',  # Sweet Maria's cupping notes class
+        'product attribute',  # Sweet Maria's product attribute class
+        'page-title'  # Sweet Maria's page title class
+    ]
+    
+    if any(indicator in html_lower for indicator in sweet_maria_indicators):
         print("DEBUG: Detected Sweet Maria's vendor")
         return 'sweet_marias'
     elif 'bluebottlecoffee.com' in html_lower or 'blue bottle' in html_lower:
@@ -82,8 +91,9 @@ def parse_html_content(html_content: str) -> Dict[str, Any]:
                 origin = 'Guatemala'
             elif 'Costa Rica' in origin:
                 origin = 'Costa Rica'
-            elif 'Kenya' in origin:
+            elif 'Kenya' in origin or 'Nyeri' in origin or 'Karima' in origin:
                 origin = 'Kenya'
+                print(f"DEBUG: Mapped to Kenya")
             elif 'Brazil' in origin:
                 origin = 'Brazil'
             elif 'Peru' in origin:
@@ -118,7 +128,7 @@ def parse_html_content(html_content: str) -> Dict[str, Any]:
             # Map process method to dropdown values
             if 'Dry Process' in process_method or 'Natural' in process_method:
                 process_method = 'Natural'
-            elif 'Washed' in process_method:
+            elif 'Washed' in process_method or 'Wet Process' in process_method:
                 process_method = 'Washed'
             elif 'Honey' in process_method:
                 process_method = 'Honey'
@@ -231,7 +241,6 @@ def parse_html_content(html_content: str) -> Dict[str, Any]:
                 # Additional data
                 'notes': raw_data.get('cupping_notes', ''),
                 'roasting_notes': raw_data.get('roast_recommendations', ''),
-                'recommended_roast_levels': ai_data.get('recommended_roast_levels', []),
                 
                 # Critical AI coaching data (will need manual input)
                 'moisture_content_pct': None,
@@ -266,13 +275,70 @@ def parse_html_content(html_content: str) -> Dict[str, Any]:
         }
     
     else:
-        # Generic parsing attempt
-        return {
-            'name': 'Unknown Coffee',
-            'vendor_detected': vendor,
-            'parsing_confidence': 'low',
-            'notes': 'Generic parsing - limited data extraction'
-        }
+        # Generic parsing attempt - try to extract basic info from any HTML
+        print("DEBUG: Attempting generic parsing...")
+        try:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # Try to extract basic info
+            name = 'Unknown Coffee'
+            description = ''
+            
+            # Look for title or h1
+            title = soup.find('title')
+            if title:
+                name = title.get_text().strip()
+            else:
+                h1 = soup.find('h1')
+                if h1:
+                    name = h1.get_text().strip()
+            
+            # Look for description
+            desc_selectors = [
+                'div.description',
+                'div.product-description',
+                'div.overview',
+                'p.description',
+                'div.value'
+            ]
+            
+            for selector in desc_selectors:
+                desc_elem = soup.select_one(selector)
+                if desc_elem:
+                    description = desc_elem.get_text().strip()
+                    break
+            
+            # Try to extract origin from text content
+            origin = 'Unknown'
+            all_text = soup.get_text().lower()
+            countries = ['ethiopia', 'colombia', 'guatemala', 'costa rica', 'kenya', 'yemen', 'brazil', 'peru', 'honduras', 'nicaragua', 'el salvador', 'panama', 'mexico', 'rwanda', 'burundi', 'tanzania', 'india', 'indonesia', 'sumatra', 'java', 'sulawesi', 'timor']
+            for country in countries:
+                if country in all_text:
+                    origin = country.title()
+                    break
+            
+            return {
+                'name': name,
+                'origin': origin,
+                'variety': 'Unknown',
+                'process_method': 'Unknown',
+                'bean_type': 'Regular',
+                'description': description,
+                'recommended_roast_levels': ['City+'],
+                'supplier_name': 'Unknown',
+                'vendor_detected': vendor,
+                'parsing_confidence': 'low',
+                'notes': 'Generic parsing - limited data extraction'
+            }
+        except Exception as e:
+            print(f"DEBUG: Generic parsing failed: {e}")
+            return {
+                'name': 'Unknown Coffee',
+                'vendor_detected': vendor,
+                'parsing_confidence': 'low',
+                'notes': f'Generic parsing failed: {str(e)}'
+            }
 
 @router.post("/bean-profiles/parse-html", response_model=HTMLParseResponse)
 async def parse_html_source(

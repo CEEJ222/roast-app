@@ -14,7 +14,8 @@ const DashboardHistoricalRoasts = ({
   setRoastDetails,
   onRoastResume,
   currentActiveRoastId,
-  hideCompareButton = false
+  hideCompareButton = false,
+  onDataChange = null // Callback to refresh parent data
 }) => {
   const { getAuthToken } = useAuth();
   const [roasts, setRoasts] = useState([]);
@@ -226,6 +227,11 @@ const DashboardHistoricalRoasts = ({
           return newDetails;
         });
         setShowDeleteConfirm(null);
+        
+        // Notify parent to refresh data
+        if (onDataChange) {
+          onDataChange();
+        }
       } else {
         const errorData = await response.json();
         console.error('Error deleting roast:', errorData);
@@ -274,6 +280,11 @@ const DashboardHistoricalRoasts = ({
           selectedRoasts.forEach(id => delete newDetails[id]);
           return newDetails;
         });
+        
+        // Notify parent to refresh data
+        if (onDataChange) {
+          onDataChange();
+        }
       }
     } catch (error) {
       console.error('Error deleting roasts:', error);

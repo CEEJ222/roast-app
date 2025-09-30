@@ -8,6 +8,10 @@ import os
 import logging
 from typing import Dict, Any, List, Optional
 from openai import OpenAI
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -18,16 +22,18 @@ class DeepSeekRoastingCopilot:
         self._initialize_client()
     
     def _initialize_client(self):
-        """Initialize DeepSeek client with API key"""
+        """Initialize client with free models via OpenRouter"""
         try:
-            # DeepSeek uses OpenAI-compatible API
+            # Use OpenRouter with free models
             self.client = OpenAI(
-                api_key=os.getenv("DEEPSEEK_API_KEY", "sk-your-deepseek-key-here"),
-                base_url="https://api.deepseek.com/v1"
+                api_key=os.getenv("OPENROUTER_API_KEY", os.getenv("DEEPSEEK_API_KEY", "sk-your-openrouter-key-here")),
+                base_url="https://openrouter.ai/api/v1"
             )
-            logger.info("✅ DeepSeek LLM client initialized")
+            self.primary_model = os.getenv("PRIMARY_MODEL", "meta-llama/llama-3.2-3b-instruct:free")
+            self.fallback_model = os.getenv("FALLBACK_MODEL", "google/gemini-flash-1.5:free")
+            logger.info(f"✅ OpenRouter LLM client initialized with primary model: {self.primary_model}")
         except Exception as e:
-            logger.error(f"❌ Failed to initialize DeepSeek client: {e}")
+            logger.error(f"❌ Failed to initialize OpenRouter client: {e}")
             self.client = None
     
     def get_pre_roast_advice(self, 
@@ -50,9 +56,10 @@ class DeepSeekRoastingCopilot:
             # Create the prompt
             prompt = self._create_pre_roast_prompt(context)
             
-            # Call DeepSeek API
+            # Use configured models with fallback
+            model_name = self.primary_model
             response = self.client.chat.completions.create(
-                model="deepseek-chat",
+                model=model_name,
                 messages=[
                     {
                         "role": "system",
@@ -64,7 +71,8 @@ class DeepSeekRoastingCopilot:
                     }
                 ],
                 temperature=0.7,
-                max_tokens=1000
+                max_tokens=1000,
+                timeout=30  # Add timeout to prevent hanging
             )
             
             # Parse the response
@@ -101,8 +109,10 @@ class DeepSeekRoastingCopilot:
             Provide specific FreshRoast SR540/SR800 advice for this situation.
             """
             
+            # Use configured models with fallback
+            model_name = self.primary_model
             response = self.client.chat.completions.create(
-                model="deepseek-chat",
+                model=model_name,
                 messages=[
                     {
                         "role": "system",
@@ -114,7 +124,8 @@ class DeepSeekRoastingCopilot:
                     }
                 ],
                 temperature=0.8,
-                max_tokens=500
+                max_tokens=500,
+                timeout=30  # Add timeout to prevent hanging
             )
             
             return response.choices[0].message.content

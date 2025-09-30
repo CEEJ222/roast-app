@@ -16,6 +16,7 @@ const Dashboard = ({
   setRoastDetails,
   roastId,
   getAuthToken,
+  onDataChange = null,
 }) => {
   return (
     <div className="space-y-6">
@@ -87,10 +88,11 @@ const Dashboard = ({
         setRoastDetails={setRoastDetails}
         onRoastResume={handleRoastResume}
         roastId={roastId}
+        onDataChange={onDataChange}
       />
 
       {/* Bean Profiles */}
-      <BeanProfiles getAuthToken={getAuthToken} />
+      <BeanProfiles getAuthToken={getAuthToken} onDataChange={onDataChange} />
     </div>
   );
 };

@@ -6,7 +6,7 @@ const API_BASE = import.meta.env.DEV
   ? 'http://localhost:8000'
   : 'https://roast-backend-production-8883.up.railway.app';
 
-const BeanProfiles = ({ getAuthToken }) => {
+const BeanProfiles = ({ getAuthToken, onDataChange = null }) => {
   const [beanProfiles, setBeanProfiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -219,6 +219,11 @@ const BeanProfiles = ({ getAuthToken }) => {
     // Add the new profile to the list
     setBeanProfiles(prev => [newProfile, ...prev]);
     setShowCreateForm(false);
+    
+    // Notify parent to refresh data if needed
+    if (onDataChange) {
+      onDataChange();
+    }
   };
 
   const handleCreateClose = () => {
@@ -564,6 +569,10 @@ const BeanProfiles = ({ getAuthToken }) => {
           onClose={handleCreateClose}
           onSave={handleCreateSave}
           getAuthToken={getAuthToken}
+          onDataUpdate={(updatedData) => {
+            // Handle data updates if needed
+            console.log('Bean profile data updated:', updatedData);
+          }}
         />
       )}
 
