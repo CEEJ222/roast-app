@@ -33,19 +33,36 @@ const StartNewRoastModal = ({
     beanProfileMode: 'select' // 'select', 'create' - removed 'auto'
   });
   const [beanProfiles, setBeanProfiles] = useState([]);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(true);
 
   // Load bean profiles when modal opens
   useEffect(() => {
     if (isOpen) {
       setRoastSetupStep('machine');
-      setFormData(prev => ({
-        ...prev,
-        address: userProfile?.address || '',
-        selectedMachineId: userMachines.length > 0 ? userMachines[0].id : ''
-      }));
+      setIsLoadingLocation(true);
+      setFormData(prev => {
+        const firstMachine = userMachines.length > 0 ? userMachines[0] : null;
+        return {
+          ...prev,
+          address: userProfile?.address || '',
+          selectedMachineId: firstMachine?.id || '',
+          model: firstMachine?.model || 'SR800',
+          hasExtension: firstMachine?.has_extension || false
+        };
+      });
       loadBeanProfiles();
+      
+      // Check if location is available
+      if (userProfile?.address) {
+        setIsLoadingLocation(false);
+      } else {
+        // Wait a bit for userProfile to load
+        setTimeout(() => {
+          setIsLoadingLocation(false);
+        }, 1000);
+      }
     }
-  }, [isOpen]); // Only depend on isOpen to prevent infinite loops
+  }, [isOpen]); // Removed userProfile.address dependency to prevent resetting formData
 
   const loadBeanProfiles = async () => {
     try {
@@ -119,12 +136,12 @@ const StartNewRoastModal = ({
     const requestData = {
       machine_label: machineLabel,
       address: formData.address,
-      bean_profile_id: formData.selectedBeanProfile,
+      bean_profile_id: formData.selectedBeanProfile?.id,
       desired_roast_level: formData.roastLevel,
       weight_before_g: parseFloat(formData.weightBefore) || null,
       notes: formData.notes || null
     };
-    console.log('Starting roast with data:', requestData);
+      console.log('Starting roast with data:', requestData);
     
     setLoading(true);
     try {
@@ -143,6 +160,7 @@ const StartNewRoastModal = ({
       }
 
       const data = await response.json();
+      // Pass the roast data (bean profile will come from backend response)
       onStart(data);
       onClose();
     } catch (error) {
@@ -226,14 +244,13 @@ const StartNewRoastModal = ({
               </span>
             </div>
             <div className="w-6 h-0.5 bg-gray-300"></div>
-            <div className="w-6 h-0.5 bg-gray-300"></div>
             <div className="flex items-center">
               <div className="flex items-center justify-center">
                 <span className={`text-xl ${
                   roastSetupStep === 'roast-parameters' ? 'text-indigo-600' : 
                   roastSetupStep === 'review' ? 'text-green-600' : 'text-gray-400'
                 }`}>
-                  ⚙️
+                  🔥
                 </span>
               </div>
               <span className={`ml-2 text-xs font-medium ${
@@ -327,7 +344,21 @@ const StartNewRoastModal = ({
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">Location</h3>
                   
-                  {!formData.address ? (
+                  {isLoadingLocation ? (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0">
+                          <span className="text-2xl">⏳</span>
+                        </div>
+                        <div className="ml-3">
+                          <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200">Loading Location...</h4>
+                          <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                            Fetching your location data...
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : !formData.address ? (
                     <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
                       <div className="flex items-start">
                         <div className="flex-shrink-0">
@@ -458,12 +489,17 @@ const StartNewRoastModal = ({
                   <BeanProfileSearch
                     beanProfiles={beanProfiles}
                     onSelect={(profile) => {
+                      console.log('Bean profile selected:', profile);
                       if (profile) {
-                        setFormData(prev => ({
-                          ...prev,
-                          selectedBeanProfile: profile.id,
-                          beanProfileMode: 'select'
-                        }));
+                        setFormData(prev => {
+                          const newData = {
+                            ...prev,
+                            selectedBeanProfile: profile,  // Store the full profile object, not just ID
+                            beanProfileMode: 'select'
+                          };
+                          console.log('Updated formData with bean profile:', newData.selectedBeanProfile);
+                          return newData;
+                        });
                         // Go directly to roast parameters
                         setRoastSetupStep('roast-parameters');
                       } else {
@@ -471,9 +507,10 @@ const StartNewRoastModal = ({
                         handleInputChange('beanProfileMode', 'select');
                       }
                     }}
-                    selectedProfileId={formData.selectedBeanProfile}
+                    selectedProfileId={formData.selectedBeanProfile?.id}
                     placeholder="Search bean profiles..."
                     showDetails={true}
+                    defaultOpen={true}
                   />
                   </div>
                 </div>
@@ -501,7 +538,7 @@ const StartNewRoastModal = ({
                         // Set the selected profile and advance to next step
                         setFormData(prev => ({
                           ...prev,
-                          selectedBeanProfile: profile.id,
+                          selectedBeanProfile: profile, // Store the full profile object, not just ID
                           beanProfileMode: 'create'
                         }));
                         // Skip coffee details step and go directly to roast parameters
@@ -611,25 +648,25 @@ const StartNewRoastModal = ({
                       <div className="flex justify-between">
                         <span className="text-gray-600 dark:text-dark-text-secondary">Profile:</span>
                         <span className="text-gray-900 dark:text-dark-text-primary">
-                          {beanProfiles.find(p => p.id === formData.selectedBeanProfile)?.name || 'Not selected'}
+                          {formData.selectedBeanProfile?.name || 'Not selected'}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600 dark:text-dark-text-secondary">Origin:</span>
                         <span className="text-gray-900 dark:text-dark-text-primary">
-                          {beanProfiles.find(p => p.id === formData.selectedBeanProfile)?.origin || 'Not specified'}
+                          {formData.selectedBeanProfile?.origin || 'Not specified'}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600 dark:text-dark-text-secondary">Variety:</span>
                         <span className="text-gray-900 dark:text-dark-text-primary">
-                          {beanProfiles.find(p => p.id === formData.selectedBeanProfile)?.variety || 'Not specified'}
+                          {formData.selectedBeanProfile?.variety || 'Not specified'}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600 dark:text-dark-text-secondary">Process:</span>
                         <span className="text-gray-900 dark:text-dark-text-primary">
-                          {beanProfiles.find(p => p.id === formData.selectedBeanProfile)?.process_method || 'Not specified'}
+                          {formData.selectedBeanProfile?.process_method || 'Not specified'}
                         </span>
                       </div>
                       <div className="flex justify-between">

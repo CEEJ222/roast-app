@@ -465,7 +465,8 @@ async def create_roast(request: CreateRoastRequest, user_id: str = Depends(verif
             "start_ts": start_ts,
             "env": env,
             "weight_before_g": request.weight_before_g,
-            "bean_profile_id": request.bean_profile_id
+            "bean_profile_id": request.bean_profile_id,
+            "bean_profile": bean_profile  # Include the full bean profile object
         }
         print(f"DEBUG: Returning response with weight_before_g: {request.weight_before_g}")
         return response_data

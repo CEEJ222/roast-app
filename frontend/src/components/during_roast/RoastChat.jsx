@@ -11,6 +11,7 @@ const RoastChat = ({
   elapsedTime,
   currentPhase,
   environmentalConditions,
+  userProfile,
   getAuthToken,
   isOpen,
   onClose
@@ -19,8 +20,22 @@ const RoastChat = ({
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
+
+  // Format temperature based on user's unit preference
+  const formatTemperature = (tempFahrenheit) => {
+    if (!tempFahrenheit || isNaN(tempFahrenheit)) return 'Not recorded';
+    
+    const units = userProfile?.units || {};
+    if (units.temperature === 'celsius') {
+      const celsius = ((tempFahrenheit - 32) * 5/9);
+      return `${Math.round(celsius)}°C`;
+    } else {
+      return `${Math.round(tempFahrenheit)}°F`;
+    }
+  };
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -29,7 +44,15 @@ const RoastChat = ({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+    
+    // Track unread messages when chat is minimized
+    if (isMinimized && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.type === 'ai') {
+        setUnreadCount(prev => prev + 1);
+      }
+    }
+  }, [messages, isMinimized]);
 
   // Initialize chat with welcome message and first recommendation
   useEffect(() => {
@@ -38,22 +61,270 @@ const RoastChat = ({
     }
   }, [isOpen]);
 
+  // Clear unread count when chat is opened or maximized
+  useEffect(() => {
+    if (isOpen && !isMinimized) {
+      setUnreadCount(0);
+    }
+  }, [isOpen, isMinimized]);
+
+  // Trigger AI call once data becomes available
+  useEffect(() => {
+    if (isOpen && messages.length > 0 && formData.selectedBeanProfile && formData.selectedMachine) {
+      // Check if we already have AI recommendations (avoid duplicate calls)
+      const hasAIRecommendation = messages.some(msg => 
+        msg.content.includes('**FreshRoast Pre-Roast Strategy:**')
+      );
+      
+      if (!hasAIRecommendation) {
+        getAIRecommendation('initial_setup');
+      }
+    }
+  }, [isOpen, formData.selectedBeanProfile, formData.selectedMachine]);
+
+  // Auto-trigger AI responses when events change (new events logged)
+  useEffect(() => {
+    if (isOpen && events.length > 0 && messages.length > 1) {
+      // Only trigger if we have a new event (events array changed)
+      const lastEvent = events[events.length - 1];
+      if (lastEvent && (lastEvent.kind === 'SET' || ['FIRST_CRACK', 'SECOND_CRACK', 'COOL'].includes(lastEvent.kind))) {
+        // Auto-respond to all relevant events
+        getAutomaticEventResponse(lastEvent);
+      }
+    }
+  }, [events.length]); // Trigger when events array length changes
+
   const initializeChat = async () => {
+    const getStructuredWelcome = () => {
+      const machineName = formData.selectedMachine?.name || 'FreshRoast SR800';
+      const hasExtension = formData.selectedMachine?.has_extension || false;
+      
+      // Machine setup - interpretive guidance
+      const machineLine = hasExtension 
+        ? `🖥️ **Machine:** ${machineName} with extension tube - expect better bean movement and lower heat/fan settings needed`
+        : `🖥️ **Machine:** ${machineName} - standard chamber requires careful heat/fan management for even roasting`;
+      
+      // Environmental conditions - interpretive guidance
+      const getEnvironmentalGuidance = () => {
+        if (!environmentalConditions) return `🌡️ **Environment:** Weather data unavailable`;
+        
+        const temp = environmentalConditions.temperature_f || environmentalConditions.temperature_c;
+        const humidity = environmentalConditions.humidity_pct;
+        const elevation = environmentalConditions.elevation_ft || environmentalConditions.elevation_m;
+        const pressure = environmentalConditions.pressure_hpa;
+        
+        let guidance = [];
+        
+        // Temperature guidance
+        if (temp > 85) {
+          guidance.push("high temperature may speed up roasting");
+        } else if (temp < 65) {
+          guidance.push("cool temperature may slow roasting");
+        } else {
+          guidance.push("ideal temperature for roasting");
+        }
+        
+        // Humidity guidance  
+        if (humidity > 70) {
+          guidance.push("high humidity may require higher fan settings");
+        } else if (humidity < 30) {
+          guidance.push("low humidity may dry beans faster");
+        } else {
+          guidance.push("moderate humidity ideal");
+        }
+        
+        // Elevation guidance
+        if (elevation > 3000) {
+          guidance.push("high altitude requires lower heat settings");
+        } else if (elevation < 1000) {
+          guidance.push("low altitude allows standard heat settings");
+        } else {
+          guidance.push("moderate altitude ideal");
+        }
+        
+        return `🌡️ **Environment:** ${guidance.join(", ")}`;
+      };
+      
+      const envLine = getEnvironmentalGuidance();
+      
+      // Bean information - interpretive guidance
+      const bean = formData.selectedBeanProfile;
+      
+      // Debug: Log the bean profile data to see what fields are available
+      if (bean) {
+        console.log('Bean profile data for AI chat:', bean);
+        console.log('Bean altitude fields:', {
+          altitude: bean.altitude,
+          altitude_m: bean.altitude_m,
+          altitude_ft: bean.altitude_ft
+        });
+        console.log('Bean density/screen fields:', {
+          density: bean.density,
+          bulk_density: bean.bulk_density,
+          screen_size: bean.screen_size,
+          screen_size_mm: bean.screen_size_mm
+        });
+      }
+      
+      const getBeanOriginGuidance = () => {
+        if (!bean) return `🌍 **Bean Origin:** No bean profile selected`;
+        
+        const origin = bean.origin || 'Unknown';
+        const altitude = bean.altitude_m || bean.altitude_ft || bean.altitude;
+        const altitudeUnit = bean.altitude_m ? 'm' : 'ft';
+        
+        let guidance = `${origin}`;
+        
+        if (altitude) {
+          if (altitude > 1500) {
+            guidance += ` - high altitude beans require slower, gentler roasting`;
+          } else if (altitude > 1000) {
+            guidance += ` - moderate altitude allows standard roasting approach`;
+          } else {
+            guidance += ` - low altitude beans can handle higher heat settings`;
+          }
+        } else {
+          guidance += ` - altitude unknown, monitor closely for roasting characteristics`;
+        }
+        
+        return `🌍 **Bean Origin:** ${guidance}`;
+      };
+      
+      const getBeanProcessGuidance = () => {
+        if (!bean) return `🔄 **Bean Process:** No bean profile selected`;
+        
+        const process = bean.process_method || 'Unknown';
+        
+        switch (process.toLowerCase()) {
+          case 'natural':
+            return `🔄 **Bean Process:** Natural process - expect faster development and more complex sugars`;
+          case 'washed':
+            return `🔄 **Bean Process:** Washed process - expect cleaner development and brighter acidity`;
+          case 'honey':
+            return `🔄 **Bean Process:** Honey process - expect medium development speed with balanced sweetness`;
+          default:
+            return `🔄 **Bean Process:** ${process} - monitor for unique roasting characteristics`;
+        }
+      };
+      
+      const getBeanTypeGuidance = () => {
+        if (!bean) return `☕ **Bean Type:** No bean profile selected`;
+        
+        const name = bean.name || 'Unknown';
+        const variety = bean.variety || 'Unknown variety';
+        const density = bean.density || bean.bulk_density;
+        const screenSize = bean.screen_size || bean.screen_size_mm;
+        
+        let guidance = `${name}`;
+        
+        // Add variety information
+        if (variety && variety !== 'Unknown variety') {
+          guidance += ` (${variety})`;
+        }
+        
+        // Add density information
+        if (density) {
+          guidance += ` - ${density} density`;
+        }
+        
+        // Add screen size information
+        if (screenSize) {
+          guidance += `, ${screenSize} screen size`;
+        }
+        
+        // Add monitoring guidance
+        guidance += ` - monitor density and moisture content`;
+        
+        return `☕ **Bean Type:** ${guidance}`;
+      };
+      
+      const beanOriginLine = bean ? getBeanOriginGuidance() : null;
+      const beanProcessLine = bean ? getBeanProcessGuidance() : null;
+      const beanTypeLine = bean ? getBeanTypeGuidance() : null;
+      
+      // Final summary - interpretive guidance
+      const getSummaryGuidance = () => {
+        if (!bean) {
+          return `🎯 **Summary:** ${hasExtension ? 'Extension tube setup ready - ' : ''}Select a bean profile for specific roasting guidance`;
+        }
+        
+        let summary = `🎯 **Summary:** `;
+        
+        // Machine contribution
+        if (hasExtension) {
+          summary += `Extension tube provides better control for `;
+        }
+        
+        // Bean process contribution
+        const process = bean.process_method?.toLowerCase();
+        switch (process) {
+          case 'natural':
+            summary += `natural process beans that develop sugars quickly - watch for faster first crack`;
+            break;
+          case 'washed':
+            summary += `washed beans with cleaner development - expect more predictable timing`;
+            break;
+          case 'honey':
+            summary += `honey process beans with balanced sweetness - moderate development speed expected`;
+            break;
+          default:
+            summary += `${process || 'this'} process beans - monitor closely for unique characteristics`;
+        }
+        
+        return summary;
+      };
+      
+      const summaryLine = getSummaryGuidance();
+      
+      const lines = [
+        machineLine,
+        envLine,
+        beanOriginLine,
+        beanProcessLine,
+        beanTypeLine,
+        summaryLine
+      ].filter(line => line !== null);
+
+      return `👋 **AI Roasting Copilot Setup Analysis:**
+
+${lines.join('\n')}
+
+Ready to start? I'll provide specific guidance based on your actual roast progression! 🚀`;
+    };
+
     const welcomeMessage = {
       id: Date.now(),
       type: 'ai',
-      content: "👋 Welcome to your AI Roasting Copilot! I'm here to help guide you through this roast. Let me analyze your setup and provide some initial recommendations.",
+      content: getStructuredWelcome(),
       timestamp: new Date()
     };
 
     setMessages([welcomeMessage]);
     
-    // Get initial AI recommendation
-    await getAIRecommendation('initial_setup');
+    // Get initial AI recommendation only if we have the required data
+    if (formData.selectedBeanProfile && formData.selectedMachine) {
+      try {
+        await getAIRecommendation('initial_setup');
+      } catch (error) {
+        console.error('AI recommendation failed:', error);
+        const errorMessage = {
+          id: Date.now(),
+          type: 'ai',
+          content: "I'm having trouble connecting right now. Please start your roast and I'll help guide you through it!",
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      }
+    }
   };
 
   const getAIRecommendation = async (context = 'general') => {
     setIsLoading(true);
+    
+    // Add a timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('AI response timeout')), 15000)
+    );
     
     try {
       const token = await getAuthToken();
@@ -79,19 +350,30 @@ const RoastChat = ({
         context_type: context
       };
 
-      const response = await fetch(`${API_BASE}/api/rag/pre-roast-planning`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          bean_profile_id: formData.selectedBeanProfile?.id || "default",
-          roast_goals: [formData.roastLevel || "City"],
-          roast_challenges: [],
-          environmental_conditions: environmentalConditions || null
-        })
-      });
+      const requestBody = {
+        bean_profile_id: formData.selectedBeanProfile?.id || "default",
+        bean_profile: formData.selectedBeanProfile || null,
+        roast_goals: [formData.roastLevel || "City"],
+        roast_challenges: [],
+        environmental_conditions: environmentalConditions || null,
+        machine_info: formData.selectedMachine || null,
+        user_units: userProfile?.units || null
+      };
+      
+      console.log('Sending bean profile to AI:', formData.selectedBeanProfile);
+      console.log('Request body:', requestBody);
+
+      const response = await Promise.race([
+        fetch(`${API_BASE}/api/rag/pre-roast-planning`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(requestBody)
+        }),
+        timeoutPromise
+      ]);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -112,10 +394,74 @@ const RoastChat = ({
     } catch (error) {
       console.error('Error getting AI recommendation:', error);
       
+      // Provide a quick fallback response instead of error message
+      const fallbackMessage = {
+        id: Date.now(),
+        type: 'ai',
+        content: formatFallbackResponse(),
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, fallbackMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getAutomaticEventResponse = async (eventData) => {
+    setIsLoading(true);
+    
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      // Prepare roast progress context
+      const roastProgress = {
+        elapsed_time: elapsedTime,
+        current_phase: currentPhase,
+        recent_events: events.slice(-5),
+        bean_type: formData.selectedBeanProfile?.name || "Unknown",
+        target_roast_level: formData.roastLevel || "City",
+        environmental_conditions: environmentalConditions || {},
+        user_units: userProfile?.units || {}
+      };
+
+      const response = await fetch(`${API_BASE}/api/rag/automatic-event-response`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          event_data: eventData,
+          roast_progress: roastProgress
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      const aiResponse = {
+        id: Date.now(),
+        type: 'ai',
+        content: formatAutomaticResponse(data, eventData),
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, aiResponse]);
+
+    } catch (error) {
+      console.error('Error getting automatic event response:', error);
+      
       const errorMessage = {
         id: Date.now(),
         type: 'ai',
-        content: "I'm having trouble connecting to my AI brain right now. I'll still be here to help with manual guidance!",
+        content: "Event logged successfully! I'll continue monitoring your roast.",
         timestamp: new Date()
       };
 
@@ -125,25 +471,74 @@ const RoastChat = ({
     }
   };
 
+  const formatAutomaticResponse = (data, eventData) => {
+    const eventType = eventData.kind;
+    
+    if (eventType === 'SET') {
+      return `📊 **Heat/Fan Adjustment Detected:**
+
+**Current Settings:** Heat ${eventData.heat_level || 'N/A'}, Fan ${eventData.fan_level || 'N/A'} at ${formatTime(elapsedTime)}
+
+${data.advice || 'Good adjustment! Continue monitoring your roast progression.'}
+
+**Next Watch Points:**
+${data.recommendations?.map(rec => `• ${rec}`).join('\n') || '• Continue monitoring bean movement and color changes'}`;
+    } else if (['FIRST_CRACK', 'SECOND_CRACK', 'COOL'].includes(eventType)) {
+      const milestoneName = eventType.replace('_', ' ').toLowerCase();
+      return `🎉 **${milestoneName.charAt(0).toUpperCase() + milestoneName.slice(1)} Detected!**
+
+**Time:** ${formatTime(elapsedTime)}
+**Temperature:** ${formatTemperature(eventData.temp_f)}
+
+${data.advice || 'Great timing! Your roast is progressing well.'}
+
+**Next Steps:**
+${data.recommendations?.map(rec => `• ${rec}`).join('\n') || '• Continue monitoring the development phase'}`;
+    }
+    
+    return data.advice || "Event logged successfully! I'll continue monitoring your roast.";
+  };
+
   const formatAIResponse = (data, context) => {
     if (context === 'initial_setup') {
       return `🎯 **FreshRoast Pre-Roast Strategy:**
 
-**Machine Setup:** ${formData.selectedMachine?.name || 'FreshRoast SR800'}
-**Initial Settings:** 
-• Heat: ${getInitialHeatSetting()}
-• Fan: ${getInitialFanSetting()}
-• Time: ${data.recommended_profile?.estimated_time || '12-15'} minutes
+**Machine Setup:** ${formData.selectedMachine?.name || 'FreshRoast SR800'}${formData.selectedMachine?.has_extension ? ' + Extension Tube' : ''}
+**Expected Time:** ${data.recommended_profile?.estimated_time || '12-15'} minutes
 
-**FreshRoast-Specific Tips:**
-${data.recommendations?.map(rec => `• ${rec}`).join('\n') || getFreshRoastTips()}
+**Bean-Specific Guidance:**
+${data.recommendations?.map(rec => `• ${rec}`).join('\n') || 'Loading personalized guidance...'}
 
 **AI Confidence:** ${Math.round((data.confidence_score || 0.8) * 100)}% ${data.reasoning || 'based on FreshRoast patterns'}
 
+**Note:** I'll provide specific heat/fan recommendations after you log some initial settings and temperature data. This helps me give you more accurate guidance based on your actual roast progression.
+
 Ready to start? I'll guide you through heat/fan adjustments in real-time! 🚀`;
+    } else if (context === 'heat_fan_change') {
+      const lastEvent = events[events.length - 1];
+      return `📊 **Heat/Fan Analysis:**
+
+**Current Settings:** Heat ${lastEvent?.heat_level || 'N/A'}, Fan ${lastEvent?.fan_level || 'N/A'} at ${formatTime(elapsedTime)}
+
+${data.advice || data.recommendation || 'Monitoring your roast progression...'}
+
+**Next Watch Points:**
+${data.recommendations?.map(rec => `• ${rec}`).join('\n') || '• Continue monitoring bean movement and color changes'}`;
+    } else if (context === 'milestone_reached') {
+      const lastEvent = events[events.length - 1];
+      const milestoneName = lastEvent?.kind?.replace('_', ' ').toLowerCase() || 'milestone';
+      return `🎉 **${milestoneName.charAt(0).toUpperCase() + milestoneName.slice(1)} Detected!**
+
+**Time:** ${formatTime(elapsedTime)}
+**Temperature:** ${formatTemperature(lastEvent?.temp_f)}
+
+${data.advice || data.recommendation || 'Great timing! Your roast is progressing well.'}
+
+**Next Steps:**
+${data.recommendations?.map(rec => `• ${rec}`).join('\n') || '• Continue monitoring the development phase'}`;
     }
     
-    return data.recommendation || "I'm analyzing your FreshRoast setup to provide the best guidance...";
+    return data.advice || data.recommendation || "I'm analyzing your FreshRoast setup to provide the best guidance...";
   };
 
   const getInitialHeatSetting = () => {
@@ -163,11 +558,72 @@ Ready to start? I'll guide you through heat/fan adjustments in real-time! 🚀`;
   };
 
   const getFreshRoastTips = () => {
-    return `• Start with lower heat/fan, increase gradually
-• Listen for first crack around 8-10 minutes
+    // Fallback tips - should rarely be used as AI should provide better guidance
+    return `• AI guidance temporarily unavailable - using fallback tips
+• Watch for the 'yellowing' phase at 2-3 minutes - beans should turn from green to pale yellow before browning
+• First crack typically occurs 8-12 minutes - listen for the distinct 'pop' sound, not a sizzle
+• If beans aren't moving evenly, increase fan by 1-2 levels rather than adjusting heat
+• The glass chamber shows color progression: yellow → tan → light brown → medium brown → dark brown
+• Extension tube users: expect 2-3 minute longer roast times and need 1-2 higher heat settings
+• If roast stalls (no color change for 1+ minute), bump heat by 1 level and wait 30 seconds`;
+  };
+
+  const formatFallbackResponse = () => {
+    const machineName = formData.selectedMachine?.name || 'FreshRoast SR800';
+    const hasExtension = formData.selectedMachine?.has_extension || false;
+    const roastLevel = formData.roastLevel || 'City';
+    
+    // Quick fallback recommendations based on common settings
+    // Adjust for extension tube users (need higher heat/fan)
+    const heatAdjustment = hasExtension ? 1 : 0;
+    const fanAdjustment = hasExtension ? 1 : 0;
+    
+    const baseHeatSettings = {
+      'Light': 6,
+      'City': 5, 
+      'City+': 5,
+      'Full City': 4,
+      'Dark': 4
+    };
+    
+    const baseFanSettings = {
+      'Light': 3,
+      'City': 4,
+      'City+': 4, 
+      'Full City': 5,
+      'Dark': 6
+    };
+    
+    const heatSettings = {};
+    const fanSettings = {};
+    
+    // Apply extension tube adjustments
+    Object.keys(baseHeatSettings).forEach(level => {
+      heatSettings[level] = `${baseHeatSettings[level] + heatAdjustment}-${baseHeatSettings[level] + heatAdjustment + 1}`;
+      fanSettings[level] = `${baseFanSettings[level] + fanAdjustment}-${baseFanSettings[level] + fanAdjustment + 1}`;
+    });
+    
+    const extensionNote = hasExtension 
+      ? "You have an extension tube - expect 2-3 minute longer roast times and need 1-2 higher heat settings."
+      : "You're using the standard chamber.";
+    
+    return `🎯 **Quick Roast Setup (AI Loading...)**
+
+**Machine Setup:** ${machineName}${hasExtension ? ' + Extension Tube' : ''}
+${extensionNote}
+
+**Initial Settings:**
+• Heat: ${heatSettings[roastLevel] || '5-6'}
+• Fan: ${fanSettings[roastLevel] || '4-5'}
+• Time: ${hasExtension ? '14-17' : '12-15'} minutes
+
+**Quick Tips:**
+• Start with lower heat/fan, increase gradually
+• Listen for first crack around 7-10 minutes (not 12-15!)
+• Watch for even bean movement and color changes
 • Use fan to control bean movement
-• Watch for color changes through the glass
-• Extension tube users: expect 2-3 minute longer roasts`;
+
+**AI is loading personalized recommendations...** 🤖`;
   };
 
   const sendMessage = async () => {
@@ -196,7 +652,8 @@ Ready to start? I'll guide you through heat/fan adjustments in real-time! 🚀`;
         current_phase: currentPhase,
         recent_events: events.slice(-5),
         bean_type: formData.selectedBeanProfile?.name || "Unknown",
-        target_roast_level: formData.roastLevel || "City"
+        target_roast_level: formData.roastLevel || "City",
+        user_units: userProfile?.units || {}
       };
 
       // Call the LLM-powered during-roast advice endpoint
@@ -263,8 +720,9 @@ Ready to start? I'll guide you through heat/fan adjustments in real-time! 🚀`;
     <div className="fixed bottom-4 right-4 z-50">
       <div 
         ref={chatContainerRef}
+        onClick={isMinimized ? () => setIsMinimized(false) : undefined}
         className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 transition-all duration-300 flex flex-col ${
-          isMinimized ? 'w-80 h-16' : 'w-96 h-[500px]'
+          isMinimized ? 'w-80 h-16 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750' : 'w-96 h-[500px]'
         }`}
       >
         {/* Header */}
@@ -274,11 +732,19 @@ Ready to start? I'll guide you through heat/fan adjustments in real-time! 🚀`;
             <h3 className="font-semibold text-gray-900 dark:text-white">
               AI Roasting Copilot
             </h3>
+            {unreadCount > 0 && (
+              <div className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] h-5 flex items-center justify-center animate-bounce">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </div>
+            )}
           </div>
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => setIsMinimized(!isMinimized)}
-              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsMinimized(!isMinimized);
+              }}
+              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white"
             >
               {isMinimized ? (
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -291,8 +757,11 @@ Ready to start? I'll guide you through heat/fan adjustments in real-time! 🚀`;
               )}
             </button>
             <button
-              onClick={onClose}
-              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

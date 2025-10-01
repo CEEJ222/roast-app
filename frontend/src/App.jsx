@@ -334,6 +334,48 @@ function RoastAssistant() {
           timezone_abbreviation: roast.timezone_abbreviation
         });
       }
+      
+      // Load bean profile data if available
+      if (roast.bean_profile_id) {
+        try {
+          const token = await getAuthToken();
+          const response = await fetch(`${API_BASE}/bean-profiles/${roast.bean_profile_id}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            const beanProfile = await response.json();
+            console.log('Loaded bean profile for resumed roast:', beanProfile);
+            
+            // Update formData with bean profile and machine info
+            setFormData(prev => {
+              // Find the machine used for this roast
+              const selectedMachineId = prev.selectedMachineId;
+              const hasExtension = prev.hasExtension || prev.has_extension;
+              const foundMachine = userMachines.find(m => m.id === selectedMachineId);
+              
+              const selectedMachine = foundMachine || {
+                id: selectedMachineId,
+                name: prev.model + (hasExtension ? ' + ET' : ''),
+                model: prev.model,
+                has_extension: hasExtension
+              };
+              
+              return {
+                ...prev,
+                selectedBeanProfile: beanProfile,
+                selectedMachine: selectedMachine,
+                weightBefore: roast.weight_before_g || prev.weightBefore,
+                roastLevel: roast.desired_roast_level || prev.roastLevel
+              };
+            });
+          }
+        } catch (error) {
+          console.error('Error loading bean profile for resumed roast:', error);
+        }
+      }
     } else {
       // Show roast detail page for completed roasts
       setSelectedRoast(roast);
@@ -993,7 +1035,8 @@ function RoastAssistant() {
         }}
         onStart={(data) => {
           console.log('DEBUG: onStart received data:', data);
-          console.log('DEBUG: weight_before_g in data:', data.weight_before_g);
+          console.log('DEBUG: Backend bean_profile:', data.bean_profile);
+          console.log('DEBUG: Backend bean_profile_id:', data.bean_profile_id);
           
           setRoastId(data.roast_id);
           setStartTs(data.start_ts);
@@ -1008,15 +1051,30 @@ function RoastAssistant() {
           setCoolingStartTime(null);
           setCoolingTime(0);
           
-          // Update form data with initial settings and weight
+          // Update form data with initial settings and weight, using backend data
           setFormData(prev => {
+            // Construct machine object from available data
+            const selectedMachineId = prev.selectedMachineId;
+            const hasExtension = prev.hasExtension || prev.has_extension;
+            const foundMachine = userMachines.find(m => m.id === selectedMachineId);
+            
+            const selectedMachine = foundMachine || {
+              id: selectedMachineId,
+              name: prev.model + (hasExtension ? ' + ET' : ''),
+              model: prev.model,
+              has_extension: hasExtension
+            };
+            
             const newData = {
               ...prev,
               weightBefore: data.weight_before_g || prev.weightBefore,
               fan: initialSettings.fan_level !== undefined && initialSettings.fan_level !== '' ? parseInt(initialSettings.fan_level) : 8,
-              heat: initialSettings.heat_level !== undefined && initialSettings.heat_level !== '' ? parseInt(initialSettings.heat_level) : 4
+              heat: initialSettings.heat_level !== undefined && initialSettings.heat_level !== '' ? parseInt(initialSettings.heat_level) : 4,
+              selectedBeanProfile: data.bean_profile, // Use bean profile from backend response
+              selectedMachine: selectedMachine // Construct machine object
             };
-            console.log('DEBUG: Setting formData.weightBefore to:', newData.weightBefore);
+            console.log('DEBUG: Setting formData with backend data');
+            console.log('DEBUG: Backend bean_profile:', data.bean_profile);
             return newData;
           });
           

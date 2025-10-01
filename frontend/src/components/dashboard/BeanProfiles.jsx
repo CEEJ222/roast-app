@@ -312,20 +312,20 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null }) => {
 
   return (
     <div className="bg-white dark:bg-dark-bg-tertiary rounded-lg shadow dark:shadow-dark-lg border dark:border-dark-border-primary">
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-border-primary">
-        <div className="flex justify-between items-center">
+      <div className="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-dark-border-primary">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">Bean Profiles</h3>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             <button
               onClick={handleCreateProfile}
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-dark-accent-primary dark:to-dark-accent-secondary text-white px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-medium shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105 flex items-center gap-2"
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-dark-accent-primary dark:to-dark-accent-secondary text-white px-3 sm:px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-medium shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base"
             >
               📝 Create New
             </button>
             {beanProfiles.length > 0 && (
               <button
                 onClick={() => setShowAll(!showAll)}
-                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
+                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium text-sm sm:text-base whitespace-nowrap"
               >
                 {showAll ? 'Show Recent Only →' : 'View All Profiles →'}
               </button>
@@ -356,53 +356,65 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null }) => {
         />
       ) : (
         // Dashboard card view
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {beanProfiles.length === 0 ? (
-            <div className="text-center py-12 text-gray-500 dark:text-dark-text-tertiary">
-              <div className="text-6xl mb-4">☕</div>
-              <p className="text-lg font-semibold mb-2 dark:text-dark-text-primary">No Bean Profiles Yet</p>
-              <p className="text-sm mb-6 dark:text-dark-text-secondary">
+            <div className="text-center py-8 sm:py-12 text-gray-500 dark:text-dark-text-tertiary px-4">
+              <div className="text-4xl sm:text-6xl mb-4">☕</div>
+              <p className="text-base sm:text-lg font-semibold mb-2 dark:text-dark-text-primary">No Bean Profiles Yet</p>
+              <p className="text-xs sm:text-sm mb-6 dark:text-dark-text-secondary max-w-sm mx-auto">
                 Create your first bean profile to track detailed coffee information for better AI coaching!
               </p>
               <button
                 onClick={handleCreateProfile}
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-dark-accent-primary dark:to-dark-accent-secondary text-white px-6 py-3 rounded-lg hover:from-indigo-700 hover:to-purple-700 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-bold shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105"
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-dark-accent-primary dark:to-dark-accent-secondary text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:from-indigo-700 hover:to-purple-700 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-bold shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105 text-sm sm:text-base"
               >
                 📝 Create Bean Profile
               </button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {beanProfiles.slice(0, 5).map((profile) => {
                 const badge = getCompletenessBadge(profile.profile_completeness);
                 return (
                   <div 
                     key={profile.id}
                     onClick={() => handleViewProfile(profile)}
-                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary cursor-pointer"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary cursor-pointer"
                   >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-indigo-100 dark:bg-dark-bg-tertiary rounded-full flex items-center justify-center border dark:border-dark-border-primary">
+                    <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+                      <div className="w-10 h-10 bg-indigo-100 dark:bg-dark-bg-tertiary rounded-full flex items-center justify-center border dark:border-dark-border-primary flex-shrink-0">
                         <span className="text-indigo-600 dark:text-dark-accent-primary font-bold">
                           {getProfileIcon(profile.profile_completeness)}
                         </span>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-dark-text-primary">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 dark:text-dark-text-primary text-sm sm:text-base break-words">
                           {profile.name}
                         </p>
-                        <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-dark-text-tertiary">
-                          {profile.origin && <span>{profile.origin}</span>}
-                          {profile.variety && <span>• {profile.variety}</span>}
-                          {profile.process_method && <span>• {profile.process_method}</span>}
+                        <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2 text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary mt-1">
+                          {profile.origin && (
+                            <span className="truncate sm:inline">{profile.origin}</span>
+                          )}
+                          {profile.variety && (
+                            <span className="hidden sm:inline">• {profile.variety}</span>
+                          )}
+                          {profile.variety && (
+                            <span className="sm:hidden text-gray-400 dark:text-gray-500">{profile.variety}</span>
+                          )}
+                          {profile.process_method && (
+                            <>
+                              <span className="hidden sm:inline">• {profile.process_method}</span>
+                              <span className="sm:hidden text-gray-400 dark:text-gray-500">{profile.process_method}</span>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-4 text-sm">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium border dark:border-dark-border-primary ${badge.color}`}>
+                    <div className="flex items-center justify-between sm:justify-end space-x-3 sm:space-x-4 text-sm mt-2 sm:mt-0">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium border dark:border-dark-border-primary ${badge.color} flex-shrink-0`}>
                         {badge.text}
                       </span>
-                      <div className="text-indigo-600 dark:text-indigo-400">
+                      <div className="text-indigo-600 dark:text-indigo-400 flex-shrink-0">
                         👁️
                       </div>
                     </div>
@@ -416,29 +428,29 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null }) => {
 
       {/* Profile Details Modal */}
       {showProfileModal && selectedProfile && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
             {/* Header */}
-            <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 px-6 py-4 text-white">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-2xl font-bold">{selectedProfile.name}</h2>
-                  <p className="opacity-90">Bean Profile Details</p>
+            <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 px-4 sm:px-6 py-3 sm:py-4 text-white">
+              <div className="flex justify-between items-start">
+                <div className="flex-1 min-w-0 pr-4">
+                  <h2 className="text-lg sm:text-2xl font-bold break-words">{selectedProfile.name}</h2>
+                  <p className="opacity-90 text-sm sm:text-base">Bean Profile Details</p>
                 </div>
                 <button
                   onClick={handleCloseProfile}
-                  className="text-white hover:text-gray-200 text-2xl"
+                  className="text-white hover:text-gray-200 text-xl sm:text-2xl flex-shrink-0"
                 >
                   ✕
                 </button>
               </div>
             </div>
 
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+            <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-120px)]">
               {/* Basic Info */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Basic Information</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Basic Information</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <span className="font-medium text-gray-700 dark:text-dark-text-primary">Origin:</span>
                     <span className="ml-2 text-gray-600 dark:text-dark-text-secondary">{selectedProfile.origin || 'Not specified'}</span>
@@ -463,8 +475,8 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null }) => {
               {/* Enhanced Data */}
               {(selectedProfile.moisture_content_pct || selectedProfile.density_g_ml || selectedProfile.altitude_m || selectedProfile.screen_size) && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Enhanced Data</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Enhanced Data</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     {selectedProfile.moisture_content_pct && (
                       <div>
                         <span className="font-medium text-gray-700 dark:text-dark-text-primary">Moisture Content:</span>
@@ -496,8 +508,8 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null }) => {
               {/* Flavor Profile */}
               {(selectedProfile.cupping_score || selectedProfile.fragrance_score || selectedProfile.flavor_notes?.length > 0) && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Flavor Profile</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Flavor Profile</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     {selectedProfile.cupping_score && (
                       <div>
                         <span className="font-medium text-gray-700 dark:text-dark-text-primary">Cupping Score:</span>
@@ -523,24 +535,24 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null }) => {
               {/* Notes */}
               {selectedProfile.notes && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Notes</h3>
-                  <p className="text-gray-600 dark:text-dark-text-secondary">{selectedProfile.notes}</p>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Notes</h3>
+                  <p className="text-gray-600 dark:text-dark-text-secondary break-words">{selectedProfile.notes}</p>
                 </div>
               )}
             </div>
 
             {/* Footer */}
-            <div className="bg-gray-50 dark:bg-gray-800 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex justify-end space-x-3">
+            <div className="bg-gray-50 dark:bg-gray-800 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
                 <button
                   onClick={handleCloseProfile}
-                  className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium"
+                  className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium order-2 sm:order-1"
                 >
                   Close
                 </button>
                 <button
                   onClick={handleEditProfile}
-                  className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-medium"
+                  className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-medium order-1 sm:order-2"
                 >
                   Edit Profile
                 </button>
@@ -579,18 +591,18 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null }) => {
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
-          <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-md w-full p-6">
+          <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6">
             <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
                 <span className="text-2xl">⚠️</span>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary mb-2">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-dark-text-primary mb-2">
                 Delete Bean Profile
               </h3>
-              <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
+              <p className="text-sm sm:text-base text-gray-600 dark:text-dark-text-secondary mb-6 break-words">
                 Are you sure you want to delete "{profileToDelete?.name}"? This action cannot be undone.
               </p>
-              <div className="flex gap-3 justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   onClick={handleDeleteCancel}
                   className="px-4 py-2 text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary font-medium rounded-lg border border-gray-300 dark:border-dark-border-primary hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary transition-colors"
@@ -612,18 +624,18 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null }) => {
       {/* Bulk Delete Confirmation Modal */}
       {showBulkDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
-          <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-md w-full p-6">
+          <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6">
             <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
                 <span className="text-2xl">⚠️</span>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary mb-2">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-dark-text-primary mb-2">
                 Delete Selected Bean Profiles
               </h3>
-              <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
+              <p className="text-sm sm:text-base text-gray-600 dark:text-dark-text-secondary mb-6">
                 Are you sure you want to delete {selectedProfiles.size} selected bean profile{selectedProfiles.size > 1 ? 's' : ''}? This action cannot be undone.
               </p>
-              <div className="flex gap-3 justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   onClick={handleBulkDeleteCancel}
                   className="px-4 py-2 text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary font-medium rounded-lg border border-gray-300 dark:border-dark-border-primary hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary transition-colors"
@@ -645,16 +657,16 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null }) => {
       {/* Error Modal */}
       {showErrorModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
-          <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-lg w-full p-6">
+          <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-lg w-full p-4 sm:p-6">
             <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center">
                 <span className="text-2xl">⚠️</span>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary mb-4">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-dark-text-primary mb-4">
                 Deletion Failed
               </h3>
               <div className="text-left">
-                <p className="text-gray-600 dark:text-dark-text-secondary whitespace-pre-line leading-relaxed">
+                <p className="text-sm sm:text-base text-gray-600 dark:text-dark-text-secondary whitespace-pre-line leading-relaxed break-words">
                   {errorMessage}
                 </p>
               </div>

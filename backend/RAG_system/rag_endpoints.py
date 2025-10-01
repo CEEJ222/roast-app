@@ -139,9 +139,12 @@ router = APIRouter()
 # Pydantic models for RAG API
 class PreRoastPlanningRequest(BaseModel):
     bean_profile_id: str
+    bean_profile: Optional[Dict[str, Any]] = None
     roast_goals: List[str]
     roast_challenges: List[str] = []
     environmental_conditions: Optional[Dict[str, Any]] = None
+    machine_info: Optional[Dict[str, Any]] = None
+    user_units: Optional[Dict[str, Any]] = None
 
 class PreRoastPlanningResponse(BaseModel):
     recommended_profile: Dict[str, Any]
@@ -195,13 +198,23 @@ async def pre_roast_planning(
         
         # Get bean profile for LLM context
         bean_profile = {}
-        if request.bean_profile_id and request.bean_profile_id != "default":
+        logger.info(f"Received bean_profile_id: {request.bean_profile_id}")
+        logger.info(f"Received bean_profile: {request.bean_profile}")
+        
+        if request.bean_profile:  # Use the passed bean profile object if available
+            bean_profile = request.bean_profile
+            logger.info(f"Using passed bean profile: {bean_profile.get('name', 'Unknown')} - Origin: {bean_profile.get('origin', 'Unknown')}")
+        elif request.bean_profile_id and request.bean_profile_id != "default":
+            # Fallback to database fetch if no bean profile object was passed
             try:
                 bean_result = sb.table("bean_profiles").select("*").eq("id", request.bean_profile_id).eq("user_id", user_id).execute()
                 if bean_result.data:
                     bean_profile = bean_result.data[0]
+                    logger.info(f"Fetched bean profile from DB: {bean_profile.get('name', 'Unknown')}")
             except Exception as e:
                 logger.warning(f"Could not fetch bean profile: {e}")
+        else:
+            logger.warning("No bean profile provided")
         
         # Use LLM for intelligent recommendations
         roast_level = request.roast_goals[0] if request.roast_goals else "City"
@@ -209,7 +222,9 @@ async def pre_roast_planning(
             roast_level=roast_level,
             bean_profile=bean_profile,
             environmental_conditions=request.environmental_conditions,
-            historical_roasts=num_historical_roasts
+            historical_roasts=num_historical_roasts,
+            machine_info=request.machine_info,
+            user_units=request.user_units
         )
         
         # Adjust confidence based on LLM availability and historical data
@@ -283,6 +298,34 @@ async def during_roast_advice(
         logger.error(f"During-roast advice error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/rag/automatic-event-response")
+async def automatic_event_response(
+    event_data: Dict[str, Any],
+    roast_progress: Dict[str, Any],
+    user_id: str = Depends(verify_jwt_token)
+):
+    """
+    Get automatic AI response when events are logged
+    """
+    try:
+        # Use LLM for automatic event response
+        response = llm_copilot.get_automatic_event_response(
+            event_data=event_data,
+            roast_progress=roast_progress
+        )
+        
+        return {
+            "advice": response.get("advice", "Event logged successfully"),
+            "recommendations": response.get("recommendations", []),
+            "event_type": response.get("event_type", "Unknown"),
+            "timestamp": datetime.now().isoformat(),
+            "llm_available": llm_copilot.client is not None
+        }
+        
+    except Exception as e:
+        logger.error(f"Automatic event response error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/rag/health")
 async def rag_health():
     """
@@ -298,6 +341,7 @@ async def rag_health():
             "/rag/pre-roast-planning",
             "/rag/roast-outcome",
             "/rag/during-roast-advice",
+            "/rag/automatic-event-response",
             "/rag/health"
         ]
     }

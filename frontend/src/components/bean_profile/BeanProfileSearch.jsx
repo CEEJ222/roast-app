@@ -6,10 +6,11 @@ const BeanProfileSearch = ({
   selectedProfileId = null,
   placeholder = "Search bean profiles...",
   className = "",
-  showDetails = true
+  showDetails = true,
+  defaultOpen = false
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
   // Filter profiles based on search term

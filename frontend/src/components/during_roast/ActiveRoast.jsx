@@ -257,6 +257,7 @@ const ActiveRoast = ({
         elapsedTime={elapsedTime}
         currentPhase={currentPhase}
         environmentalConditions={environmentalConditions}
+        userProfile={userProfile}
         getAuthToken={getAuthToken}
         isOpen={showChat}
         onClose={() => setShowChat(false)}
