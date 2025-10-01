@@ -263,7 +263,7 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
   const getProfileIcon = (completeness) => {
     const icons = {
       'basic': '📝',
-      'enhanced': '⭐',
+      'enhanced': '☕',
       'complete': '🏆'
     };
     return icons[completeness] || '📝';

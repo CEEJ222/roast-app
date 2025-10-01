@@ -65,7 +65,7 @@ const RecentRoasts = ({
           {!historicalRoasts || historicalRoasts.length === 0 ? (
             <div className="text-center py-8 sm:py-8 px-4">
               <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                <span className="text-2xl sm:text-3xl">☕</span>
+                <span className="text-2xl sm:text-3xl">🔥</span>
               </div>
               <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-dark-text-primary mb-2">
                 No Roasts Yet
@@ -84,7 +84,7 @@ const RecentRoasts = ({
                 >
                   <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
                     <div className="w-10 h-10 bg-amber-100 dark:bg-dark-bg-tertiary rounded-full flex items-center justify-center border dark:border-dark-border-primary flex-shrink-0">
-                      <span className="text-amber-600 dark:text-dark-accent-warning text-lg">☕</span>
+                      <span className="text-amber-600 dark:text-dark-accent-warning text-lg">🔥</span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 dark:text-dark-text-primary text-sm sm:text-base break-words">
