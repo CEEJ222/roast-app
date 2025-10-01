@@ -57,7 +57,7 @@ const LoginForm = () => {
       <div className="max-w-md w-full rounded-xl shadow-2xl dark:shadow-dark-glow-login overflow-hidden border-metallic border-gray-200 dark:border-gray-600 relative">
         {/* Header with transparent background to show glow */}
         <div className="px-6 py-8 text-white text-center relative z-10">
-          <h1 className="text-3xl font-bold mb-2">☕ Roast Buddy</h1>
+          <h1 className="text-3xl font-bold mb-2">🔥 Roast Buddy ☕</h1>
           <p className="opacity-90">Professional roast logging and analysis</p>
         </div>
         

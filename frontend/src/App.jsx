@@ -23,6 +23,7 @@ import RoastTimer from './components/during_roast/RoastTimer';
 import AfterRoast from './components/during_roast/AfterRoast';
 import ActiveRoast from './components/during_roast/ActiveRoast';
 import Dashboard from './components/dashboard/Dashboard';
+import FeatureFlagManager from './components/admin/FeatureFlagManager';
 import { Analytics } from '@vercel/analytics/react';
 
 const API_BASE = import.meta.env.DEV 
@@ -66,6 +67,7 @@ function RoastAssistant() {
   const [loadingHistoricalRoasts, setLoadingHistoricalRoasts] = useState(false);
   const [showFullHistoricalRoasts, setShowFullHistoricalRoasts] = useState(false);
   const [selectedRoasts, setSelectedRoasts] = useState([]);
+  const [showAdminPage, setShowAdminPage] = useState(false);
   const [roastDetails, setRoastDetails] = useState({});
   const [recentRoastDetails, setRecentRoastDetails] = useState({});
   const [milestonesMarked, setMilestonesMarked] = useState({
@@ -851,6 +853,43 @@ function RoastAssistant() {
     return <SetupWizard onComplete={handleSetupComplete} />;
   }
 
+  // Show admin page if user is admin and admin page is requested
+  if (showAdminPage && user?.user_metadata?.role === 'admin') {
+    return (
+      <div className="min-h-screen bg-light-gradient-blue dark:bg-dark-gradient p-2 sm:p-4">
+        <div className="max-w-7xl mx-auto bg-white dark:bg-dark-bg-secondary rounded-xl shadow-2xl dark:shadow-dark-xl overflow-hidden">
+          <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-3 sm:px-6 py-2 sm:py-4 text-white">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <div>
+                  <h1 className="text-lg sm:text-xl lg:text-2xl font-bold">Admin Panel</h1>
+                  <p className="text-xs sm:text-sm opacity-90">Feature flags and feedback management</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAdminPage(false)}
+                className="w-full sm:w-auto bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Dashboard
+              </button>
+            </div>
+          </div>
+          <div className="p-4 sm:p-6">
+            <FeatureFlagManager />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-light-gradient-blue dark:bg-dark-gradient p-2 sm:p-4">
       <div className="max-w-7xl mx-auto bg-white dark:bg-dark-bg-secondary rounded-xl shadow-2xl dark:shadow-dark-xl overflow-hidden">
@@ -871,10 +910,22 @@ function RoastAssistant() {
         <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-3 sm:px-6 py-2 sm:py-4 text-white">
           <div className="flex justify-between items-center">
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-3xl font-bold truncate">☕ Roast Buddy</h1>
+              <h1 className="text-xl sm:text-3xl font-bold truncate">🔥 Roast Buddy ☕</h1>
               <p className="opacity-90 text-xs sm:text-base hidden sm:block">Professional roast logging and analysis</p>
             </div>
             <div className="flex items-center gap-2 sm:gap-4 ml-3">
+              {user?.user_metadata?.role === 'admin' && (
+                <button
+                  onClick={() => setShowAdminPage(true)}
+                  className="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm"
+                  title="Admin Panel"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  <span className="hidden sm:inline">Admin</span>
+                </button>
+              )}
               <UserProfile />
             </div>
           </div>

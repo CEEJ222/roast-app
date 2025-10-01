@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Fire emoji SVG representation -->
+  <defs>
+    <radialGradient id="fireGradient" cx="50%" cy="70%" r="60%">
+      <stop offset="0%" style="stop-color:#ff4500;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#ff6347;stop-opacity:1" />
+      <stop offset="60%" style="stop-color:#ff7f50;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ffa500;stop-opacity:1" />
+    </radialGradient>
+    <radialGradient id="innerFire" cx="50%" cy="80%" r="40%">
+      <stop offset="0%" style="stop-color:#ffff00;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#ffd700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ff6347;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Main fire shape -->
+  <path d="M16 2 C12 8, 8 12, 8 18 C8 24, 12 28, 16 28 C20 28, 24 24, 24 18 C24 12, 20 8, 16 2 Z" 
+        fill="url(#fireGradient)" 
+        stroke="#ff4500" 
+        stroke-width="0.5"/>
+  
+  <!-- Inner fire highlight -->
+  <path d="M16 6 C14 10, 12 13, 12 18 C12 22, 14 24, 16 24 C18 24, 20 22, 20 18 C20 13, 18 10, 16 6 Z" 
+        fill="url(#innerFire)"/>
+  
+  <!-- Small flame flicker -->
+  <ellipse cx="14" cy="12" rx="2" ry="4" fill="#ffff00" opacity="0.8"/>
+  <ellipse cx="18" cy="14" rx="1.5" ry="3" fill="#ffd700" opacity="0.6"/>
+</svg>

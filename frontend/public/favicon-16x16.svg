@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <defs>
+    <radialGradient id="fireGradient16" cx="50%" cy="70%" r="60%">
+      <stop offset="0%" style="stop-color:#ff4500;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#ff6347;stop-opacity:1" />
+      <stop offset="60%" style="stop-color:#ff7f50;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ffa500;stop-opacity:1" />
+    </radialGradient>
+    <radialGradient id="innerFire16" cx="50%" cy="80%" r="40%">
+      <stop offset="0%" style="stop-color:#ffff00;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#ffd700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ff6347;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  <path d="M8 1 C6 4, 4 6, 4 9 C4 12, 6 14, 8 14 C10 14, 12 12, 12 9 C12 6, 10 4, 8 1 Z" fill="url(#fireGradient16)" stroke="#ff4500" stroke-width="0.25"/>
+  <path d="M8 3 C7 5, 6 6.5, 6 9 C6 11, 7 12, 8 12 C9 12, 10 11, 10 9 C10 6.5, 9 5, 8 3 Z" fill="url(#innerFire16)"/>
+</svg>
