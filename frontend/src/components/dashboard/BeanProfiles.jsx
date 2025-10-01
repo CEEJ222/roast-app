@@ -263,7 +263,7 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-indigo-100 dark:bg-dark-bg-tertiary rounded-full flex items-center justify-center border dark:border-dark-border-primary">
             <span className="text-indigo-600 dark:text-dark-accent-primary font-bold">
-              {getProfileIcon(profile.profile_completeness)}
+              {getProfileIcon()}
             </span>
           </div>
           <div>
@@ -280,15 +280,17 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
       )
     },
     {
-      header: 'Status',
-      key: 'status',
+      header: 'Espresso',
+      key: 'espresso',
       render: (profile) => {
-        const badge = getCompletenessBadge(profile.profile_completeness);
-        return (
-          <span className={`px-2 py-1 rounded-full text-xs font-medium border dark:border-dark-border-primary ${badge.color}`}>
-            {badge.text}
+        const isGoodForEspresso = profile.espresso_suitable === true || 
+                                  profile.notes?.toLowerCase().includes('espresso') ||
+                                  profile.roasting_notes?.toLowerCase().includes('espresso');
+        return isGoodForEspresso ? (
+          <span className="px-2 py-1 rounded-full text-xs font-medium border dark:border-dark-border-primary bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+            Good for Espresso
           </span>
-        );
+        ) : null;
       }
     }
   ];
