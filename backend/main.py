@@ -1272,4 +1272,7 @@ except ImportError as e:
 if __name__ == "__main__":
     import uvicorn
     print("🚀 Starting Roast Buddy Backend Server...")
+    print(f"✅ Supabase URL configured: {bool(SUPABASE_URL)}")
+    print(f"✅ Supabase Service Key configured: {bool(SUPABASE_SERVICE_ROLE_KEY)}")
+    print(f"✅ Supabase JWT Secret configured: {bool(SUPABASE_JWT_SECRET)}")
     uvicorn.run(app, host="0.0.0.0", port=8000)

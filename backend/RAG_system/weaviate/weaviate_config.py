@@ -64,7 +64,7 @@ class WeaviateClient:
             import weaviate
             
             # Use Weaviate Client (v3) with correct API
-            self.client = weaviate.Client(url=self.config.url)
+            self.client = weaviate.Client(url=self.config.url, timeout_config=self.config.timeout_config)
             logger.info("✅ Using Weaviate Client (v3)")
             
             # Test connection with timeout
@@ -79,8 +79,8 @@ class WeaviateClient:
             logger.info("💡 Install with: pip install weaviate-client")
             self.client = None
         except Exception as e:
-            logger.warning(f"⚠️ Weaviate not available: {e}")
-            logger.info("💡 Semantic search features will be disabled")
+            logger.info(f"ℹ️ Weaviate not available: {e}")
+            logger.info("ℹ️ Semantic search features will be disabled")
             self.client = None
     
     def is_connected(self) -> bool:
