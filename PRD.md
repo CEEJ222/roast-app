@@ -3,12 +3,14 @@
 ## 1. Overview
 **Product Name:** FreshRoast CoPilot  
 **Owner:** CJ Britz  
-**Version:** Draft v0.5 (Living Document)  
+**Version:** Draft v0.8 (Living Document)  
 **Last Updated:** December 2024
 
 The FreshRoast CoPilot is an intelligent roasting assistant designed to help home roasters (starting with FreshRoast SR540/SR800 models) record, analyze, and improve their coffee roasts. It will capture environmental conditions, machine parameters, temperature data, and roast outcomes, then provide AI-powered recommendations and visual roast curve analysis to improve consistency and quality over time.
 
 **NEW:** The application now features secure, account-based authentication with multiple sign-in options for personalized roast tracking and data isolation, plus a comprehensive profile management system with setup wizard, environmental data integration, and enhanced user experience.
+
+**MAJOR UPDATE:** The application now includes a fully functional RAG-powered AI Roasting Copilot that provides personalized recommendations based on bean profiles, machine configuration, environmental conditions, and historical roast data.
 
 ## 2. Goals
 - Provide an easy way to log each roast with minimal friction
@@ -26,6 +28,7 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - **NEW:** Build RAG-powered AI roasting copilot that learns from historical data
 - **NEW:** Provide real-time roasting guidance based on similar past roasts
 - **NEW:** Enable intelligent roast planning and adjustment recommendations
+- **✅ IMPLEMENTED:** Fully functional AI chatbot with pre-roast planning, during-roast guidance, and event-triggered responses
 
 ## 3. User Stories
 
@@ -54,6 +57,7 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - **NEW:** I want to know that my roast data is private and only accessible to me
 - **NEW:** I want to manage multiple machines and switch between them easily
 - **NEW:** I want to update my profile settings and preferences anytime
+- **✅ IMPLEMENTED:** I want AI-powered recommendations that understand my specific bean profiles and machine setup
 
 ### As an Advanced User:
 - I want to view roast curves showing temperature over time with milestone markers
@@ -75,14 +79,16 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - **NEW:** I want confidence that my roasting data is secure and backed up
 
 ### As an AI-Powered Roaster (RAG Copilot):
-- I want the system to analyze my 50+ historical roasts and provide intelligent recommendations
-- I want pre-roast planning: "Given this Ethiopian Yirgacheffe, here's your recommended roast profile based on your 12 similar roasts"
-- I want real-time guidance during roasting: "Your temp is 15°F below your target curve - increase heat to 8"
-- I want timing guidance: "You're 30 seconds behind on first crack - this will affect development"
-- I want post-roast analysis: "This roast was 2 minutes longer than your best result - here's what to adjust next time"
-- I want the system to learn from my reflections and tasting notes to improve recommendations
-- I want intelligent roast planning based on bean characteristics and environmental conditions
-- I want the AI to understand my preferences and adapt recommendations accordingly
+- **✅ IMPLEMENTED:** I want the system to analyze my historical roasts and provide intelligent recommendations
+- **✅ IMPLEMENTED:** I want pre-roast planning: "Given this Ethiopian Yirgacheffe, here's your recommended roast profile based on your similar roasts"
+- **✅ IMPLEMENTED:** I want real-time guidance during roasting: "Your temp is 15°F below your target curve - increase heat to 8"
+- **✅ IMPLEMENTED:** I want timing guidance: "You're 30 seconds behind on first crack - this will affect development"
+- **✅ IMPLEMENTED:** I want post-roast analysis: "This roast was 2 minutes longer than your best result - here's what to adjust next time"
+- **✅ IMPLEMENTED:** I want the system to learn from my reflections and tasting notes to improve recommendations
+- **✅ IMPLEMENTED:** I want intelligent roast planning based on bean characteristics and environmental conditions
+- **✅ IMPLEMENTED:** I want the AI to understand my preferences and adapt recommendations accordingly
+- **✅ IMPLEMENTED:** I want the AI to provide specific, bean-aware guidance instead of generic advice
+- **✅ IMPLEMENTED:** I want the AI to understand my machine configuration (extension tube, etc.) and adjust recommendations accordingly
 
 ## 4. Core Features (MVP)
 
@@ -196,15 +202,28 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - **Frontend Test Interface:** Simple HTML paste interface for testing parser functionality
 - **Raw Data Storage:** Store complete parsed data for reference and future analysis
 
+### 4.9 RAG-Powered AI Roasting Copilot ✅ **IMPLEMENTED**
+- **Pre-Roast Planning AI:** Analyzes bean profile, machine configuration, and environmental conditions to provide initial roasting strategy
+- **During-Roast AI:** Real-time guidance based on roast progression and user questions
+- **Event-Triggered AI:** Automatic responses to logged events (heat/fan changes, milestones)
+- **Bean Profile Integration:** AI uses complete bean characteristics (origin, variety, process, altitude, density, screen size) for personalized recommendations
+- **Machine Configuration Awareness:** AI understands extension tube status and adjusts recommendations accordingly
+- **Environmental Conditions Integration:** AI considers temperature, humidity, elevation, and pressure for tailored advice
+- **Structured Welcome Messages:** Interpretive guidance for machine, environment, bean origin, process, type, and summary
+- **Chat Interface:** Minimizable chat window with unread message indicators and quick actions
+- **DeepSeek LLM Integration:** Advanced AI reasoning and response generation
+- **Performance Optimized:** 15-second timeout with fallback responses
+- **User Unit Preferences:** Temperature and elevation displayed in user's preferred units
+
 ## 5. Enhanced Features (V2)
 
-### 5.1 AI Analysis & Recommendations
-- Pattern Recognition: AI analysis of **user's** roast history to identify successful patterns
-- Environmental Correlation: Recommendations based on weather, humidity, elevation
-- Predictive Modeling: Suggest optimal heat/fan profiles for specific coffee types
-- Roast Outcome Prediction: Estimate final roast characteristics based on current curve
-- Personalized Suggestions: Learn user preferences and adapt recommendations
-- **NEW:** Privacy-preserving AI analysis (data stays user-specific)
+### 5.1 AI Analysis & Recommendations ✅ **IMPLEMENTED**
+- **✅ IMPLEMENTED:** Pattern Recognition: AI analysis of **user's** roast history to identify successful patterns
+- **✅ IMPLEMENTED:** Environmental Correlation: Recommendations based on weather, humidity, elevation
+- **✅ IMPLEMENTED:** Predictive Modeling: Suggest optimal heat/fan profiles for specific coffee types
+- **✅ IMPLEMENTED:** Roast Outcome Prediction: Estimate final roast characteristics based on current curve
+- **✅ IMPLEMENTED:** Personalized Suggestions: Learn user preferences and adapt recommendations
+- **✅ IMPLEMENTED:** Privacy-preserving AI analysis (data stays user-specific)
 
 ### 5.2 Real-Time Roast Monitoring
 - Live Temperature Tracking: Real-time curve updates during active roast
@@ -212,11 +231,11 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - Roast Progress Indicators: Visual cues for roast phase transitions
 - Alert System: Notifications for critical roast moments or deviations
 
-### 5.3 Voice & Chat Interface
+### 5.3 Voice & Chat Interface ✅ **PARTIALLY IMPLEMENTED**
+- **✅ IMPLEMENTED:** Chat Interface: Natural language queries about roast history and planning
+- **✅ IMPLEMENTED:** Conversational AI: Planning assistance and roast guidance
 - Voice Commands: Hands-free logging during roasting ("Log first crack", "Set heat to 7")
-- Chat Interface: Natural language queries about roast history and planning
 - Audio Feedback: Spoken confirmations and roast status updates
-- Conversational AI: Planning assistance and roast guidance
 
 ### 5.4 Browser Extension for Coffee Suppliers ✅ **PLANNED**
 - **One-Click Bean Import:** Browser extension for seamless bean profile creation
@@ -250,28 +269,28 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - **NEW:** User consent and privacy controls for sharing
 
 ### 6.4 Vector Database Integration ✅ **IMPLEMENTED**
-- **Semantic Bean Search:** Find beans similar to current selection using vector embeddings
-- **Flavor Profile Matching:** AI-powered flavor profile similarity search
-- **Roast Pattern Learning:** Vector storage of successful roast patterns and outcomes
-- **Real-Time Recommendations:** Semantic search for roast recommendations based on bean characteristics
-- **Weaviate Integration:** High-performance vector database for coffee bean and roast pattern embeddings
-- **FastEmbed Integration:** Free local embedding generation using sentence-transformers
-- **Similarity Scoring:** Advanced similarity algorithms for bean and roast matching
-- **AI Coaching Data:** Vector storage for AI-powered roast coaching and recommendations
-- **Semantic Search APIs:** RESTful endpoints for semantic search functionality
-- **Automatic Sync:** Real-time synchronization between Supabase and Weaviate
+- **✅ IMPLEMENTED:** Semantic Bean Search: Find beans similar to current selection using vector embeddings
+- **✅ IMPLEMENTED:** Flavor Profile Matching: AI-powered flavor profile similarity search
+- **✅ IMPLEMENTED:** Roast Pattern Learning: Vector storage of successful roast patterns and outcomes
+- **✅ IMPLEMENTED:** Real-Time Recommendations: Semantic search for roast recommendations based on bean characteristics
+- **✅ IMPLEMENTED:** Weaviate Integration: High-performance vector database for coffee bean and roast pattern embeddings
+- **✅ IMPLEMENTED:** FastEmbed Integration: Free local embedding generation using sentence-transformers
+- **✅ IMPLEMENTED:** Similarity Scoring: Advanced similarity algorithms for bean and roast matching
+- **✅ IMPLEMENTED:** AI Coaching Data: Vector storage for AI-powered roast coaching and recommendations
+- **✅ IMPLEMENTED:** Semantic Search APIs: RESTful endpoints for semantic search functionality
+- **✅ IMPLEMENTED:** Automatic Sync: Real-time synchronization between Supabase and Weaviate
 
-### 6.5 RAG-Powered Roasting Copilot ✅ **PLANNED**
-- **Historical Data Analysis:** AI analysis of 50+ historical roasts with full context
-- **Pre-Roast Planning:** "Given this Ethiopian Yirgacheffe, here's your recommended roast profile based on your 12 similar roasts"
-- **Real-Time Guidance:** "Your temp is 15°F below your target curve - increase heat to 8"
-- **Timing Guidance:** "You're 30 seconds behind on first crack - this will affect development"
-- **Post-Roast Analysis:** "This roast was 2 minutes longer than your best result - here's what to adjust next time"
-- **Learning System:** AI learns from user reflections and tasting notes to improve recommendations
-- **Intelligent Planning:** Roast planning based on bean characteristics and environmental conditions
-- **Preference Adaptation:** AI understands user preferences and adapts recommendations accordingly
-- **RAG Architecture:** Retrieval-Augmented Generation for context-aware AI responses
-- **Vector Search:** Find similar roasts, beans, and patterns for intelligent recommendations
+### 6.5 RAG-Powered Roasting Copilot ✅ **IMPLEMENTED**
+- **✅ IMPLEMENTED:** Historical Data Analysis: AI analysis of historical roasts with full context
+- **✅ IMPLEMENTED:** Pre-Roast Planning: "Given this Ethiopian Yirgacheffe, here's your recommended roast profile based on your similar roasts"
+- **✅ IMPLEMENTED:** Real-Time Guidance: "Your temp is 15°F below your target curve - increase heat to 8"
+- **✅ IMPLEMENTED:** Timing Guidance: "You're 30 seconds behind on first crack - this will affect development"
+- **✅ IMPLEMENTED:** Post-Roast Analysis: "This roast was 2 minutes longer than your best result - here's what to adjust next time"
+- **✅ IMPLEMENTED:** Learning System: AI learns from user reflections and tasting notes to improve recommendations
+- **✅ IMPLEMENTED:** Intelligent Planning: Roast planning based on bean characteristics and environmental conditions
+- **✅ IMPLEMENTED:** Preference Adaptation: AI understands user preferences and adapts recommendations accordingly
+- **✅ IMPLEMENTED:** RAG Architecture: Retrieval-Augmented Generation for context-aware AI responses
+- **✅ IMPLEMENTED:** Vector Search: Find similar roasts, beans, and patterns for intelligent recommendations
 
 ## 7. Data Model Updates ✅ **ENHANCED**
 
@@ -453,12 +472,12 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - ✅ Added frontend test interface for HTML parsing
 - **Timeline:** Completed December 2024
 
-### Phase 4: Core Curve Visualization (Current)
+### Phase 4: Core Curve Visualization ✅ **COMPLETED**
 - ✅ Fixed environmental data collection bug (field name mismatch resolved)
-- Implement historical roast curve charts (Recharts)
-- Add temperature logging to current roast flow
-- Basic ROR calculations
-- **Timeline:** 2-4 weeks
+- ✅ Implemented historical roast curve charts (Recharts)
+- ✅ Added temperature logging to current roast flow
+- ✅ Basic ROR calculations
+- **Timeline:** Completed December 2024
 
 ### Phase 5: Vector Database Integration ✅ **COMPLETED**
 - ✅ Weaviate vector database setup and configuration
@@ -472,23 +491,29 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - ✅ Roast outcomes and reflections data capture
 - **Timeline:** Completed December 2024
 
-### Phase 6: Browser Extension Development ✅ **PLANNED**
+### Phase 6: RAG-Powered AI Copilot ✅ **COMPLETED**
+- ✅ **Historical Data Ingestion:** Import and analyze historical roasts
+- ✅ **RAG System Architecture:** Retrieval-Augmented Generation for intelligent recommendations
+- ✅ **Pre-Roast Planning:** AI-powered roast profile recommendations based on similar past roasts
+- ✅ **Real-Time Guidance:** During-roast AI recommendations and adjustments
+- ✅ **Post-Roast Analysis:** AI analysis of roast outcomes and improvement suggestions
+- ✅ **Learning System:** AI learns from user reflections and tasting notes
+- ✅ **LLM Integration:** DeepSeek LLM for natural language reasoning and responses
+- ✅ **Context Retrieval:** Intelligent retrieval of relevant historical data
+- ✅ **Bean Profile Integration:** AI uses complete bean characteristics for personalized recommendations
+- ✅ **Machine Configuration Awareness:** AI understands extension tube status and adjusts recommendations
+- ✅ **Environmental Conditions Integration:** AI considers weather data for tailored advice
+- ✅ **Chat Interface:** Minimizable chat window with unread message indicators
+- ✅ **Performance Optimization:** 15-second timeout with fallback responses
+- ✅ **User Unit Preferences:** Temperature and elevation displayed in user's preferred units
+- **Timeline:** Completed December 2024
+
+### Phase 7: Browser Extension Development ✅ **PLANNED**
 - Chrome extension for Sweet Maria's integration
 - Multi-supplier parser configuration
 - One-click bean import functionality
 - Cross-browser compatibility (Firefox, Safari, Edge)
 - Privacy-focused local parsing
-- **Timeline:** 2-3 months
-
-### Phase 7: RAG-Powered AI Copilot ✅ **PLANNED**
-- **Historical Data Ingestion:** Import and analyze 50+ historical roasts
-- **RAG System Architecture:** Retrieval-Augmented Generation for intelligent recommendations
-- **Pre-Roast Planning:** AI-powered roast profile recommendations based on similar past roasts
-- **Real-Time Guidance:** During-roast AI recommendations and adjustments
-- **Post-Roast Analysis:** AI analysis of roast outcomes and improvement suggestions
-- **Learning System:** AI learns from user reflections and tasting notes
-- **LLM Integration:** GPT/Claude for natural language reasoning and responses
-- **Context Retrieval:** Intelligent retrieval of relevant historical data
 - **Timeline:** 2-3 months
 
 ### Phase 8: Real-Time & Voice
@@ -511,8 +536,9 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - **Database:** Supabase (PostgreSQL) with RLS
 - **Authentication:** Supabase Auth (Google, GitHub, Email/Password)
 - **Deployment:** Railway (Backend), Vercel (Frontend)
-- **APIs:** Open-Meteo (Environmental), OpenStreetMap (Geocoding), Anthropic Claude (AI Analysis)
-- **New Components:** SetupWizard, ProfilePage, EnvironmentalConditions, UserProfile
+- **APIs:** Open-Meteo (Environmental), OpenStreetMap (Geocoding), DeepSeek LLM (AI Analysis)
+- **AI Integration:** DeepSeek LLM + Weaviate Vector Database + FastEmbed
+- **New Components:** SetupWizard, ProfilePage, EnvironmentalConditions, UserProfile, RoastChat
 
 ### Security Architecture ✅ **IMPLEMENTED**
 - **JWT Authentication:** All API endpoints require valid JWT tokens
@@ -560,6 +586,7 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - AI recommendation acceptance rate
 - **NEW:** User retention rate (monthly active users)
 - **NEW:** Authentication method preferences
+- **✅ IMPLEMENTED:** AI chat engagement metrics
 
 ### Quality Metrics
 - Roast consistency improvement over time
@@ -568,6 +595,7 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - Community engagement with shared profiles
 - **NEW:** User satisfaction with authentication experience
 - **NEW:** Data security incident rate (target: 0)
+- **✅ IMPLEMENTED:** AI response accuracy and relevance
 
 ### Security Metrics
 - **NEW:** Authentication success rate
@@ -579,7 +607,7 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 
 📌 **This is a living document. All sections are open for refinement as the product evolves with user feedback and technical discoveries.**
 
-**Recent Updates (v0.7):**
+**Recent Updates (v0.8):**
 - ✅ **MAJOR:** RAG-Powered Roasting Copilot System Implementation
 - ✅ **MAJOR:** Enhanced database schemas for AI coaching and roast outcomes
 - ✅ **MAJOR:** Weaviate vector database integration with FastEmbed
@@ -612,3 +640,10 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - ✅ **NEW:** Planned browser extension for multi-supplier bean import
 - ✅ **NEW:** Fixed roast detail page undefined ID issue
 - ✅ Updated implementation roadmap with completed RAG system phase
+- ✅ **NEW:** Fully functional AI chatbot with pre-roast planning, during-roast guidance, and event-triggered responses
+- ✅ **NEW:** Bean profile data flow integration with AI recommendations
+- ✅ **NEW:** Machine configuration awareness in AI recommendations
+- ✅ **NEW:** Environmental conditions integration with AI guidance
+- ✅ **NEW:** User unit preferences support in AI responses
+- ✅ **NEW:** Performance optimization with timeout and fallback responses
+- ✅ **NEW:** Chat interface with unread message indicators and quick actions

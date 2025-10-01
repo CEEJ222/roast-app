@@ -238,7 +238,7 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
       },
       key_watch_points: [
         "Monitor bean movement during drying",
-        "Listen for first crack around 8-10 minutes",
+        "Listen for first crack around 8-12 minutes",
         "Watch for even color development",
         "Control heat during development phase"
       ],
@@ -421,7 +421,7 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
         // Convert string numbers to actual numbers
         moisture_content_pct: formData.moisture_content_pct ? parseFloat(formData.moisture_content_pct) : null,
         density_g_ml: formData.density_g_ml ? parseFloat(formData.density_g_ml) : null,
-        altitude_m: formData.altitude_m ? parseInt(formData.altitude_m) : null,
+        altitude_m: formData.altitude_m && formData.altitude_m !== '' ? parseInt(formData.altitude_m) : null,
         cupping_score: formData.cupping_score ? parseFloat(formData.cupping_score) : null,
         fragrance_score: formData.fragrance_score ? parseFloat(formData.fragrance_score) : null,
         // Convert empty strings to null for optional fields
@@ -506,8 +506,8 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
         <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 px-6 py-4 text-white flex-shrink-0">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold">Enhance Bean Profile</h2>
-              <p className="opacity-90">Add detailed AI-optimized data for better roast coaching</p>
+              <h2 className="text-2xl font-bold">Add Green Coffee Profile</h2>
+              <p className="opacity-90">Add detailed information about the green coffee</p>
             </div>
             <button
               onClick={onClose}
@@ -769,7 +769,13 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
                   placeholder="Select screen size..."
                   className="w-full"
                 />
-                <p className="text-xs text-gray-600 dark:text-dark-text-secondary mt-1">Bean size affects heat transfer</p>
+                <p className="text-xs text-gray-600 dark:text-dark-text-secondary mt-1">
+                  {formData.screen_size === '14-15' && 'Small beans: Lower heat to avoid scorching'}
+                  {formData.screen_size === '15-16' && 'Medium beans: Standard heat settings work well'}
+                  {formData.screen_size === '16-17' && 'Large beans: Higher heat for even roasting'}
+                  {formData.screen_size === '17-18' && 'Very large beans: High heat and longer roast time'}
+                  {!formData.screen_size && 'Bean size affects heat transfer and roast timing'}
+                </p>
               </div>
 
 
@@ -782,7 +788,10 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
                 <input
                   type="number"
                   value={formData.altitude_m || ''}
-                  onChange={(e) => handleInputChange('altitude_m', parseInt(e.target.value))}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    handleInputChange('altitude_m', value === '' ? '' : parseInt(value));
+                  }}
                   className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 dark:bg-dark-bg-secondary dark:text-dark-text-primary"
                   placeholder="1400"
                   min="0"

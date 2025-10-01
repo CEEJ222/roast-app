@@ -9,26 +9,69 @@
 **Root Cause**: Railway's infrastructure has known issues with CORS handling, especially with OPTIONS preflight requests.
 
 **Solution**: 
-1. Add custom CORS middleware to ensure headers on ALL responses (including errors)
-2. Use wildcard CORS configuration for Railway compatibility
+1. Use specific origins instead of wildcard for production security
+2. Add custom CORS middleware to ensure headers on ALL responses (including errors)
 
 ```python
 # In backend/main.py
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[
+        "https://www.roastbuddy.app",
+        "https://roastbuddy.app", 
+        "http://localhost:3000",
+        "http://localhost:5173"
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
 )
 
 # Custom middleware to ensure CORS headers on ALL responses
 @app.middleware("http")
 async def add_cors_headers(request: Request, call_next):
+    # Handle OPTIONS preflight requests
+    if request.method == "OPTIONS":
+        response = Response()
+        origin = request.headers.get("origin")
+        
+        # Define allowed origins
+        allowed_origins = [
+            "https://www.roastbuddy.app",
+            "https://roastbuddy.app", 
+            "http://localhost:3000",
+            "http://localhost:5173"
+        ]
+        
+        # Set CORS headers if origin is allowed
+        if origin in allowed_origins:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+        
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+        response.headers["Access-Control-Max-Age"] = "600"
+        return response
+    
+    # Handle regular requests
     response = await call_next(request)
     
-    # Add CORS headers to all responses
-    response.headers["Access-Control-Allow-Origin"] = "*"
+    # Get the origin from the request
+    origin = request.headers.get("origin")
+    
+    # Define allowed origins
+    allowed_origins = [
+        "https://www.roastbuddy.app",
+        "https://roastbuddy.app", 
+        "http://localhost:3000",
+        "http://localhost:5173"
+    ]
+    
+    # Set CORS headers if origin is allowed
+    if origin in allowed_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, Origin"
     response.headers["Access-Control-Max-Age"] = "600"
@@ -76,7 +119,7 @@ except JWTError:  # Not jwt.InvalidTokenError
 **Root Cause**: Different platforms handle CORS differently
 
 **Solution**: 
-- Railway: Use wildcard CORS with custom middleware
+- Railway: Use specific origins with custom middleware (wildcard blocked in production)
 - Vercel: Use specific origins with credentials support
 
 ### 5. Environment Variables Checklist
@@ -95,7 +138,7 @@ except JWTError:  # Not jwt.InvalidTokenError
 ### 6. Common Deployment Mistakes
 
 1. **Skipping JWT Secret**: Always add `SUPABASE_JWT_SECRET` to Railway
-2. **Wrong CORS Configuration**: Railway needs wildcard CORS, not specific origins
+2. **Wrong CORS Configuration**: Railway blocks wildcard CORS in production, needs specific origins
 3. **Missing Custom Middleware**: Standard CORS middleware doesn't work on Railway for error responses
 4. **Incorrect JWT Error Handling**: Use `JWTError`, not `InvalidTokenError`
 
@@ -110,7 +153,7 @@ except JWTError:  # Not jwt.InvalidTokenError
 
 **If CORS errors persist**:
 - Add custom CORS middleware
-- Use wildcard origins for Railway
+- Use specific origins for Railway (wildcard blocked in production)
 - Ensure middleware runs on ALL responses
 
 **If 401 errors persist**:

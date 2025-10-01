@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import RoastCurveGraph from '../shared/RoastCurveGraph';
 import RecentRoasts from './RecentRoasts';
 import BeanProfiles from './BeanProfiles';
@@ -18,6 +18,23 @@ const Dashboard = ({
   getAuthToken,
   onDataChange = null,
 }) => {
+  const [showActionsDropdown, setShowActionsDropdown] = useState(false);
+  const [triggerBeanProfileCreate, setTriggerBeanProfileCreate] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowActionsDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
@@ -25,12 +42,44 @@ const Dashboard = ({
           <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Roast Dashboard</h2>
           <p className="text-gray-600 dark:text-dark-text-secondary text-sm sm:text-base">Your roasting history and quick actions</p>
         </div>
-        <button
-          onClick={() => setShowStartRoastWizard(true)}
-          className="w-full sm:w-auto bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant text-white px-4 sm:px-6 py-3 rounded-lg hover:from-indigo-800 hover:via-purple-700 hover:to-purple-800 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-bold shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105 flex items-center justify-center gap-2"
-        >
-          🏁 Start New Roast
-        </button>
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setShowActionsDropdown(!showActionsDropdown)}
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-dark-accent-primary dark:to-dark-accent-secondary text-white px-4 sm:px-6 py-3 rounded-lg hover:from-indigo-700 hover:to-purple-700 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-bold shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105 flex items-center justify-center gap-2 w-full sm:w-auto"
+          >
+            ⚡ Actions
+            <svg className={`w-4 h-4 transition-transform ${showActionsDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          
+          {showActionsDropdown && (
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-dark-bg-tertiary rounded-lg shadow-lg dark:shadow-dark-lg border dark:border-dark-border-primary z-50">
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    setShowStartRoastWizard(true);
+                    setShowActionsDropdown(false);
+                  }}
+                  className="w-full text-left px-4 py-3 text-gray-700 dark:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-bg-quaternary flex items-center gap-3 transition-colors"
+                >
+                  <span className="text-lg">🏁</span>
+                  <span className="font-medium">Start New Roast</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setTriggerBeanProfileCreate(true);
+                    setShowActionsDropdown(false);
+                  }}
+                  className="w-full text-left px-4 py-3 text-gray-700 dark:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-bg-quaternary flex items-center gap-3 transition-colors"
+                >
+                  <span className="text-lg">📝</span>
+                  <span className="font-medium">Add Bean Profile</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Roast Curve Visualization */}
@@ -89,10 +138,18 @@ const Dashboard = ({
         onRoastResume={handleRoastResume}
         roastId={roastId}
         onDataChange={onDataChange}
+        setShowStartRoastWizard={setShowStartRoastWizard}
       />
 
       {/* Bean Profiles */}
-      <BeanProfiles getAuthToken={getAuthToken} onDataChange={onDataChange} />
+      <div data-section="bean-profiles">
+        <BeanProfiles 
+          getAuthToken={getAuthToken} 
+          onDataChange={onDataChange} 
+          triggerCreateModal={triggerBeanProfileCreate}
+          onTriggerReset={() => setTriggerBeanProfileCreate(false)}
+        />
+      </div>
     </div>
   );
 };

@@ -6,7 +6,7 @@ const API_BASE = import.meta.env.DEV
   ? 'http://localhost:8000'
   : 'https://roast-backend-production-8883.up.railway.app';
 
-const BeanProfiles = ({ getAuthToken, onDataChange = null }) => {
+const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = false, onTriggerReset = null }) => {
   const [beanProfiles, setBeanProfiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -47,6 +47,17 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null }) => {
   useEffect(() => {
     loadBeanProfiles();
   }, []);
+
+  // Handle external trigger to open create modal
+  useEffect(() => {
+    if (triggerCreateModal) {
+      setShowCreateForm(true);
+      // Reset the trigger after using it
+      if (onTriggerReset) {
+        onTriggerReset();
+      }
+    }
+  }, [triggerCreateModal, onTriggerReset]);
 
   const handleViewProfile = (profile) => {
     setSelectedProfile(profile);
@@ -429,9 +440,9 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null }) => {
       {/* Profile Details Modal */}
       {showProfileModal && selectedProfile && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
+          <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 px-4 sm:px-6 py-3 sm:py-4 text-white">
+            <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 px-4 sm:px-6 py-3 sm:py-4 text-white flex-shrink-0">
               <div className="flex justify-between items-start">
                 <div className="flex-1 min-w-0 pr-4">
                   <h2 className="text-lg sm:text-2xl font-bold break-words">{selectedProfile.name}</h2>
@@ -446,7 +457,7 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null }) => {
               </div>
             </div>
 
-            <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-120px)]">
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1">
               {/* Basic Info */}
               <div className="mb-6">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Basic Information</h3>
@@ -542,7 +553,7 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null }) => {
             </div>
 
             {/* Footer */}
-            <div className="bg-gray-50 dark:bg-gray-800 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="bg-gray-50 dark:bg-gray-800 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
               <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
                 <button
                   onClick={handleCloseProfile}

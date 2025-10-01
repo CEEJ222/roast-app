@@ -23,13 +23,18 @@ See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues and solutions, 
 ## 🆕 Latest Updates
 
 ### 🤖 RAG-POWERED ROASTING COPILOT (December 2024)
-- **🧠 AI-Powered Recommendations:** Intelligent pre-roast planning based on historical data
+- **🧠 AI-Powered Recommendations:** Intelligent pre-roast planning based on historical data and bean profiles
 - **📊 Enhanced Data Capture:** Roast outcomes, reflections, and tasting notes for AI learning
 - **🔍 Semantic Search:** Vector database integration for finding similar beans and roasts
 - **⚡ Real-Time Guidance:** During-roast AI coaching and adjustment recommendations
 - **📈 Post-Roast Analysis:** AI analysis of roast outcomes with improvement suggestions
 - **🗄️ Advanced Database:** New tables for roast outcomes, curves, and AI coaching data
 - **🔗 Vector Integration:** Weaviate vector database with FastEmbed for free local embeddings
+- **💬 Interactive Chat Interface:** Minimizable chat window with unread message indicators and quick actions
+- **🌡️ Environmental Integration:** AI considers temperature, humidity, elevation, and pressure for tailored advice
+- **🛠️ Machine Configuration Awareness:** AI understands extension tube status and adjusts recommendations accordingly
+- **🫘 Bean Profile Integration:** AI uses complete bean characteristics (origin, variety, process, altitude, density, screen size) for personalized recommendations
+- **📱 Performance Optimized:** 15-second timeout with fallback responses and user unit preferences support
 
 ### 🏗️ MAJOR ARCHITECTURE REFACTORING (December 2024)
 - **🎯 47% Size Reduction:** App.jsx reduced from 1902 lines to 1007 lines
@@ -123,6 +128,12 @@ See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues and solutions, 
 - **Vector Database:** Weaviate integration with FastEmbed for free local embeddings
 - **Enhanced Data Capture:** Store detailed roast outcomes, reflections, and AI insights
 - **Intelligent Recommendations:** Context-aware suggestions based on your roasting history
+- **Interactive Chat Interface:** Minimizable chat window with unread message indicators and quick actions
+- **Environmental Integration:** AI considers weather conditions (temperature, humidity, elevation, pressure) for tailored advice
+- **Machine Configuration Awareness:** AI understands your machine setup (extension tube, etc.) and adjusts recommendations
+- **Bean Profile Integration:** AI uses complete bean characteristics for personalized guidance
+- **Performance Optimized:** 15-second timeout with fallback responses and user unit preferences support
+- **Event-Triggered Responses:** Automatic AI responses to logged events (heat/fan changes, milestones)
 
 ### 🎨 User Experience & Interface
 - **Clean, Intuitive Design:** Professional styling with orange theme and modern UI

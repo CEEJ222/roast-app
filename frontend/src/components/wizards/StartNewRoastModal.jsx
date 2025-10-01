@@ -533,6 +533,7 @@ const StartNewRoastModal = ({
                         setBeanProfileScreen('choice');
                       }}
                       onSave={(profile) => {
+                        console.log('DEBUG: BeanProfileForm onSave callback received:', profile);
                         // Update the bean profiles list
                         setBeanProfiles(prev => [profile, ...prev]);
                         // Set the selected profile and advance to next step
@@ -617,6 +618,7 @@ const StartNewRoastModal = ({
           {roastSetupStep === 'review' && (
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">Review Your Roast Setup</h3>
+              {console.log('DEBUG: Review step - formData.selectedBeanProfile:', formData.selectedBeanProfile)}
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Machine & Location */}
