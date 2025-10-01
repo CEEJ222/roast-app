@@ -66,33 +66,48 @@ class DeepSeekRoastingCopilot:
             # Create the prompt
             prompt = self._create_pre_roast_prompt(context)
             
-            # Use configured models with fallback
-            model_name = self.primary_model
-            response = self.client.chat.completions.create(
-                model=model_name,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are an expert coffee roasting AI specialized in FreshRoast SR540 and SR800 roasters. Provide specific, actionable advice for heat/fan settings, timing, and techniques."
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                temperature=0.7,
-                max_tokens=500,  # Reduced for faster response
-                timeout=10  # Reduced timeout for faster initial response
-            )
+            # Try primary model first, then fallback model
+            models_to_try = [self.primary_model, self.fallback_model]
+            last_error = None
             
-            # Parse the response
-            llm_response = response.choices[0].message.content
+            for model_name in models_to_try:
+                try:
+                    logger.info(f"🔄 Trying model: {model_name}")
+                    response = self.client.chat.completions.create(
+                        model=model_name,
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "You are an expert coffee roasting AI specialized in FreshRoast SR540 and SR800 roasters. Provide specific, actionable advice for heat/fan settings, timing, and techniques."
+                            },
+                            {
+                                "role": "user",
+                                "content": prompt
+                            }
+                        ],
+                        temperature=0.7,
+                        max_tokens=500,
+                        timeout=10
+                    )
+                    
+                    # Parse the response
+                    llm_response = response.choices[0].message.content
+                    logger.info(f"✅ Successfully got response from {model_name}")
+                    
+                    return self._parse_llm_response(llm_response, roast_level)
+                    
+                except Exception as model_error:
+                    last_error = model_error
+                    logger.warning(f"⚠️ Model {model_name} failed: {model_error}")
+                    continue  # Try next model
             
-            return self._parse_llm_response(llm_response, roast_level)
+            # If all models failed, use fallback advice
+            logger.error(f"❌ All models failed. Last error: {last_error}")
+            return self._get_fallback_advice(roast_level, machine_info, bean_profile)
             
         except Exception as e:
             logger.error(f"❌ DeepSeek API error: {e}")
-            return self._get_fallback_advice(roast_level)
+            return self._get_fallback_advice(roast_level, machine_info, bean_profile)
     
     def get_during_roast_advice(self, 
                               roast_progress: Dict[str, Any],
@@ -119,26 +134,39 @@ class DeepSeekRoastingCopilot:
             Provide specific FreshRoast SR540/SR800 advice for this situation.
             """
             
-            # Use configured models with fallback
-            model_name = self.primary_model
-            response = self.client.chat.completions.create(
-                model=model_name,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are a real-time coffee roasting coach for FreshRoast SR540/SR800. Provide immediate, specific advice for heat/fan adjustments and timing. Use plain text only - NO LaTeX, NO math formatting, just regular text."
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                temperature=0.8,
-                max_tokens=300,  # Reduced for faster response
-                timeout=8  # Reduced timeout for during-roast advice
-            )
+            # Try primary model first, then fallback model
+            models_to_try = [self.primary_model, self.fallback_model]
             
-            return response.choices[0].message.content
+            for model_name in models_to_try:
+                try:
+                    logger.info(f"🔄 During-roast: Trying model: {model_name}")
+                    response = self.client.chat.completions.create(
+                        model=model_name,
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "You are a real-time coffee roasting coach for FreshRoast SR540/SR800. Provide immediate, specific advice for heat/fan adjustments and timing. Use plain text only - NO LaTeX, NO math formatting, just regular text."
+                            },
+                            {
+                                "role": "user",
+                                "content": prompt
+                            }
+                        ],
+                        temperature=0.8,
+                        max_tokens=300,
+                        timeout=8
+                    )
+                    
+                    logger.info(f"✅ During-roast: Successfully got response from {model_name}")
+                    return response.choices[0].message.content
+                    
+                except Exception as model_error:
+                    logger.warning(f"⚠️ During-roast: Model {model_name} failed: {model_error}")
+                    continue  # Try next model
+            
+            # If all models failed
+            logger.error(f"❌ During-roast: All models failed")
+            return "I'm having trouble providing real-time advice. Please check your roast progress and adjust heat/fan as needed."
             
         except Exception as e:
             logger.error(f"❌ DeepSeek during-roast error: {e}")
@@ -178,24 +206,36 @@ class DeepSeekRoastingCopilot:
                 Provide urgent, specific guidance. Be direct and actionable.
                 """
                 
-                response = self.client.chat.completions.create(
-                    model=self.primary_model,
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": "You are an expert coffee roaster providing URGENT guidance for dangerous temperature spikes. Be direct, specific, and urgent. Use plain text only."
-                        },
-                        {
-                            "role": "user",
-                            "content": prompt
-                        }
-                    ],
-                    temperature=0.3,
-                    max_tokens=150,
-                    timeout=3
-                )
+                # Try models with fallback for urgent spike response
+                ai_response = None
+                for model in [self.primary_model, self.fallback_model]:
+                    try:
+                        logger.info(f"🚨 URGENT: Trying {model} for spike response")
+                        response = self.client.chat.completions.create(
+                            model=model,
+                            messages=[
+                                {
+                                    "role": "system",
+                                    "content": "You are an expert coffee roaster providing URGENT guidance for dangerous temperature spikes. Be direct, specific, and urgent. Use plain text only."
+                                },
+                                {
+                                    "role": "user",
+                                    "content": prompt
+                                }
+                            ],
+                            temperature=0.3,
+                            max_tokens=150,
+                            timeout=3
+                        )
+                        ai_response = response.choices[0].message.content
+                        logger.info(f"✅ URGENT: Got spike response from {model}")
+                        break
+                    except Exception as e:
+                        logger.warning(f"⚠️ URGENT: {model} failed: {e}")
+                        continue
                 
-                ai_response = response.choices[0].message.content
+                if not ai_response:
+                    ai_response = "⚠️ CRITICAL: Temperature rising dangerously fast! Immediately reduce heat by 2-3 levels to prevent scorching!"
                 logger.warning(f"🚨 URGENT TEMPERATURE SPIKE RESPONSE: {ai_response}")
                 
                 return {
@@ -282,24 +322,41 @@ class DeepSeekRoastingCopilot:
                 Provide brief guidance for this situation.
                 """
             
-            response = self.client.chat.completions.create(
-                model=self.primary_model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are a real-time coffee roasting coach. Provide brief, encouraging feedback on roast events. Use plain text only - NO LaTeX, NO math formatting like $$, NO \\text{}, just regular text."
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                temperature=0.6,
-                max_tokens=200,  # Reduced for faster response
-                timeout=5  # Reduced timeout for automatic responses
-            )
+            # Try models with fallback for event response
+            ai_response = None
+            for model in [self.primary_model, self.fallback_model]:
+                try:
+                    logger.info(f"🔄 Auto-event: Trying {model}")
+                    response = self.client.chat.completions.create(
+                        model=model,
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "You are a real-time coffee roasting coach. Provide brief, encouraging feedback on roast events. Use plain text only - NO LaTeX, NO math formatting like $$, NO \\text{}, just regular text."
+                            },
+                            {
+                                "role": "user",
+                                "content": prompt
+                            }
+                        ],
+                        temperature=0.6,
+                        max_tokens=200,
+                        timeout=5
+                    )
+                    ai_response = response.choices[0].message.content
+                    logger.info(f"✅ Auto-event: Got response from {model}")
+                    break
+                except Exception as e:
+                    logger.warning(f"⚠️ Auto-event: {model} failed: {e}")
+                    continue
             
-            ai_response = response.choices[0].message.content
+            if not ai_response:
+                logger.error(f"❌ Auto-event: All models failed")
+                return {
+                    "advice": "",
+                    "recommendations": [],
+                    "has_meaningful_advice": False
+                }
             
             logger.info(f"🤖 LLM Response (first 200 chars): {ai_response[:200]}")
             
