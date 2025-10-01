@@ -23,33 +23,7 @@ from RAG_system.weaviate.weaviate_integration import (
 )
 from RAG_system.weaviate.weaviate_config import initialize_weaviate
 
-# Coffee regions validation
-COFFEE_REGIONS = [
-    # Africa
-    'Ethiopia', 'Kenya', 'Rwanda', 'Burundi', 'Tanzania', 'Uganda', 
-    'Zambia', 'Malawi', 'Zimbabwe', 'Madagascar', 'Côte d\'Ivoire', 
-    'Cameroon', 'Angola', 'Mozambique',
-    # Central & South America
-    'Colombia', 'Brazil', 'Peru', 'Ecuador', 'Bolivia', 'Venezuela', 
-    'Guyana', 'Suriname', 'French Guiana',
-    # Central America & Caribbean
-    'Guatemala', 'Acatenango', 'Costa Rica', 'Honduras', 'Nicaragua', 'El Salvador', 
-    'Panama', 'Mexico', 'Jamaica', 'Cuba', 'Dominican Republic', 
-    'Haiti', 'Puerto Rico',
-    # Asia Pacific
-    'Indonesia', 'Vietnam', 'India', 'Papua New Guinea', 'Philippines', 
-    'Thailand', 'Myanmar', 'Laos', 'Cambodia', 'Malaysia', 'Sri Lanka', 
-    'Nepal', 'China', 'Japan', 'Taiwan', 'South Korea', 'Australia', 
-    'New Zealand', 'Hawaii',
-    # Middle East
-    'Yemen', 'Saudi Arabia', 'Oman', 'United Arab Emirates',
-    # Other
-    'Other'
-]
-
-def validate_coffee_region(region: str) -> bool:
-    """Validate that the coffee region is in our predefined list"""
-    return region in COFFEE_REGIONS
+# Coffee regions validation moved to routers/beans.py
 
 # Load environment variables from .env file for local development
 load_dotenv()
@@ -140,10 +114,7 @@ async def add_cors_headers(request: Request, call_next):
 
 # Duplicate health check endpoint removed - using the one above
 
-@app.get("/coffee-regions")
-async def get_coffee_regions():
-    """Get the list of valid coffee regions"""
-    return {"regions": COFFEE_REGIONS}
+# Coffee regions endpoint moved to routers/beans.py
 
 
 
@@ -203,6 +174,297 @@ async def update_user_profile(request: UserProfileRequest, user_id: str = Depend
         })
         
         return {"success": True, "message": "Profile updated"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Import feature flags
+from feature_flags import check_ai_copilot_access, feature_manager
+
+# Subscription Status Endpoint
+@app.get("/user/subscription-status")
+async def get_subscription_status(user_id: str = Depends(verify_jwt_token)):
+    """
+    Get user's subscription status for AI features with feature flag support
+    """
+    try:
+        sb = get_supabase()
+        
+        # Get user data to check for premium status
+        user_response = sb.auth.admin.get_user_by_id(user_id)
+        if not user_response.user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_meta = user_response.user.user_metadata or {}
+        
+        # Check AI Copilot access using feature flags
+        ai_access = check_ai_copilot_access(user_id, user_meta)
+        
+        # Get subscription status
+        subscription_status = user_meta.get("subscription_status", "free")
+        
+        if ai_access["has_access"]:
+            return {
+                "status": subscription_status,
+                "ai_features_enabled": True,
+                "access_type": ai_access["access_type"],
+                "reasoning": ai_access["reasoning"],
+                "features": [
+                    "AI Roasting Copilot",
+                    "Real-time guidance", 
+                    "Intelligent recommendations",
+                    "Historical analysis"
+                ],
+                "feature_flags": {
+                    "development_access": ai_access["development_access"],
+                    "beta_access": ai_access["beta_access"],
+                    "premium_access": ai_access["premium_access"]
+                }
+            }
+        else:
+            return {
+                "status": subscription_status,
+                "ai_features_enabled": False,
+                "access_type": "none",
+                "reasoning": ai_access["reasoning"],
+                "features": [
+                    "Basic roasting tools",
+                    "Manual logging"
+                ],
+                "upgrade_required": "AI features require premium subscription or beta access"
+            }
+        
+    except Exception as e:
+        # Default to no access on error
+        return {
+            "status": "free",
+            "ai_features_enabled": False,
+            "access_type": "none",
+            "reasoning": "Error checking access",
+            "error": str(e)
+        }
+
+# Feature Flag Management Endpoints
+@app.get("/admin/feature-flags")
+async def get_all_feature_flags(user_id: str = Depends(verify_jwt_token)):
+    """Get all feature flags (admin only)"""
+    try:
+        # Check if user is admin
+        sb = get_supabase()
+        user_response = sb.auth.admin.get_user_by_id(user_id)
+        if not user_response.user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_meta = user_response.user.user_metadata or {}
+        if user_meta.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        return {
+            "features": feature_manager.list_all_features(),
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/admin/feature-flags/{feature_name}/enable")
+async def enable_feature_flag(feature_name: str, user_id: str = Depends(verify_jwt_token)):
+    """Enable a feature flag (admin only)"""
+    try:
+        # Check if user is admin
+        sb = get_supabase()
+        user_response = sb.auth.admin.get_user_by_id(user_id)
+        if not user_response.user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_meta = user_response.user.user_metadata or {}
+        if user_meta.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        success = feature_manager.enable_feature(feature_name)
+        if not success:
+            raise HTTPException(status_code=404, detail="Feature flag not found")
+        
+        return {"success": True, "message": f"Feature flag '{feature_name}' enabled"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/admin/feature-flags/{feature_name}/disable")
+async def disable_feature_flag(feature_name: str, user_id: str = Depends(verify_jwt_token)):
+    """Disable a feature flag (admin only)"""
+    try:
+        # Check if user is admin
+        sb = get_supabase()
+        user_response = sb.auth.admin.get_user_by_id(user_id)
+        if not user_response.user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_meta = user_response.user.user_metadata or {}
+        if user_meta.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        success = feature_manager.disable_feature(feature_name)
+        if not success:
+            raise HTTPException(status_code=404, detail="Feature flag not found")
+        
+        return {"success": True, "message": f"Feature flag '{feature_name}' disabled"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/admin/feature-flags/{feature_name}/beta-users")
+async def manage_beta_users(feature_name: str, request: dict, user_id: str = Depends(verify_jwt_token)):
+    """Add or remove beta users (admin only)"""
+    try:
+        # Check if user is admin
+        sb = get_supabase()
+        user_response = sb.auth.admin.get_user_by_id(user_id)
+        if not user_response.user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_meta = user_response.user.user_metadata or {}
+        if user_meta.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        action = request.get("action")  # "add" or "remove"
+        target_user_id = request.get("user_id")
+        
+        if action == "add":
+            success = feature_manager.add_beta_user(feature_name, target_user_id)
+        elif action == "remove":
+            success = feature_manager.remove_beta_user(feature_name, target_user_id)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid action. Use 'add' or 'remove'")
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="Feature flag not found")
+        
+        return {"success": True, "message": f"Beta user {action}ed for {feature_name}"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Development Feedback Endpoint
+@app.post("/feedback/development")
+async def submit_development_feedback(
+    feedback_data: dict,
+    user_id: str = Depends(verify_jwt_token)
+):
+    """Submit development feedback for AI Copilot"""
+    try:
+        from feedback_storage import feedback_storage
+        
+        sb = get_supabase()
+        
+        # Get user info
+        user_response = sb.auth.admin.get_user_by_id(user_id)
+        if not user_response.user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_email = user_response.user.email
+        feedback_text = feedback_data.get("feedback", "")
+        
+        if not feedback_text.strip():
+            raise HTTPException(status_code=400, detail="Feedback cannot be empty")
+        
+        # Store feedback using the storage system
+        feedback_id = feedback_storage.store_feedback(
+            user_id=user_id,
+            user_email=user_email,
+            feedback_text=feedback_text,
+            feature="ai_copilot",
+            status="development"
+        )
+        
+        return {
+            "success": True,
+            "message": "Thank you for your feedback! We'll consider it for the final product.",
+            "feedback_id": feedback_id
+        }
+        
+    except Exception as e:
+        print(f"Error in feedback submission: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Admin Feedback Management Endpoints
+@app.get("/admin/feedback")
+async def get_all_feedback(user_id: str = Depends(verify_jwt_token)):
+    """Get all development feedback (admin only)"""
+    try:
+        # Check if user is admin
+        sb = get_supabase()
+        user_response = sb.auth.admin.get_user_by_id(user_id)
+        if not user_response.user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_meta = user_response.user.user_metadata or {}
+        if user_meta.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        from feedback_storage import feedback_storage
+        
+        feedback_items = feedback_storage.get_all_feedback()
+        
+        return {
+            "success": True,
+            "feedback": feedback_items,
+            "total": len(feedback_items)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/admin/feedback/search")
+async def search_feedback(query: str, user_id: str = Depends(verify_jwt_token)):
+    """Search feedback using semantic search (admin only)"""
+    try:
+        # Check if user is admin
+        sb = get_supabase()
+        user_response = sb.auth.admin.get_user_by_id(user_id)
+        if not user_response.user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_meta = user_response.user.user_metadata or {}
+        if user_meta.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        from feedback_storage import feedback_storage
+        
+        search_results = feedback_storage.search_feedback(query)
+        
+        return {
+            "success": True,
+            "query": query,
+            "results": search_results,
+            "total": len(search_results)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/admin/feedback/summary")
+async def get_feedback_summary(user_id: str = Depends(verify_jwt_token)):
+    """Get feedback summary and analytics (admin only)"""
+    try:
+        # Check if user is admin
+        sb = get_supabase()
+        user_response = sb.auth.admin.get_user_by_id(user_id)
+        if not user_response.user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_meta = user_response.user.user_metadata or {}
+        if user_meta.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        from feedback_storage import feedback_storage
+        
+        summary = feedback_storage.get_feedback_summary()
+        
+        return {
+            "success": True,
+            "summary": summary
+        }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

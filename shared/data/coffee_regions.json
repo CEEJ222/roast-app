@@ -1,0 +1,89 @@
+{
+  "regions": [
+    "Ethiopia",
+    "Kenya", 
+    "Rwanda",
+    "Burundi",
+    "Tanzania",
+    "Uganda",
+    "Zambia",
+    "Malawi",
+    "Zimbabwe",
+    "Madagascar",
+    "Côte d'Ivoire",
+    "Cameroon",
+    "Angola",
+    "Mozambique",
+    "Colombia",
+    "Brazil",
+    "Peru",
+    "Ecuador",
+    "Bolivia",
+    "Venezuela",
+    "Guyana",
+    "Suriname",
+    "French Guiana",
+    "Guatemala",
+    "Costa Rica",
+    "Honduras",
+    "Nicaragua",
+    "El Salvador",
+    "Panama",
+    "Mexico",
+    "Jamaica",
+    "Cuba",
+    "Dominican Republic",
+    "Haiti",
+    "Puerto Rico",
+    "Indonesia",
+    "Vietnam",
+    "India",
+    "Papua New Guinea",
+    "Philippines",
+    "Thailand",
+    "Myanmar",
+    "Laos",
+    "Cambodia",
+    "Malaysia",
+    "Sri Lanka",
+    "Nepal",
+    "China",
+    "Japan",
+    "Taiwan",
+    "South Korea",
+    "Australia",
+    "New Zealand",
+    "Hawaii",
+    "Yemen",
+    "Saudi Arabia",
+    "Oman",
+    "United Arab Emirates",
+    "Other"
+  ],
+  "regions_by_continent": {
+    "Africa": [
+      "Ethiopia", "Kenya", "Rwanda", "Burundi", "Tanzania", "Uganda", 
+      "Zambia", "Malawi", "Zimbabwe", "Madagascar", "Côte d'Ivoire", 
+      "Cameroon", "Angola", "Mozambique"
+    ],
+    "Central & South America": [
+      "Colombia", "Brazil", "Peru", "Ecuador", "Bolivia", "Venezuela", 
+      "Guyana", "Suriname", "French Guiana"
+    ],
+    "Central America & Caribbean": [
+      "Guatemala", "Costa Rica", "Honduras", "Nicaragua", "El Salvador", 
+      "Panama", "Mexico", "Jamaica", "Cuba", "Dominican Republic", 
+      "Haiti", "Puerto Rico"
+    ],
+    "Asia Pacific": [
+      "Indonesia", "Vietnam", "India", "Papua New Guinea", "Philippines", 
+      "Thailand", "Myanmar", "Laos", "Cambodia", "Malaysia", "Sri Lanka", 
+      "Nepal", "China", "Japan", "Taiwan", "South Korea", "Australia", 
+      "New Zealand", "Hawaii"
+    ],
+    "Middle East": [
+      "Yemen", "Saudi Arabia", "Oman", "United Arab Emirates"
+    ],
+    "Other": ["Other"]
+  }
+}

@@ -389,9 +389,9 @@ Ready to start? I'll provide specific guidance based on your actual roast progre
   const getAIRecommendation = async (context = 'general') => {
     setIsLoading(true);
     
-    // Add a timeout to prevent hanging
+    // Add a timeout to prevent hanging (increased to 30 seconds)
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('AI response timeout')), 15000)
+      setTimeout(() => reject(new Error('AI response timeout')), 30000)
     );
     
     try {

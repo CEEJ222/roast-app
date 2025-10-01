@@ -15,6 +15,36 @@ from RAG_system.weaviate.weaviate_integration import (
 
 router = APIRouter(prefix="", tags=["Bean Profiles"])
 
+# Coffee regions validation - using shared data file
+import json
+import os
+
+def load_coffee_regions():
+    """Load coffee regions from shared data file"""
+    try:
+        # Get the path to the shared data file
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        shared_data_path = os.path.join(current_dir, '..', '..', 'shared', 'data', 'coffee_regions.json')
+        
+        with open(shared_data_path, 'r') as f:
+            data = json.load(f)
+            return data['regions']
+    except Exception as e:
+        # Fallback to a minimal list if file can't be loaded
+        print(f"Warning: Could not load coffee regions from shared file: {e}")
+        return ['Other']
+
+def validate_coffee_region(region: str) -> bool:
+    """Validate that the coffee region is in our predefined list"""
+    regions = load_coffee_regions()
+    return region in regions
+
+@router.get("/coffee-regions")
+async def get_coffee_regions():
+    """Get the list of valid coffee regions from shared data file"""
+    regions = load_coffee_regions()
+    return {"regions": regions}
+
 @router.post("/bean-profiles")
 async def create_bean_profile(request: CreateBeanProfileRequest, user_id: str = Depends(verify_jwt_token)):
     try:

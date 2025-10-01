@@ -1,0 +1,74 @@
+[
+  {
+    "id": "feedback_test_user_1759350636",
+    "user_id": "test_user",
+    "user_email": "test@example.com",
+    "feedback_text": "This is a test feedback",
+    "feature": "ai_copilot",
+    "timestamp": "2025-10-01T13:30:36.622642",
+    "status": "development"
+  },
+  {
+    "id": "feedback_5b5a8274-888f-4679-be09-2b2e6b69666d_1759350647",
+    "user_id": "5b5a8274-888f-4679-be09-2b2e6b69666d",
+    "user_email": "christianjbritz@gmail.com",
+    "feedback_text": "i would like to use this to understand and analyze roast curves",
+    "feature": "ai_copilot",
+    "timestamp": "2025-10-01T13:30:47.598895",
+    "status": "development"
+  },
+  {
+    "id": "feedback_5b5a8274-888f-4679-be09-2b2e6b69666d_1759350773",
+    "user_id": "5b5a8274-888f-4679-be09-2b2e6b69666d",
+    "user_email": "christianjbritz@gmail.com",
+    "feedback_text": "i want to use it to get advice during the roast",
+    "feature": "ai_copilot",
+    "timestamp": "2025-10-01T13:32:53.666028",
+    "status": "development"
+  },
+  {
+    "id": "feedback_5b5a8274-888f-4679-be09-2b2e6b69666d_1759350856",
+    "user_id": "5b5a8274-888f-4679-be09-2b2e6b69666d",
+    "user_email": "christianjbritz@gmail.com",
+    "feedback_text": "i want to use this to adjust heat and fan",
+    "feature": "ai_copilot",
+    "timestamp": "2025-10-01T13:34:16.399679",
+    "status": "development"
+  },
+  {
+    "id": "feedback_5b5a8274-888f-4679-be09-2b2e6b69666d_1759350968",
+    "user_id": "5b5a8274-888f-4679-be09-2b2e6b69666d",
+    "user_email": "christianjbritz@gmail.com",
+    "feedback_text": "i want help with the roast curves",
+    "feature": "ai_copilot",
+    "timestamp": "2025-10-01T13:36:08.130073",
+    "status": "development"
+  },
+  {
+    "id": "feedback_5b5a8274-888f-4679-be09-2b2e6b69666d_1759351039",
+    "user_id": "5b5a8274-888f-4679-be09-2b2e6b69666d",
+    "user_email": "christianjbritz@gmail.com",
+    "feedback_text": "I want to be able to know how long the roast should be",
+    "feature": "ai_copilot",
+    "timestamp": "2025-10-01T13:37:19.365187",
+    "status": "development"
+  },
+  {
+    "id": "feedback_acc6933c-583c-4fa2-bade-b2b2d6ea08ca_1759351324",
+    "user_id": "acc6933c-583c-4fa2-bade-b2b2d6ea08ca",
+    "user_email": "betsybowman2@gmail.com",
+    "feedback_text": "test",
+    "feature": "ai_copilot",
+    "timestamp": "2025-10-01T13:42:04.570022",
+    "status": "development"
+  },
+  {
+    "id": "feedback_acc6933c-583c-4fa2-bade-b2b2d6ea08ca_1759351495",
+    "user_id": "acc6933c-583c-4fa2-bade-b2b2d6ea08ca",
+    "user_email": "betsybowman2@gmail.com",
+    "feedback_text": "to analyze roast curves",
+    "feature": "ai_copilot",
+    "timestamp": "2025-10-01T13:44:55.082454",
+    "status": "development"
+  }
+]

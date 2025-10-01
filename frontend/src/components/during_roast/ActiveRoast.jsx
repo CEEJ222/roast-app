@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import RoastTimer from './RoastTimer';
 import RoastControls from './RoastControls';
 import EventsTable from './EventsTable';
 import AfterRoast from './AfterRoast';
 import RoastCurveGraph from '../shared/RoastCurveGraph';
 import EnvironmentalConditions from '../shared/EnvironmentalConditions';
-import RoastChat from './RoastChat';
+import GatedRoastChat from './GatedRoastChat';
+import { useDevMessageSeen } from '../../hooks/useDevMessageSeen';
+import { useAuth } from '../../contexts/AuthContext';
 
 const ActiveRoast = ({
   roastId,
@@ -54,6 +56,9 @@ const ActiveRoast = ({
   setShowEndRoastConfirm
 }) => {
   const [showChat, setShowChat] = useState(false);
+  const { hasSeenDevMessage } = useDevMessageSeen();
+  const { user } = useAuth();
+  
   const handleBackToDashboard = () => {
     setRoastId(null);
     setStartTs(null);
@@ -88,7 +93,13 @@ const ActiveRoast = ({
             <div className="flex items-center gap-2 w-full sm:w-32">
               <button
                 onClick={() => setShowChat(!showChat)}
-                className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition flex items-center gap-2"
+                className={`px-4 py-2 rounded-lg transition-all flex items-center gap-2 ${
+                  hasSeenDevMessage && user?.user_metadata?.role !== 'admin' && user?.user_metadata?.subscription_status !== 'premium'
+                    ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white opacity-50' 
+                    : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white transform hover:scale-105'
+                }`}
+                disabled={hasSeenDevMessage && user?.user_metadata?.role !== 'admin' && user?.user_metadata?.subscription_status !== 'premium'}
+                title={hasSeenDevMessage ? 'AI Copilot coming soon!' : 'Open AI Copilot'}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -250,7 +261,7 @@ const ActiveRoast = ({
       )}
 
       {/* AI Roasting Copilot Chat */}
-      <RoastChat
+      <GatedRoastChat
         roastId={roastId}
         formData={formData}
         events={events}
@@ -260,7 +271,9 @@ const ActiveRoast = ({
         userProfile={userProfile}
         getAuthToken={getAuthToken}
         isOpen={showChat}
-        onClose={() => setShowChat(false)}
+        onClose={() => {
+          setShowChat(false);
+        }}
       />
     </>
   );
