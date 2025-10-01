@@ -36,6 +36,12 @@ Machine Characteristics:
 - Extension tubes: Increase chamber size, require higher heat/fan settings
 - Heat and Fan settings: 0-9 scale (0=off, 9=maximum)
 
+CRITICAL: Fan speed affects temperature OPPOSITELY:
+- HIGHER fan speed = MORE cooling = LOWER temperature
+- LOWER fan speed = LESS cooling = HIGHER temperature
+- If temperature is too high, INCREASE fan speed or DECREASE heat
+- If temperature is too low, DECREASE fan speed or INCREASE heat
+
 Bean Characteristics:
 {char_desc}
 
@@ -129,6 +135,14 @@ Return ONLY valid JSON, no other text.
             prompt = f"""
 You are an expert coffee roaster providing real-time coaching during a roast.
 
+IMPORTANT: Coffee roasts typically take 8-20 minutes total. Never recommend roast times longer than 25 minutes.
+
+CRITICAL: Fan speed affects temperature OPPOSITELY:
+- HIGHER fan speed = MORE cooling = LOWER temperature
+- LOWER fan speed = LESS cooling = HIGHER temperature
+- If temperature is too high, INCREASE fan speed or DECREASE heat
+- If temperature is too low, DECREASE fan speed or INCREASE heat
+
 Current Roast Status:
 {roast_status}
 
@@ -139,14 +153,16 @@ Provide real-time coaching in this JSON format:
 {{
     "current_advice": "What the roaster should do right now",
     "heat_adjustment": "Increase/decrease heat and why",
-    "fan_adjustment": "Increase/decrease fan and why",
+    "fan_adjustment": "Increase/decrease fan and why (remember: higher fan = more cooling)",
     "next_milestone": "What to watch for next",
-    "time_estimate": "How much time until next phase",
+    "time_estimate": "How much time until next phase (keep under 25 minutes total)",
     "warning_signs": ["Signs of problems to watch for"],
     "success_indicators": ["Signs that roast is going well"]
 }}
 
-Be specific and actionable. Consider the current roast phase and bean characteristics.
+Be specific and actionable. Consider the current roast phase and bean characteristics. Remember: typical coffee roast times are 8-20 minutes.
+
+IMPORTANT: Keep responses concise and direct. Avoid unnecessary fluff or verbose explanations. Focus on what the roaster needs to do right now.
 """
 
             # Use the existing LLM client to generate response
@@ -166,6 +182,10 @@ Be specific and actionable. Consider the current roast phase and bean characteri
             import json
             try:
                 coaching = json.loads(response.strip())
+                
+                # Validate fan advice for correctness
+                coaching = self._validate_fan_advice(coaching)
+                
                 logger.info("LLM generated real-time coaching successfully")
                 return {
                     "success": True,
@@ -206,6 +226,25 @@ Be specific and actionable. Consider the current roast phase and bean characteri
             if value is not None:
                 status.append(f"- {key}: {value}")
         return "\n".join(status) if status else "No roast data available"
+    
+    def _validate_fan_advice(self, coaching: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate and correct fan advice to ensure it's physically correct"""
+        fan_advice = coaching.get("fan_adjustment", "")
+        
+        # Check for common incorrect patterns
+        incorrect_patterns = [
+            ("reduce fan", "increase fan", "to lower temperature"),
+            ("decrease fan", "increase fan", "to cool down"),
+            ("lower fan", "increase fan", "for cooling")
+        ]
+        
+        for incorrect, correct, reason in incorrect_patterns:
+            if incorrect in fan_advice.lower() and "temperature" in fan_advice.lower():
+                logger.warning(f"Corrected incorrect fan advice: {fan_advice}")
+                coaching["fan_adjustment"] = fan_advice.replace(incorrect, correct)
+                break
+        
+        return coaching
 
 # Global instance
 _llm_roast_coach_instance: Optional[LLMRoastCoach] = None

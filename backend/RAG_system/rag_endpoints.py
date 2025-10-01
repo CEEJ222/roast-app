@@ -315,16 +315,24 @@ async def automatic_event_response(
         )
         
         return {
-            "advice": response.get("advice", "Event logged successfully"),
+            "advice": response.get("advice", ""),
             "recommendations": response.get("recommendations", []),
             "event_type": response.get("event_type", "Unknown"),
+            "has_meaningful_advice": response.get("has_meaningful_advice", True),
             "timestamp": datetime.now().isoformat(),
             "llm_available": llm_copilot.client is not None
         }
         
     except Exception as e:
         logger.error(f"Automatic event response error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # Return empty response on error
+        return {
+            "advice": "",
+            "recommendations": [],
+            "has_meaningful_advice": False,
+            "timestamp": datetime.now().isoformat(),
+            "llm_available": False
+        }
 
 @router.get("/rag/health")
 async def rag_health():

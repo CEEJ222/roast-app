@@ -883,7 +883,7 @@ async def create_bean_profile(request: CreateBeanProfileRequest, user_id: str = 
         bean_data = {k: v for k, v in bean_data.items() if v is not None}
         
         result = sb.table("bean_profiles").insert(bean_data).execute()
-        return {"id": result.data[0]["id"], "message": "Bean profile created successfully"}
+        return result.data[0]  # Return the full bean profile data
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

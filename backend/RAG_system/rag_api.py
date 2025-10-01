@@ -400,6 +400,9 @@ def _generate_during_roast_guidance(
 ) -> Dict[str, Any]:
     """Generate real-time guidance during roasting"""
     
+    # Note: Temperature spike detection is handled by the primary system in llm_integration.py
+    # which uses actual time differences between events, not assumed intervals
+    
     # Analyze current roast progress
     if current_time < 5.0:
         return {
@@ -426,6 +429,15 @@ def _generate_during_roast_guidance(
             "recommended_heat": min(9, current_heat + 1),
             "confidence": 0.8,
             "reasoning": "Temperature below expected range"
+        }
+    elif current_temp > 500:
+        return {
+            "type": "warning",
+            "message": f"Temperature is dangerously high at {current_temp:.0f}°F! Reduce heat by 2-3 levels immediately to prevent scorching.",
+            "recommended_heat": max(1, current_heat - 3),
+            "recommended_fan": min(9, current_fan + 2),
+            "confidence": 0.9,
+            "reasoning": "Temperature dangerously high - risk of scorching"
         }
     elif current_temp > 450:
         return {

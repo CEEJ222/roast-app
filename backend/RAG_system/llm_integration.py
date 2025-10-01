@@ -24,9 +24,17 @@ class DeepSeekRoastingCopilot:
     def _initialize_client(self):
         """Initialize client with free models via OpenRouter"""
         try:
+            # Check for API key
+            api_key = os.getenv("OPENROUTER_API_KEY", os.getenv("DEEPSEEK_API_KEY"))
+            if not api_key or api_key == "sk-your-openrouter-key-here":
+                logger.warning("⚠️ No valid API key found for OpenRouter. LLM features will be disabled.")
+                logger.info("💡 To enable AI features, set OPENROUTER_API_KEY environment variable")
+                self.client = None
+                return
+            
             # Use OpenRouter with free models
             self.client = OpenAI(
-                api_key=os.getenv("OPENROUTER_API_KEY", os.getenv("DEEPSEEK_API_KEY", "sk-your-openrouter-key-here")),
+                api_key=api_key,
                 base_url="https://openrouter.ai/api/v1"
             )
             self.primary_model = os.getenv("PRIMARY_MODEL", "meta-llama/llama-3.2-3b-instruct:free")
@@ -47,7 +55,7 @@ class DeepSeekRoastingCopilot:
         Get LLM-powered pre-roast advice for FreshRoast SR540/SR800
         """
         if not self.client:
-            return self._get_fallback_advice(roast_level)
+            return self._get_fallback_advice(roast_level, machine_info, bean_profile)
         
         try:
             # Build context for the LLM
@@ -118,7 +126,7 @@ class DeepSeekRoastingCopilot:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a real-time coffee roasting coach for FreshRoast SR540/SR800. Provide immediate, specific advice for heat/fan adjustments and timing."
+                        "content": "You are a real-time coffee roasting coach for FreshRoast SR540/SR800. Provide immediate, specific advice for heat/fan adjustments and timing. Use plain text only - NO LaTeX, NO math formatting, just regular text."
                     },
                     {
                         "role": "user",
@@ -140,30 +148,119 @@ class DeepSeekRoastingCopilot:
         """Get automatic AI response when events are logged"""
         if not self.client:
             return {
-                "advice": "AI guidance temporarily unavailable",
-                "recommendations": ["Continue monitoring your roast", "Adjust heat/fan as needed"]
+                "advice": "",
+                "recommendations": [],
+                "has_meaningful_advice": False
             }
         
         try:
             context = self._build_during_roast_context(roast_progress)
             context['last_event'] = event_data
             
+            # Calculate temperature rate of rise and detect dangerous changes
+            temp_analysis = self._analyze_temperature_change(event_data, context.get('recent_events', []))
+            
+            # Check for dangerous temperature spikes first - this applies to ALL events
+            if temp_analysis['has_spike'] or temp_analysis['is_fast']:
+                logger.warning(f"🚨 TEMPERATURE SPIKE DETECTED: {temp_analysis['rate_per_sec']:.1f}°F/sec!")
+                # Generate urgent response for temperature spike
+                spike_instructions = self._get_event_response_instructions(temp_analysis)
+                
+                prompt = f"""
+                {spike_instructions}
+                
+                Current roast context:
+                - Time: {context.get('elapsed_time', 'Unknown')} minutes
+                - Current temperature: {event_data.get('temp_f', 'Unknown')}°F
+                - Current settings: Heat {context.get('current_heat', 'Unknown')}, Fan {context.get('current_fan', 'Unknown')}
+                - Bean profile: {context.get('bean_profile', 'Unknown')}
+                
+                Provide urgent, specific guidance. Be direct and actionable.
+                """
+                
+                response = self.client.chat.completions.create(
+                    model=self.primary_model,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are an expert coffee roaster providing URGENT guidance for dangerous temperature spikes. Be direct, specific, and urgent. Use plain text only."
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    temperature=0.3,
+                    max_tokens=150,
+                    timeout=3
+                )
+                
+                ai_response = response.choices[0].message.content
+                logger.warning(f"🚨 URGENT TEMPERATURE SPIKE RESPONSE: {ai_response}")
+                
+                return {
+                    "advice": ai_response,
+                    "recommendations": [],
+                    "has_meaningful_advice": True,
+                    "event_type": "TEMPERATURE_SPIKE"
+                }
+            
             # Create specific prompt based on event type
             if event_data.get('kind') == 'SET':
+                # Build environmental conditions string
+                env_conditions = context.get('environmental_conditions', {})
+                env_str = f"""
+                - Ambient temperature: {env_conditions.get('temperature_f', 'Unknown')}°F
+                - Humidity: {env_conditions.get('humidity_pct', 'Unknown')}%
+                - Altitude: {env_conditions.get('elevation_ft', 'Unknown')}ft
+                """ if env_conditions else ""
+                
+                # Add temperature analysis to prompt
+                temp_warning = ""
+                if temp_analysis['has_spike']:
+                    temp_warning = f"""
+                ⚠️ CRITICAL TEMPERATURE ALERT:
+                - Rate of rise: {temp_analysis['rate_per_min']:.1f}°F/min ({temp_analysis['rate_per_sec']:.1f}°F/sec)
+                - Previous temp: {temp_analysis['prev_temp']:.1f}°F at {temp_analysis['time_diff']:.0f} seconds ago
+                - Current temp: {event_data.get('temp_f', 'N/A')}°F
+                - Temperature jumped {temp_analysis['temp_change']:.1f}°F in {temp_analysis['time_diff']:.0f} seconds!
+                
+                THIS IS DANGEROUSLY FAST! Provide IMMEDIATE corrective action.
+                """
+                elif temp_analysis['is_fast']:
+                    temp_warning = f"""
+                ⚠️ Temperature rising quickly:
+                - Rate of rise: {temp_analysis['rate_per_min']:.1f}°F/min ({temp_analysis['rate_per_sec']:.1f}°F/sec)
+                - Previous temp: {temp_analysis['prev_temp']:.1f}°F
+                - Current temp: {event_data.get('temp_f', 'N/A')}°F
+                
+                This may be too fast. Consider adjusting heat/fan.
+                """
+                elif temp_analysis['has_data']:
+                    temp_warning = f"""
+                Temperature change:
+                - Rate of rise: {temp_analysis['rate_per_min']:.1f}°F/min
+                - Previous temp: {temp_analysis['prev_temp']:.1f}°F
+                - Current temp: {event_data.get('temp_f', 'N/A')}°F
+                """
+                
                 prompt = f"""
-                The user just adjusted their FreshRoast settings:
+                The user just logged their FreshRoast settings:
                 - Heat: {event_data.get('heat_level', 'N/A')}
                 - Fan: {event_data.get('fan_level', 'N/A')}
                 - Temperature: {event_data.get('temp_f', 'N/A')}°F
                 - Time: {context.get('elapsed_time', 'Unknown')} minutes
                 - Current phase: {context.get('current_phase', 'Unknown')}
+                - Target roast level: {context.get('target_roast_level', 'City')}
                 
-                Current environmental conditions:
-                - Ambient temperature: {context.get('environmental_conditions', {}).get('temperature_f', 'Unknown')}°F
-                - Humidity: {context.get('environmental_conditions', {}).get('humidity_pct', 'Unknown')}%
-                - Altitude: {context.get('environmental_conditions', {}).get('elevation_ft', 'Unknown')}ft
+                {temp_warning}
                 
-                Provide brief, actionable feedback on this adjustment considering the current weather conditions.
+                Environmental conditions:{env_str}
+                
+                INSTRUCTIONS:
+                {self._get_event_response_instructions(temp_analysis)}
+                
+                Keep response under 3 sentences and be VERY SPECIFIC about what to adjust.
                 """
             elif event_data.get('kind') in ['FIRST_CRACK', 'SECOND_CRACK', 'COOL']:
                 milestone = event_data.get('kind').replace('_', ' ').lower()
@@ -190,7 +287,7 @@ class DeepSeekRoastingCopilot:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a real-time coffee roasting coach. Provide brief, encouraging feedback on roast events."
+                        "content": "You are a real-time coffee roasting coach. Provide brief, encouraging feedback on roast events. Use plain text only - NO LaTeX, NO math formatting like $$, NO \\text{}, just regular text."
                     },
                     {
                         "role": "user",
@@ -204,18 +301,157 @@ class DeepSeekRoastingCopilot:
             
             ai_response = response.choices[0].message.content
             
+            logger.info(f"🤖 LLM Response (first 200 chars): {ai_response[:200]}")
+            
             # Parse the response for structured data
-            return self._parse_automatic_response(ai_response, event_data)
+            parsed_response = self._parse_automatic_response(ai_response, event_data)
+            logger.info(f"✅ Parsed response: has_meaningful_advice={parsed_response.get('has_meaningful_advice')}")
+            return parsed_response
             
         except Exception as e:
             logger.error(f"Automatic event response error: {e}")
+            # Return empty response - no need to acknowledge every event
             return {
-                "advice": "Event logged successfully - continue monitoring your roast",
-                "recommendations": ["Watch for color changes", "Listen for first crack", "Adjust settings as needed"]
+                "advice": "",
+                "recommendations": [],
+                "has_meaningful_advice": False
             }
+    
+    def _analyze_temperature_change(self, current_event: Dict[str, Any], recent_events: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Analyze temperature rate of change to detect dangerous spikes"""
+        current_temp = current_event.get('temp_f')
+        current_time = current_event.get('t_offset_sec', 0)
+        
+        logger.info(f"🔍 Analyzing temperature change: current={current_temp}°F at t={current_time}s")
+        logger.info(f"📊 Recent events count: {len(recent_events) if recent_events else 0}")
+        
+        # Default analysis result
+        analysis = {
+            'has_data': False,
+            'has_spike': False,
+            'is_fast': False,
+            'rate_per_min': 0.0,
+            'rate_per_sec': 0.0,
+            'temp_change': 0.0,
+            'time_diff': 0.0,
+            'prev_temp': None
+        }
+        
+        if not current_temp or not recent_events:
+            logger.warning(f"⚠️ Cannot analyze: current_temp={current_temp}, recent_events={len(recent_events) if recent_events else 0}")
+            return analysis
+        
+        # Find the most recent event with temperature data
+        prev_event = None
+        for event in reversed(recent_events):
+            if event.get('temp_f') and event.get('t_offset_sec') != current_time:
+                prev_event = event
+                break
+        
+        if not prev_event:
+            logger.warning(f"⚠️ No previous event with temperature found")
+            return analysis
+        
+        prev_temp = prev_event.get('temp_f')
+        prev_time = prev_event.get('t_offset_sec', 0)
+        
+        logger.info(f"📈 Previous event: {prev_temp}°F at t={prev_time}s")
+        
+        # Calculate rate of change
+        time_diff = current_time - prev_time
+        if time_diff <= 0:
+            logger.warning(f"⚠️ Invalid time difference: {time_diff}s")
+            return analysis
+        
+        temp_change = current_temp - prev_temp
+        rate_per_sec = temp_change / time_diff
+        rate_per_min = rate_per_sec * 60
+        
+        logger.info(f"📊 Rate of rise: {rate_per_min:.1f}°F/min ({rate_per_sec:.1f}°F/sec)")
+        logger.info(f"🌡️ Change: {temp_change:.1f}°F over {time_diff:.0f}s")
+        
+        analysis.update({
+            'has_data': True,
+            'temp_change': temp_change,
+            'time_diff': time_diff,
+            'rate_per_sec': rate_per_sec,
+            'rate_per_min': rate_per_min,
+            'prev_temp': prev_temp,
+            'current_temp': current_temp
+        })
+        
+        # Detect dangerous spikes (>2°F/sec or >120°F/min)
+        if abs(rate_per_sec) > 2.0:
+            analysis['has_spike'] = True
+            logger.warning(f"🚨 DANGEROUS SPIKE DETECTED: {rate_per_sec:.1f}°F/sec!")
+        # Detect fast rise (>20°F/min)
+        elif rate_per_min > 20.0:
+            analysis['is_fast'] = True
+            logger.warning(f"⚡ FAST RISE DETECTED: {rate_per_min:.1f}°F/min")
+        else:
+            logger.info(f"✅ Normal rate of rise")
+        
+        return analysis
+    
+    def _get_event_response_instructions(self, temp_analysis: Dict[str, Any]) -> str:
+        """Get specific instructions based on temperature analysis"""
+        if temp_analysis['has_spike']:
+            return """
+            CRITICAL: Temperature is rising DANGEROUSLY fast!
+            - Tell user to IMMEDIATELY reduce heat by 2-3 levels OR increase fan by 2-3 levels
+            - Explain this will cause scorching and tipping if not corrected NOW
+            - Be urgent but calm - they need to act fast
+            """
+        elif temp_analysis['is_fast']:
+            return """
+            Temperature is rising too fast! This could cause scorching.
+            - IMMEDIATELY reduce heat by 2 levels OR increase fan by 2 levels
+            - Explain this rapid rise will cause uneven roasting and burnt flavors
+            - Be urgent and specific about the risk
+            """
+        else:
+            return """
+            Only provide feedback if:
+            1. Their current settings seem problematic for the roast phase
+            2. Their temperature is unusually high/low for the time
+            3. You have specific, actionable advice
+            
+            If everything looks normal, return ONLY "🔥 Settings logged" (no other text).
+            This tells the frontend to NOT display a message.
+            """
     
     def _parse_automatic_response(self, response: str, event_data: Dict[str, Any]) -> Dict[str, Any]:
         """Parse automatic response into structured format"""
+        response_lower = response.strip().lower()
+        
+        # Check for generic/meaningless responses that should be silent
+        generic_responses = [
+            "🔥 settings logged",
+            "settings logged",
+            "event logged",
+            "logged successfully",
+            "continue monitoring",
+            "good adjustment",
+            "monitoring your roast"
+        ]
+        
+        # If response is just a generic acknowledgment, stay silent
+        if any(generic in response_lower for generic in generic_responses):
+            # Check if there's actual advice beyond the generic phrase
+            response_cleaned = response_lower
+            for generic in generic_responses:
+                response_cleaned = response_cleaned.replace(generic, "")
+            
+            # If less than 20 chars remain after removing generic phrases, it's meaningless
+            if len(response_cleaned.strip().replace(".", "").replace("!", "")) < 20:
+                logger.info(f"🔇 Generic response detected, staying silent: {response[:50]}")
+                return {
+                    "advice": "",
+                    "recommendations": [],
+                    "has_meaningful_advice": False,
+                    "event_type": event_data.get('kind', 'Unknown')
+                }
+        
         lines = response.split('\n')
         recommendations = []
         
@@ -228,20 +464,28 @@ class DeepSeekRoastingCopilot:
                 if clean_line and len(clean_line) > 5:
                     recommendations.append(clean_line)
         
-        # If no recommendations found, create default ones
-        if not recommendations:
-            if event_data.get('kind') == 'SET':
-                recommendations = ["Continue monitoring bean movement", "Watch for color changes"]
-            elif event_data.get('kind') == 'FIRST_CRACK':
-                recommendations = ["Monitor development phase", "Watch for even browning"]
-            elif event_data.get('kind') == 'SECOND_CRACK':
-                recommendations = ["Be ready to drop soon", "Watch for desired roast level"]
-            else:
-                recommendations = ["Continue monitoring your roast"]
+        # Check if recommendations are also generic
+        generic_recs = ["continue monitoring bean movement", "watch for color changes", "continue monitoring your roast"]
+        meaningful_recs = [rec for rec in recommendations if rec.lower() not in generic_recs]
         
+        # If only generic recommendations, filter them out
+        if meaningful_recs:
+            recommendations = meaningful_recs
+        elif not meaningful_recs and recommendations:
+            # All recommendations are generic, so stay silent
+            logger.info(f"🔇 Only generic recommendations, staying silent")
+            return {
+                "advice": "",
+                "recommendations": [],
+                "has_meaningful_advice": False,
+                "event_type": event_data.get('kind', 'Unknown')
+            }
+        
+        logger.info(f"✅ Meaningful advice detected with {len(recommendations)} specific recommendations")
         return {
             "advice": response,
             "recommendations": recommendations,
+            "has_meaningful_advice": True,
             "event_type": event_data.get('kind', 'Unknown')
         }
     
@@ -527,7 +771,12 @@ class DeepSeekRoastingCopilot:
                 # Look for time patterns like "12 minutes", "10-15 minutes", etc.
                 time_match = re.search(r'(\d+)(?:[-–]\d+)?\s*(?:minutes?|mins?|min)', line.lower())
                 if time_match:
-                    estimated_time = float(time_match.group(1))
+                    extracted_time = float(time_match.group(1))
+                    # Only use reasonable roast times (8-25 minutes)
+                    if 8 <= extracted_time <= 25:
+                        estimated_time = extracted_time
+                    else:
+                        logger.warning(f"LLM suggested unreasonable roast time: {extracted_time} minutes, ignoring")
                 else:
                     # Fallback: look for reasonable numbers (8-25 range for roast times)
                     numbers = re.findall(r'\d+', line)
@@ -550,14 +799,21 @@ class DeepSeekRoastingCopilot:
                 # Clean up the line
                 clean_line = re.sub(r'^[•\-*]\s*|\d+\.\s*', '', line)
                 if clean_line and len(clean_line) > 10:  # Only include substantial recommendations
-                    recommendations.append(clean_line)
+                    # Filter out recommendations with unreasonable roast times (30+ minutes)
+                    import re
+                    time_matches = re.findall(r'\d+', clean_line)
+                    has_unreasonable_time = any(int(match) >= 30 for match in time_matches if match.isdigit())
+                    if not has_unreasonable_time:
+                        recommendations.append(clean_line)
+                    else:
+                        logger.warning(f"Filtered out recommendation with unreasonable time: {clean_line}")
         
         # If no recommendations found in LLM response, use minimal fallback
         if not recommendations:
             recommendations = [
                 f"Start with Heat {heat_setting}, Fan {fan_setting}",
                 "Monitor roast progression and adjust as needed",
-                "Listen for first crack around 7-10 minutes (not 12-15!)",
+                "Listen for first crack around 7-10 minutes",
                 "Watch for even bean movement and color development"
             ]
         
@@ -571,7 +827,7 @@ class DeepSeekRoastingCopilot:
             "llm_advice": response
         }
     
-    def _get_fallback_advice(self, roast_level: str) -> Dict[str, Any]:
+    def _get_fallback_advice(self, roast_level: str, machine_info: Optional[Dict[str, Any]] = None, bean_profile: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Fallback advice when LLM is not available"""
         fallback_configs = {
             "Light": {"heat": 7, "fan": 3, "time": 10},
@@ -583,17 +839,34 @@ class DeepSeekRoastingCopilot:
         
         config = fallback_configs.get(roast_level, fallback_configs["City"])
         
+        # Get machine info
+        machine_name = "Unknown Machine"
+        if machine_info:
+            machine_name = machine_info.get("name", machine_info.get("model", "Unknown Machine"))
+        
+        # Get bean info
+        bean_name = "Unknown Bean"
+        bean_origin = "Unknown"
+        bean_altitude = "Unknown"
+        if bean_profile:
+            bean_name = bean_profile.get("name", "Unknown Bean")
+            bean_origin = bean_profile.get("origin", "Unknown")
+            bean_altitude = bean_profile.get("altitude_m", "Unknown")
+        
         return {
             "roast_level": roast_level,
             "estimated_time": config["time"],
             "initial_heat": config["heat"],
             "initial_fan": config["fan"],
             "strategy": f"Fallback FreshRoast strategy for {roast_level} roast",
+            "machine_info": machine_name,
+            "bean_info": f"{bean_name} from {bean_origin}",
+            "bean_altitude": bean_altitude,
             "recommendations": [
                 f"Start with Heat {config['heat']}, Fan {config['fan']}",
                 "AI guidance temporarily unavailable - using fallback recommendations",
                 "Monitor roast progression and adjust as needed",
-                "Listen for first crack around 7-10 minutes (not 12-15!)",
+                "Listen for first crack around 7-10 minutes",
                 "Watch for even bean movement and color development"
             ],
             "llm_advice": "LLM temporarily unavailable - using fallback recommendations"
