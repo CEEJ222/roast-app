@@ -385,6 +385,50 @@ async def submit_development_feedback(
         print(f"Error in feedback submission: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# General App Feedback Endpoint
+@app.post("/feedback/general")
+async def submit_general_feedback(
+    feedback_data: dict,
+    user_id: str = Depends(verify_jwt_token)
+):
+    """Submit general app feedback"""
+    try:
+        from feedback_storage import feedback_storage
+        
+        sb = get_supabase()
+        
+        # Get user info
+        user_response = sb.auth.admin.get_user_by_id(user_id)
+        if not user_response.user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_email = user_response.user.email
+        feedback_text = feedback_data.get("feedback", "")
+        feedback_type = feedback_data.get("type", "general")  # general, bug, feature_request, etc.
+        
+        if not feedback_text.strip():
+            raise HTTPException(status_code=400, detail="Feedback cannot be empty")
+        
+        # Store feedback using the storage system
+        feedback_id = feedback_storage.store_feedback(
+            user_id=user_id,
+            user_email=user_email,
+            feedback_text=feedback_text,
+            feature="general_app",
+            status="new",
+            feedback_type=feedback_type
+        )
+        
+        return {
+            "success": True,
+            "message": "Thank you for your feedback! We appreciate your input and will review it soon.",
+            "feedback_id": feedback_id
+        }
+        
+    except Exception as e:
+        print(f"Error in general feedback submission: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Admin Feedback Management Endpoints
 @app.get("/admin/feedback")
 async def get_all_feedback(user_id: str = Depends(verify_jwt_token)):

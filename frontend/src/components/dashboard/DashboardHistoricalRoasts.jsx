@@ -30,6 +30,18 @@ const DashboardHistoricalRoasts = ({
     loadHistoricalRoasts();
   }, []);
 
+  // Load roast details for all roasts to calculate duration
+  useEffect(() => {
+    if (roasts.length > 0) {
+      // Load details for all roasts to show duration
+      roasts.forEach(roast => {
+        if (!roastDetails[roast.id]) {
+          loadRoastDetails(roast.id);
+        }
+      });
+    }
+  }, [roasts]);
+
   const loadHistoricalRoasts = async () => {
     try {
       const token = await getAuthToken();

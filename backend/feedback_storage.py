@@ -31,7 +31,7 @@ class FeedbackStorage:
             print(f"Error saving feedback data: {e}")
     
     def store_feedback(self, user_id: str, user_email: str, feedback_text: str, 
-                      feature: str = "ai_copilot", status: str = "development") -> str:
+                      feature: str = "ai_copilot", status: str = "development", feedback_type: str = "general") -> str:
         """Store feedback locally"""
         try:
             feedback_entry = {
@@ -40,6 +40,7 @@ class FeedbackStorage:
                 "user_email": user_email,
                 "feedback_text": feedback_text,
                 "feature": feature,
+                "feedback_type": feedback_type,
                 "timestamp": datetime.now().isoformat(),
                 "status": status
             }
@@ -99,21 +100,27 @@ class FeedbackStorage:
         if not all_feedback:
             return {
                 "total_feedback": 0,
-                "by_feature": {},
-                "by_status": {},
+                "by_type": {},
                 "recent_feedback": []
             }
         
-        # Count by feature
-        by_feature = {}
-        by_status = {}
+        # Count by feedback type (combining feature and feedback_type)
+        by_type = {}
         
         for item in all_feedback:
             feature = item.get("feature", "unknown")
-            status = item.get("status", "unknown")
+            feedback_type = item.get("feedback_type", "general")
             
-            by_feature[feature] = by_feature.get(feature, 0) + 1
-            by_status[status] = by_status.get(status, 0) + 1
+            if feature == "ai_copilot":
+                # AI Copilot feedback
+                by_type["AI Copilot"] = by_type.get("AI Copilot", 0) + 1
+            elif feature == "general_app":
+                # General app feedback - use specific feedback type
+                type_display = feedback_type.replace("_", " ").title()
+                by_type[type_display] = by_type.get(type_display, 0) + 1
+            else:
+                # Other features
+                by_type[feature] = by_type.get(feature, 0) + 1
         
         # Get recent feedback (last 10)
         recent = sorted(all_feedback, 
@@ -122,8 +129,7 @@ class FeedbackStorage:
         
         return {
             "total_feedback": len(all_feedback),
-            "by_feature": by_feature,
-            "by_status": by_status,
+            "by_type": by_type,
             "recent_feedback": recent
         }
 

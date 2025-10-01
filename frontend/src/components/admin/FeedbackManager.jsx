@@ -9,6 +9,11 @@ const FeedbackManager = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'search', 'summary'
+  const [filters, setFilters] = useState({
+    feature: 'all', // 'all', 'ai_copilot', 'general_app'
+    dateRange: 'all' // 'all', 'today', 'week', 'month'
+  });
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -120,6 +125,54 @@ const FeedbackManager = ({ isOpen, onClose }) => {
     }
   };
 
+  const applyFilters = (feedbackList) => {
+    return feedbackList.filter(item => {
+      // Filter by feature/type
+      if (filters.feature !== 'all') {
+        if (filters.feature === 'ai_copilot') {
+          if (item.feature !== 'ai_copilot') return false;
+        } else {
+          // For general app feedback types, check feedback_type
+          if (item.feature !== 'general_app' || item.feedback_type !== filters.feature) {
+            return false;
+          }
+        }
+      }
+      
+      
+      // Filter by date range
+      if (filters.dateRange !== 'all') {
+        const itemDate = new Date(item.timestamp);
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        switch (filters.dateRange) {
+          case 'today':
+            if (itemDate < today) return false;
+            break;
+          case 'week':
+            const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            if (itemDate < weekAgo) return false;
+            break;
+          case 'month':
+            const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+            if (itemDate < monthAgo) return false;
+            break;
+        }
+      }
+      
+      return true;
+    });
+  };
+
+  const getFilteredFeedback = () => {
+    return applyFilters(feedback);
+  };
+
+  const getFilteredSearchResults = () => {
+    return applyFilters(searchResults);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -135,10 +188,10 @@ const FeedbackManager = ({ isOpen, onClose }) => {
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                Development Feedback Manager
+                Feedback Manager
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                View and search AI Copilot feedback
+                View and search all app feedback
               </p>
             </div>
           </div>
@@ -162,7 +215,7 @@ const FeedbackManager = ({ isOpen, onClose }) => {
                 : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
             }`}
           >
-            All Feedback ({feedback.length})
+            All Feedback ({getFilteredFeedback().length})
           </button>
           <button
             onClick={() => setActiveTab('search')}
@@ -172,7 +225,7 @@ const FeedbackManager = ({ isOpen, onClose }) => {
                 : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
             }`}
           >
-            Search Results ({searchResults.length})
+            Search Results ({getFilteredSearchResults().length})
           </button>
           <button
             onClick={() => setActiveTab('summary')}
@@ -207,6 +260,75 @@ const FeedbackManager = ({ isOpen, onClose }) => {
           </div>
         </div>
 
+        {/* Filters */}
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filters</h3>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-white dark:bg-gray-600 hover:bg-gray-50 dark:hover:bg-gray-500 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-500 rounded-lg transition-colors shadow-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
+              </svg>
+              {showFilters ? 'Hide Filters' : 'Show Filters'}
+            </button>
+          </div>
+          
+          {showFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Feature Filter */}
+              <div>
+                <select
+                  value={filters.feature}
+                  onChange={(e) => setFilters(prev => ({ ...prev, feature: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="all">All Types</option>
+                  <option value="ai_copilot">AI Copilot</option>
+                  <option value="general">General</option>
+                  <option value="bug">Bug Report</option>
+                  <option value="feature">Feature Request</option>
+                  <option value="improvement">Improvement</option>
+                </select>
+              </div>
+
+
+              {/* Date Range Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Date Range
+                </label>
+                <select
+                  value={filters.dateRange}
+                  onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="all">All Time</option>
+                  <option value="today">Today</option>
+                  <option value="week">Last 7 Days</option>
+                  <option value="month">Last 30 Days</option>
+                </select>
+              </div>
+            </div>
+          )}
+          
+          {/* Clear Filters Button */}
+          {(filters.feature !== 'all' || filters.dateRange !== 'all') && (
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => setFilters({ feature: 'all', dateRange: 'all' })}
+                className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Clear All Filters
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {loading && (
@@ -218,12 +340,12 @@ const FeedbackManager = ({ isOpen, onClose }) => {
 
           {!loading && activeTab === 'all' && (
             <div className="space-y-4">
-              {feedback.length === 0 ? (
+              {getFilteredFeedback().length === 0 ? (
                 <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  No feedback submitted yet
+                  {feedback.length === 0 ? 'No feedback submitted yet' : 'No feedback matches your filters'}
                 </div>
               ) : (
-                feedback.map((item, index) => (
+                getFilteredFeedback().map((item, index) => (
                   <div key={index} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center space-x-2">
@@ -234,9 +356,11 @@ const FeedbackManager = ({ isOpen, onClose }) => {
                           {formatDate(item.timestamp)}
                         </span>
                       </div>
-                      <span className="text-xs bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 px-2 py-1 rounded">
-                        {item.status}
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                          {item.feature === 'ai_copilot' ? 'AI Copilot' : item.feature === 'general_app' ? (item.feedback_type ? item.feedback_type.charAt(0).toUpperCase() + item.feedback_type.slice(1).replace('_', ' ') : 'General App') : item.feature}
+                        </span>
+                      </div>
                     </div>
                     <p className="text-gray-700 dark:text-gray-300">{item.feedback_text}</p>
                   </div>
@@ -247,12 +371,12 @@ const FeedbackManager = ({ isOpen, onClose }) => {
 
           {!loading && activeTab === 'search' && (
             <div className="space-y-4">
-              {searchResults.length === 0 ? (
+              {getFilteredSearchResults().length === 0 ? (
                 <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  {searchQuery ? 'No results found for your search' : 'Enter a search query to find relevant feedback'}
+                  {searchResults.length === 0 ? (searchQuery ? 'No results found for your search' : 'Enter a search query to find relevant feedback') : 'No search results match your filters'}
                 </div>
               ) : (
-                searchResults.map((item, index) => (
+                getFilteredSearchResults().map((item, index) => (
                   <div key={index} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center space-x-2">
@@ -263,9 +387,11 @@ const FeedbackManager = ({ isOpen, onClose }) => {
                           {formatDate(item.timestamp)}
                         </span>
                       </div>
-                      <span className="text-xs bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 px-2 py-1 rounded">
-                        {item.status}
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                          {item.feature === 'ai_copilot' ? 'AI Copilot' : item.feature === 'general_app' ? (item.feedback_type ? item.feedback_type.charAt(0).toUpperCase() + item.feedback_type.slice(1).replace('_', ' ') : 'General App') : item.feature}
+                        </span>
+                      </div>
                     </div>
                     <p className="text-gray-700 dark:text-gray-300">{item.feedback_text}</p>
                   </div>
@@ -278,47 +404,27 @@ const FeedbackManager = ({ isOpen, onClose }) => {
             <div className="space-y-6">
               {summary ? (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-gradient-to-br from-orange-400 to-red-500 rounded-lg p-4 text-white">
                       <div className="text-2xl font-bold">{summary.total_feedback}</div>
                       <div className="text-sm opacity-90">Total Feedback</div>
                     </div>
                     <div className="bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg p-4 text-white">
-                      <div className="text-2xl font-bold">{Object.keys(summary.by_feature).length}</div>
-                      <div className="text-sm opacity-90">Features</div>
-                    </div>
-                    <div className="bg-gradient-to-br from-green-400 to-teal-500 rounded-lg p-4 text-white">
-                      <div className="text-2xl font-bold">{Object.keys(summary.by_status).length}</div>
-                      <div className="text-sm opacity-90">Status Types</div>
+                      <div className="text-2xl font-bold">{Object.keys(summary.by_type || {}).length}</div>
+                      <div className="text-sm opacity-90">Feedback Types</div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 gap-6">
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-                        Feedback by Feature
+                        Feedback by Type
                       </h3>
                       <div className="space-y-2">
-                        {Object.entries(summary.by_feature).map(([feature, count]) => (
-                          <div key={feature} className="flex justify-between items-center">
-                            <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                        {Object.entries(summary.by_type || {}).map(([type, count]) => (
+                          <div key={type} className="flex justify-between items-center">
+                            <span className="text-gray-700 dark:text-gray-300">{type}</span>
                             <span className="bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 px-2 py-1 rounded text-sm">
-                              {count}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-                        Feedback by Status
-                      </h3>
-                      <div className="space-y-2">
-                        {Object.entries(summary.by_status).map(([status, count]) => (
-                          <div key={status} className="flex justify-between items-center">
-                            <span className="text-gray-700 dark:text-gray-300">{status}</span>
-                            <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-sm">
                               {count}
                             </span>
                           </div>
@@ -339,9 +445,14 @@ const FeedbackManager = ({ isOpen, onClose }) => {
                               <span className="text-sm font-medium text-gray-900 dark:text-white">
                                 {item.user_email}
                               </span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                {formatDate(item.timestamp)}
-                              </span>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                                  {item.feature === 'ai_copilot' ? 'AI Copilot' : item.feature === 'general_app' ? (item.feedback_type ? item.feedback_type.charAt(0).toUpperCase() + item.feedback_type.slice(1).replace('_', ' ') : 'General App') : item.feature}
+                                </span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  {formatDate(item.timestamp)}
+                                </span>
+                              </div>
                             </div>
                             <p className="text-sm text-gray-600 dark:text-gray-300 truncate">
                               {item.feedback_text}

@@ -170,12 +170,12 @@ const FeatureFlagManager = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
           Feature Flag Manager
         </h1>
-        <p className="text-gray-600 dark:text-gray-300">
+        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
           Manage AI Copilot access and feature rollout
         </p>
       </div>
@@ -192,18 +192,18 @@ const FeatureFlagManager = () => {
         </div>
       )}
 
-      <div className="grid gap-6">
+      <div className="grid gap-4 sm:gap-6">
         {features.map((feature) => (
-          <div key={feature.name} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  {feature.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+          <div key={feature.name} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+              <div className="flex-1">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
+                  {feature.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()).replace(/\bAi\b/g, 'AI')}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-300 text-sm">
+                <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">
                   {feature.description}
                 </p>
-                <div className="flex items-center gap-4 mt-2">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                     feature.enabled 
                       ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
@@ -226,7 +226,7 @@ const FeatureFlagManager = () => {
               <button
                 onClick={() => toggleFeature(feature.name, !feature.enabled)}
                 disabled={loading}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors ${
                   feature.enabled
                     ? 'bg-red-500 hover:bg-red-600 text-white'
                     : 'bg-green-500 hover:bg-green-600 text-white'
@@ -238,16 +238,16 @@ const FeatureFlagManager = () => {
 
             {/* Beta Users Management */}
             {feature.type === 'beta' && (
-              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <h4 className="font-medium text-gray-900 dark:text-white mb-3">
+              <div className="mt-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <h4 className="font-medium text-gray-900 dark:text-white mb-3 text-sm sm:text-base">
                   Beta Users ({feature.beta_users.length})
                 </h4>
                 
-                <div className="flex gap-2 mb-3">
+                <div className="flex flex-col sm:flex-row gap-2 mb-3">
                   <input
                     type="text"
                     placeholder="Enter user ID to add"
-                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-600 dark:text-white"
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-600 dark:text-white"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter') {
                         addBetaUser(feature.name, e.target.value);
@@ -264,7 +264,7 @@ const FeatureFlagManager = () => {
                       }
                     }}
                     disabled={loading}
-                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   >
                     Add
                   </button>
@@ -273,12 +273,12 @@ const FeatureFlagManager = () => {
                 {feature.beta_users.length > 0 ? (
                   <div className="space-y-2">
                     {feature.beta_users.map((userId, index) => (
-                      <div key={index} className="flex items-center justify-between bg-white dark:bg-gray-600 rounded-lg p-2">
-                        <span className="text-sm text-gray-700 dark:text-gray-300">{userId}</span>
+                      <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white dark:bg-gray-600 rounded-lg p-2 gap-2">
+                        <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 break-all">{userId}</span>
                         <button
                           onClick={() => removeBetaUser(feature.name, userId)}
                           disabled={loading}
-                          className="text-red-500 hover:text-red-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="text-red-500 hover:text-red-700 text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed self-end sm:self-auto"
                         >
                           Remove
                         </button>
@@ -292,28 +292,28 @@ const FeatureFlagManager = () => {
             )}
 
             {/* Feature Details */}
-            <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
-              <p>Created: {new Date(feature.created_at).toLocaleString()}</p>
-              <p>Updated: {new Date(feature.updated_at).toLocaleString()}</p>
+            <div className="mt-4 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+              <p className="break-words">Created: {new Date(feature.created_at).toLocaleString()}</p>
+              <p className="break-words">Updated: {new Date(feature.updated_at).toLocaleString()}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* Feedback Manager Section */}
-      <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Development Feedback
+      <div className="mt-6 sm:mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+          <div className="flex-1">
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
+              User Feedback
             </h3>
             <p className="text-gray-600 dark:text-gray-300 text-sm">
-              View and search AI Copilot development feedback from users
+              View and search all user feedback including general app feedback and AI Copilot development feedback
             </p>
           </div>
           <button
             onClick={() => setShowFeedbackManager(true)}
-            className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-medium rounded-lg transition-all transform hover:scale-105 flex items-center gap-2"
+            className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-medium rounded-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 text-sm"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
