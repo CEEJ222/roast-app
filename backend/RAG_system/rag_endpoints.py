@@ -29,7 +29,7 @@ def get_freshroast_recommendations(roast_level: str, environmental_conditions: O
             "recommendations": [
                 "Start with Heat 7, Fan 3 for 2 minutes",
                 "Increase fan to 4-5 when beans start moving",
-                "Listen for first crack around 6-8 minutes",
+                "Listen for first crack around 8-10 minutes",
                 "Drop when you hear first crack + 30 seconds"
             ]
         },
@@ -53,7 +53,7 @@ def get_freshroast_recommendations(roast_level: str, environmental_conditions: O
             "recommendations": [
                 "Start with Heat 6, Fan 4",
                 "Increase fan to 5 after 4 minutes",
-                "Listen for first crack around 8-10 minutes",
+                "Listen for first crack around 9-11 minutes",
                 "Develop for 1-2 minutes after first crack"
             ]
         },

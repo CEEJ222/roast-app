@@ -66,7 +66,7 @@ For 'initial_heat' and 'fan_speed', use ONLY numerical values from 0-9.
     }},
     "key_watch_points": [
         "Monitor bean movement during drying",
-        "Listen for first crack around 8-10 minutes",
+        "Listen for first crack around 8-12 minutes",
         "Watch for even color development",
         "Adjust heat/fan based on bean behavior"
     ],

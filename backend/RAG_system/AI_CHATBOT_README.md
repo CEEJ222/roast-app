@@ -43,7 +43,7 @@ The AI chatbot consists of three main components:
 • Sumatra beans from high altitude require slower, gentler roasting
 • Wet process beans expect cleaner development and brighter acidity
 • Multiple varieties (Ateng, Jember, Tim Tim, Typica) - monitor density differences
-• Listen for first crack around 7-10 minutes
+• Listen for first crack around 8-12 minutes
 
 **AI Confidence:** 90% AI-powered recommendations based on DeepSeek LLM
 ```
@@ -94,7 +94,7 @@ The AI chatbot consists of three main components:
 Good adjustment! The extension tube allows for lower settings while maintaining good bean movement.
 
 **Next Watch Points:**
-• Monitor for first crack around 7-9 minutes
+• Monitor for first crack around 8-12 minutes
 • Watch for even color development
 • Adjust fan if beans aren't moving uniformly
 ```

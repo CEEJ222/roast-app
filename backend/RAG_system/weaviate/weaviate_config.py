@@ -16,15 +16,26 @@ logger = logging.getLogger(__name__)
 @dataclass
 class WeaviateConfig:
     """Configuration for Weaviate connection"""
-    url: str = "http://localhost:8080"
+    url: str = "http://localhost:8081"
     api_key: Optional[str] = None
     timeout_config: tuple = (5, 15)  # (connect timeout, read timeout)
     
     @classmethod
     def from_env(cls):
         """Create config from environment variables"""
+        # For Railway production, use environment variable or default to local
+        weaviate_url = os.getenv("WEAVIATE_URL")
+        if not weaviate_url:
+            # Check if we're in Railway production
+            if os.getenv("RAILWAY_ENVIRONMENT"):
+                logger.info("🚀 Railway production detected - Weaviate disabled (no WEAVIATE_URL set)")
+                return cls(url="", api_key=None, timeout_config=(5, 15))
+            else:
+                # Local development
+                weaviate_url = "http://localhost:8081"
+        
         return cls(
-            url=os.getenv("WEAVIATE_URL", "http://localhost:8080"),
+            url=weaviate_url,
             api_key=os.getenv("WEAVIATE_API_KEY"),
             timeout_config=(
                 int(os.getenv("WEAVIATE_CONNECT_TIMEOUT", "5")),
@@ -42,6 +53,12 @@ class WeaviateClient:
     
     def _initialize_client(self):
         """Initialize Weaviate client with proper error handling"""
+        # If no URL is configured, skip initialization
+        if not self.config.url:
+            logger.info("ℹ️ Weaviate URL not configured - semantic search disabled")
+            self.client = None
+            return
+            
         try:
             # Import here to avoid dependency conflicts
             import weaviate
@@ -50,18 +67,20 @@ class WeaviateClient:
             self.client = weaviate.Client(url=self.config.url)
             logger.info("✅ Using Weaviate Client (v3)")
             
-            # Test connection
+            # Test connection with timeout
             if self.client and self.client.is_ready():
                 logger.info("✅ Weaviate client connected successfully")
             else:
-                logger.warning("⚠️ Weaviate client not ready")
+                logger.warning("⚠️ Weaviate client not ready - semantic search disabled")
+                self.client = None
                 
         except ImportError as e:
             logger.error(f"❌ Weaviate client not available: {e}")
             logger.info("💡 Install with: pip install weaviate-client")
             self.client = None
         except Exception as e:
-            logger.error(f"❌ Failed to connect to Weaviate: {e}")
+            logger.warning(f"⚠️ Weaviate not available: {e}")
+            logger.info("💡 Semantic search features will be disabled")
             self.client = None
     
     def is_connected(self) -> bool:
@@ -168,10 +187,14 @@ def get_weaviate_client() -> Optional[WeaviateClient]:
 
 def initialize_weaviate() -> bool:
     """Initialize Weaviate connection"""
-    client = get_weaviate_client()
-    if client and client.is_connected():
-        logger.info("✅ Weaviate initialized successfully")
-        return True
-    else:
-        logger.warning("⚠️ Weaviate not available - semantic search disabled")
+    try:
+        client = get_weaviate_client()
+        if client and client.is_connected():
+            logger.info("✅ Weaviate initialized successfully")
+            return True
+        else:
+            logger.info("ℹ️ Weaviate not available - semantic search disabled (app will continue)")
+            return False
+    except Exception as e:
+        logger.info(f"ℹ️ Weaviate initialization skipped: {e}")
         return False

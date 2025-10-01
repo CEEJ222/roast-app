@@ -53,13 +53,24 @@ load_dotenv()
 
 app = FastAPI()
 
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "message": "Roast Buddy Backend is running"}
+
 # Railway CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[
+        "https://www.roastbuddy.app",
+        "https://roastbuddy.app", 
+        "http://localhost:3000",
+        "http://localhost:5173"
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
 )
 
 # Custom middleware to ensure CORS headers on ALL responses (Railway compatibility)
@@ -67,8 +78,22 @@ app.add_middleware(
 async def add_cors_headers(request: Request, call_next):
     response = await call_next(request)
     
-    # Add CORS headers to all responses
-    response.headers["Access-Control-Allow-Origin"] = "*"
+    # Get the origin from the request
+    origin = request.headers.get("origin")
+    
+    # Define allowed origins
+    allowed_origins = [
+        "https://www.roastbuddy.app",
+        "https://roastbuddy.app", 
+        "http://localhost:3000",
+        "http://localhost:5173"
+    ]
+    
+    # Set CORS headers if origin is allowed
+    if origin in allowed_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, Origin"
     response.headers["Access-Control-Max-Age"] = "600"
@@ -1246,4 +1271,5 @@ except ImportError as e:
 
 if __name__ == "__main__":
     import uvicorn
+    print("🚀 Starting Roast Buddy Backend Server...")
     uvicorn.run(app, host="0.0.0.0", port=8000)
