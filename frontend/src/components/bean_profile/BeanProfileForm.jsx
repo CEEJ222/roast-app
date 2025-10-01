@@ -17,6 +17,7 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
     process_method: '', // This will be pre-populated from roast form
     bean_type: '', // NEW: Bean type (Regular, Peaberry, Maragogype, etc.)
     recommended_roast_levels: [], // This will be pre-populated from roast form
+    espresso_suitable: false, // Good for espresso checkbox
     notes: '',
     supplier_url: '',
     supplier_name: '',
@@ -690,6 +691,22 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
               ))}
             </div>
             <p className="text-xs text-gray-600 dark:text-dark-text-secondary mt-1">Select the roast levels recommended for this bean</p>
+          </div>
+
+          {/* Good for Espresso */}
+          <div className="mb-6">
+            <label className="flex items-center space-x-3 p-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.espresso_suitable || false}
+                onChange={(e) => handleInputChange('espresso_suitable', e.target.checked)}
+                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-5 h-5"
+              />
+              <div className="flex-1">
+                <span className="text-sm font-medium text-gray-700 dark:text-dark-text-primary">Good for Espresso</span>
+                <p className="text-xs text-gray-600 dark:text-dark-text-secondary mt-1">Check if this bean is suitable for espresso brewing</p>
+              </div>
+            </label>
           </div>
 
 

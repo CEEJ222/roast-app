@@ -251,22 +251,8 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
     setErrorMessage('');
   };
 
-  const getCompletenessBadge = (completeness) => {
-    const badges = {
-      'basic': { text: 'Basic', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
-      'enhanced': { text: 'Enhanced', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300' },
-      'complete': { text: 'Complete', color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' }
-    };
-    return badges[completeness] || badges['basic'];
-  };
-
-  const getProfileIcon = (completeness) => {
-    const icons = {
-      'basic': '📝',
-      'enhanced': '☕',
-      'complete': '🏆'
-    };
-    return icons[completeness] || '📝';
+  const getProfileIcon = () => {
+    return '☕';
   };
 
   const columns = [
@@ -385,7 +371,12 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
           ) : (
             <div className="space-y-3">
               {beanProfiles.slice(0, 5).map((profile) => {
-                const badge = getCompletenessBadge(profile.profile_completeness);
+                // Check if profile is good for espresso (check both database field and notes for backwards compatibility)
+                const isGoodForEspresso = profile.espresso_suitable === true || 
+                                          profile.notes?.toLowerCase().includes('espresso') ||
+                                          profile.notes?.toLowerCase().includes('good for espresso') ||
+                                          profile.roasting_notes?.toLowerCase().includes('espresso');
+                
                 return (
                   <div 
                     key={profile.id}
@@ -395,7 +386,7 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
                     <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
                       <div className="w-10 h-10 bg-indigo-100 dark:bg-dark-bg-tertiary rounded-full flex items-center justify-center border dark:border-dark-border-primary flex-shrink-0">
                         <span className="text-indigo-600 dark:text-dark-accent-primary font-bold">
-                          {getProfileIcon(profile.profile_completeness)}
+                          {getProfileIcon()}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
@@ -422,9 +413,11 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
                       </div>
                     </div>
                     <div className="flex items-center justify-between sm:justify-end space-x-3 sm:space-x-4 text-sm mt-2 sm:mt-0">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium border dark:border-dark-border-primary ${badge.color} flex-shrink-0`}>
-                        {badge.text}
-                      </span>
+                      {isGoodForEspresso && (
+                        <span className="px-2 py-1 rounded-full text-xs font-medium border dark:border-dark-border-primary bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300 flex-shrink-0">
+                          Good for Espresso
+                        </span>
+                      )}
                       <div className="text-indigo-600 dark:text-indigo-400 flex-shrink-0">
                         👁️
                       </div>
@@ -474,12 +467,16 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
                     <span className="font-medium text-gray-700 dark:text-dark-text-primary">Process:</span>
                     <span className="ml-2 text-gray-600 dark:text-dark-text-secondary">{selectedProfile.process_method || 'Not specified'}</span>
                   </div>
-                  <div>
-                    <span className="font-medium text-gray-700 dark:text-dark-text-primary">Status:</span>
-                    <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${getCompletenessBadge(selectedProfile.profile_completeness).color}`}>
-                      {getCompletenessBadge(selectedProfile.profile_completeness).text}
-                    </span>
-                  </div>
+                  {(selectedProfile.espresso_suitable || 
+                    selectedProfile.notes?.toLowerCase().includes('espresso') ||
+                    selectedProfile.roasting_notes?.toLowerCase().includes('espresso')) && (
+                    <div>
+                      <span className="font-medium text-gray-700 dark:text-dark-text-primary">Espresso:</span>
+                      <span className="ml-2 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+                        Good for Espresso
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
