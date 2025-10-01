@@ -76,6 +76,30 @@ app.add_middleware(
 # Custom middleware to ensure CORS headers on ALL responses (Railway compatibility)
 @app.middleware("http")
 async def add_cors_headers(request: Request, call_next):
+    # Handle OPTIONS preflight requests
+    if request.method == "OPTIONS":
+        response = Response()
+        origin = request.headers.get("origin")
+        
+        # Define allowed origins
+        allowed_origins = [
+            "https://www.roastbuddy.app",
+            "https://roastbuddy.app", 
+            "http://localhost:3000",
+            "http://localhost:5173"
+        ]
+        
+        # Set CORS headers if origin is allowed
+        if origin in allowed_origins:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+        
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+        response.headers["Access-Control-Max-Age"] = "600"
+        return response
+    
+    # Handle regular requests
     response = await call_next(request)
     
     # Get the origin from the request
