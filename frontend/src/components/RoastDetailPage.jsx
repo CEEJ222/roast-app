@@ -285,7 +285,7 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-2xl font-bold">☕ Roast Details</h2>
-              <p className="opacity-90">{roast.coffee_type} • {formatDate(roast.created_at)}</p>
+              <p className="opacity-90">{roast.bean_profile_name || roast.coffee_type || 'Unknown Coffee'} • {formatDate(roast.created_at)}</p>
             </div>
             <div className="flex items-center gap-3">
               {!isEditing ? (
@@ -384,14 +384,16 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
                   <div className="space-y-3">
                     <div>
                       <span className="text-sm font-medium text-gray-600 dark:text-dark-text-secondary">Coffee:</span>
-                      <p className="text-gray-900 dark:text-dark-text-primary">{roast.coffee_type}</p>
+                      <p className="text-gray-900 dark:text-dark-text-primary">
+                        {roast.bean_profile_name || roast.coffee_type || 'Not specified'}
+                      </p>
                       {roast.coffee_region && (
                         <p className="text-sm text-gray-600 dark:text-dark-text-secondary">{roast.coffee_region}</p>
                       )}
                     </div>
                     <div>
                       <span className="text-sm font-medium text-gray-600 dark:text-dark-text-secondary">Process:</span>
-                      <p className="text-gray-900 dark:text-dark-text-primary">{roast.coffee_process}</p>
+                      <p className="text-gray-900 dark:text-dark-text-primary">{roast.coffee_process || 'Not specified'}</p>
                     </div>
                     <div>
                       <span className="text-sm font-medium text-gray-600 dark:text-dark-text-secondary">Target Roast:</span>

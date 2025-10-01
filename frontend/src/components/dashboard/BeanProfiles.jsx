@@ -414,7 +414,7 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between sm:justify-end space-x-3 sm:space-x-4 text-sm mt-2 sm:mt-0">
+                    <div className="flex items-center justify-end space-x-3 sm:space-x-4 text-sm mt-2 sm:mt-0">
                       {isGoodForEspresso && (
                         <span className="px-2 py-1 rounded-full text-xs font-medium border dark:border-dark-border-primary bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300 flex-shrink-0">
                           Good for Espresso

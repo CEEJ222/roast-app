@@ -715,7 +715,6 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl">🎯</span>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">Tier 1: Critical for AI Coaching</h3>
-              <span className="bg-gray-200 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Must Have</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
               {/* Moisture Content */}
@@ -764,7 +763,6 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl">⭐</span>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">Tier 2: Very Important</h3>
-              <span className="bg-gray-200 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">High Impact</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
               {/* Screen Size */}
@@ -775,7 +773,7 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
                 </div>
                 <CustomDropdown
                   options={[
-                    { value: '', label: 'Select screen size' },
+                    { value: '', label: 'Select size' },
                     { value: '14-15', label: '14-15 (Small)' },
                     { value: '15-16', label: '15-16 (Medium)' },
                     { value: '16-17', label: '16-17 (Large)' },
@@ -783,7 +781,7 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
                   ]}
                   value={formData.screen_size}
                   onChange={(value) => handleInputChange('screen_size', value)}
-                  placeholder="Select screen size..."
+                  placeholder="Select size..."
                   className="w-full"
                 />
                 <p className="text-xs text-gray-600 dark:text-dark-text-secondary mt-1">
@@ -818,6 +816,17 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
                 <p className="text-xs text-gray-600 dark:text-dark-text-secondary mt-1">Higher altitude = denser beans</p>
               </div>
 
+            </div>
+          </div>
+
+          {/* Tier 3: Helpful */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">💡</span>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">Tier 3: Helpful</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
               {/* Body Intensity */}
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-2">
@@ -840,17 +849,6 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
                 </div>
                 <p className="text-xs text-gray-600 dark:text-dark-text-secondary mt-1">High body needs longer development</p>
               </div>
-            </div>
-          </div>
-
-          {/* Tier 3: Helpful */}
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">💡</span>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">Tier 3: Helpful</h3>
-              <span className="bg-gray-200 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Additional</span>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
 
               {/* Acidity Intensity */}
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">

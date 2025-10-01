@@ -64,9 +64,7 @@ const RecentRoasts = ({
         <div className="p-4 sm:p-6">
           {!historicalRoasts || historicalRoasts.length === 0 ? (
             <div className="text-center py-8 sm:py-8 px-4">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                <span className="text-2xl sm:text-3xl">🔥</span>
-              </div>
+              <div className="text-4xl sm:text-6xl mb-4">🔥</div>
               <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-dark-text-primary mb-2">
                 No Roasts Yet
               </h3>

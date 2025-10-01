@@ -219,7 +219,7 @@ const StartNewRoastModal = ({
                   ⚙️
                 </span>
               </div>
-              <span className={`ml-2 text-xs font-medium ${
+              <span className={`ml-2 text-xs font-medium hidden sm:block ${
                 roastSetupStep === 'machine' ? 'text-indigo-600' : 
                 ['bean-profile', 'coffee-details', 'roast-parameters', 'review'].includes(roastSetupStep) ? 'text-green-600' : 'text-gray-500'
               }`}>
@@ -236,7 +236,7 @@ const StartNewRoastModal = ({
                   ☕
                 </span>
               </div>
-              <span className={`ml-2 text-xs font-medium ${
+              <span className={`ml-2 text-xs font-medium hidden sm:block ${
                 roastSetupStep === 'bean-profile' ? 'text-indigo-600' : 
                 ['coffee-details', 'roast-parameters', 'review'].includes(roastSetupStep) ? 'text-green-600' : 'text-gray-500'
               }`}>
@@ -253,7 +253,7 @@ const StartNewRoastModal = ({
                   🔥
                 </span>
               </div>
-              <span className={`ml-2 text-xs font-medium ${
+              <span className={`ml-2 text-xs font-medium hidden sm:block ${
                 roastSetupStep === 'roast-parameters' ? 'text-indigo-600' : 
                 roastSetupStep === 'review' ? 'text-green-600' : 'text-gray-500'
               }`}>
@@ -269,7 +269,7 @@ const StartNewRoastModal = ({
                   ✓
                 </span>
               </div>
-              <span className={`ml-2 text-xs font-medium ${
+              <span className={`ml-2 text-xs font-medium hidden sm:block ${
                 roastSetupStep === 'review' ? 'text-indigo-600' : 'text-gray-500'
               }`}>
                 Review & Start
