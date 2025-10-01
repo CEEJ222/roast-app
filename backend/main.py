@@ -62,7 +62,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Custom middleware to ensure CORS headers are added to ALL responses, including errors
+# Custom middleware to ensure CORS headers on ALL responses (Railway compatibility)
 @app.middleware("http")
 async def add_cors_headers(request: Request, call_next):
     response = await call_next(request)
@@ -74,6 +74,7 @@ async def add_cors_headers(request: Request, call_next):
     response.headers["Access-Control-Max-Age"] = "600"
     
     return response
+
 
 # RAG API router will be included after app creation to avoid circular imports
 
