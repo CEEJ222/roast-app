@@ -85,32 +85,86 @@ const RoastCurveGraph = ({
     return baseData;
   }, [data, mode, filteredRoasts, milestones]);
 
-  // Calculate Rate of Rise (ROR) for live mode with validation
+  // Calculate Rate of Rise (ROR) for live mode with proper smoothing
   const rorData = useMemo(() => {
     if (!showROR || mode !== 'live' || chartData.length < 2) return [];
 
-    return chartData.map((point, index) => {
+    // First pass: calculate raw RoR values using time-weighted approach
+    const rawRorData = chartData.map((point, index) => {
       if (index === 0) return { ...point, ror: 0 };
       
-      const prevPoint = chartData[index - 1];
-      const timeDiff = point.time - prevPoint.time; // Time is already in minutes
-      const tempDiff = point.temperature - prevPoint.temperature;
+      // Use a time window for more stable RoR calculation (like professional roasters)
+      // Adjust window based on data density - longer window for sparse data
+      const dataDensity = chartData.length / Math.max(1, chartData[chartData.length - 1]?.time || 1);
+      const timeWindow = dataDensity < 2 ? 1.0 : 0.5; // 1 minute for sparse data, 30 seconds for dense data
+      const currentTime = point.time;
+      const windowStart = Math.max(0, currentTime - timeWindow);
       
-      let ror = 0;
-      if (timeDiff > 0) {
-        ror = tempDiff / timeDiff;
-        
-        // Validate ROR - coffee roasting typically ranges from -20 to 100 °F/min
-        // If ROR is outside this range, it's likely due to sparse data or errors
-        if (ror > 100 || ror < -20) {
-          // Use a more reasonable default or smooth with previous values
-          ror = Math.max(-20, Math.min(100, ror));
-        }
+      // Find points within the time window
+      const windowPoints = chartData.filter(p => p.time >= windowStart && p.time <= currentTime);
+      
+      if (windowPoints.length < 2) {
+        // Fallback to simple calculation if not enough data
+        const prevPoint = chartData[index - 1];
+        const timeDiff = point.time - prevPoint.time;
+        const tempDiff = point.temperature - prevPoint.temperature;
+        const ror = timeDiff > 0 ? tempDiff / timeDiff : 0;
+        return { ...point, ror };
       }
+      
+      // Calculate RoR using linear regression over the time window
+      const n = windowPoints.length;
+      const sumX = windowPoints.reduce((sum, p) => sum + p.time, 0);
+      const sumY = windowPoints.reduce((sum, p) => sum + p.temperature, 0);
+      const sumXY = windowPoints.reduce((sum, p) => sum + p.time * p.temperature, 0);
+      const sumXX = windowPoints.reduce((sum, p) => sum + p.time * p.time, 0);
+      
+      // Linear regression slope (RoR)
+      const ror = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
       
       return {
         ...point,
-        ror: ror
+        ror: isNaN(ror) || !isFinite(ror) ? 0 : ror
+      };
+    });
+
+    // Second pass: apply smoothing and outlier detection
+    return rawRorData.map((point, index) => {
+      if (index === 0) return { ...point, ror: 0 };
+      
+      let smoothedRor = point.ror;
+      
+      // Apply moving average smoothing for more stable RoR
+      const smoothingWindow = Math.min(3, index); // Use up to 3 previous points
+      if (smoothingWindow > 0) {
+        const windowStart = Math.max(0, index - smoothingWindow);
+        const windowData = rawRorData.slice(windowStart, index + 1);
+        const validRorValues = windowData
+          .map(p => p.ror)
+          .filter(ror => !isNaN(ror) && isFinite(ror));
+        
+        if (validRorValues.length > 0) {
+          smoothedRor = validRorValues.reduce((sum, ror) => sum + ror, 0) / validRorValues.length;
+        }
+      }
+      
+      // Outlier detection and correction
+      if (index > 0) {
+        const prevRor = rawRorData[index - 1].ror;
+        const rorChange = Math.abs(smoothedRor - prevRor);
+        
+        // If RoR change is too dramatic (>50°F/min change), smooth it
+        if (rorChange > 50) {
+          smoothedRor = prevRor + (smoothedRor - prevRor) * 0.3; // Gradual change
+        }
+      }
+      
+      // Final validation bounds
+      smoothedRor = Math.max(-20, Math.min(100, smoothedRor));
+      
+      return {
+        ...point,
+        ror: smoothedRor
       };
     });
   }, [chartData, showROR, mode]);
@@ -131,9 +185,6 @@ const RoastCurveGraph = ({
     <div className={`bg-white dark:bg-dark-bg-tertiary rounded-lg shadow-lg dark:shadow-dark-glow border-metallic border-gray-200 dark:border-gray-600 ${compact ? 'p-4' : isMobile ? 'px-1 py-3' : 'p-6'} ${className}`}>
       <div className={`${compact ? 'mb-3' : 'mb-4'} ${isMobile ? 'pl-3' : ''}`}>
         <h3 className={`${compact ? 'text-base' : 'text-lg'} font-semibold text-gray-800 dark:text-dark-text-primary`}>{title}</h3>
-        {mode === 'live' && (
-          <p className="text-sm text-gray-600 dark:text-dark-text-secondary">Real-time temperature monitoring</p>
-        )}
         {mode === 'historical' && (
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
@@ -191,6 +242,7 @@ const RoastCurveGraph = ({
               stroke="#6b7280"
               className="dark:stroke-dark-text-tertiary"
               tick={{ fontSize: isMobile ? 10 : 12 }}
+              domain={[200, 500]}
             />
             {showROR && mode === 'live' && (
               <YAxis 
@@ -316,13 +368,35 @@ const RoastCurveGraph = ({
 // Helper functions
 function processLiveData(events) {
   // Filter temperature events and convert to chart format
-  const tempEvents = events.filter(event => event.temp_f !== null && event.temp_f !== undefined);
+  const tempEvents = events.filter(event => 
+    event.temp_f !== null && 
+    event.temp_f !== undefined && 
+    event.t_offset_sec !== null && 
+    event.t_offset_sec !== undefined
+  );
   
-  return tempEvents.map(event => ({
-    time: event.t_offset_sec / 60, // Convert to minutes
-    temperature: event.temp_f,
-    timestamp: event.created_at
-  })).sort((a, b) => a.time - b.time);
+  // Sort by time and remove duplicates
+  const sortedEvents = tempEvents
+    .map(event => ({
+      time: event.t_offset_sec / 60, // Convert to minutes
+      temperature: event.temp_f,
+      timestamp: event.created_at,
+      originalEvent: event
+    }))
+    .sort((a, b) => a.time - b.time);
+  
+  // Remove duplicate time points (keep the latest temperature reading for each time)
+  const uniqueEvents = [];
+  const timeMap = new Map();
+  
+  sortedEvents.forEach(event => {
+    const timeKey = Math.round(event.time * 10) / 10; // Round to 0.1 minute precision
+    if (!timeMap.has(timeKey) || event.timestamp > timeMap.get(timeKey).timestamp) {
+      timeMap.set(timeKey, event);
+    }
+  });
+  
+  return Array.from(timeMap.values()).sort((a, b) => a.time - b.time);
 }
 
 function processHistoricalData(roasts) {
@@ -470,5 +544,6 @@ function getRoastColor(index) {
   ];
   return colors[index % colors.length];
 }
+
 
 export default RoastCurveGraph;
