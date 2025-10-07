@@ -5,6 +5,7 @@ const RoastTimer = ({
   formatTime,
   currentPhase,
   dryingTime,
+  maillardTime,
   developmentTime,
   coolingTime,
   milestonesMarked,
@@ -30,87 +31,24 @@ const RoastTimer = ({
               strokeWidth="8"
             />
             
-            {/* Progress segments drawn sequentially */}
-            {(() => {
-              const circumference = 2 * Math.PI * 50;
-              const radius = 50;
-              const centerX = 60;
-              const centerY = 60;
-              
-              // Calculate phase angles
-              const dryingAngle = (dryingTime / elapsedTime) * 2 * Math.PI;
-              const developmentAngle = (developmentTime / elapsedTime) * 2 * Math.PI;
-              const coolingAngle = (coolingTime / elapsedTime) * 2 * Math.PI;
-              
-              // Helper function to create arc path
-              const createArcPath = (startAngle, endAngle, radius) => {
-                const start = {
-                  x: centerX + radius * Math.cos(startAngle - Math.PI / 2),
-                  y: centerY + radius * Math.sin(startAngle - Math.PI / 2)
-                };
-                const end = {
-                  x: centerX + radius * Math.cos(endAngle - Math.PI / 2),
-                  y: centerY + radius * Math.sin(endAngle - Math.PI / 2)
-                };
-                
-                const largeArcFlag = endAngle - startAngle <= Math.PI ? "0" : "1";
-                
-                return [
-                  `M ${start.x} ${start.y}`,
-                  `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`
-                ].join(" ");
-              };
-              
-              let currentAngle = 0;
-              
-              return (
-                <>
-                  {/* Drying phase (green) */}
-                  {elapsedTime > 0 && dryingTime > 0 && (
-                    <path
-                      d={createArcPath(currentAngle, currentAngle + dryingAngle, radius)}
-                      fill="none"
-                      stroke="#10b981"
-                      strokeWidth="8"
-                      strokeLinecap="round"
-                      style={{ transition: 'all 0.5s ease' }}
-                    />
-                  )}
-                  
-                  {/* Development phase (orange) */}
-                  {elapsedTime > 0 && developmentTime > 0 && (
-                    <path
-                      d={createArcPath(
-                        currentAngle + dryingAngle, 
-                        currentAngle + dryingAngle + developmentAngle, 
-                        radius
-                      )}
-                      fill="none"
-                      stroke="#f59e0b"
-                      strokeWidth="8"
-                      strokeLinecap="round"
-                      style={{ transition: 'all 0.5s ease' }}
-                    />
-                  )}
-                  
-                  {/* Cooling phase (blue) */}
-                  {elapsedTime > 0 && coolingTime > 0 && (
-                    <path
-                      d={createArcPath(
-                        currentAngle + dryingAngle + developmentAngle,
-                        currentAngle + dryingAngle + developmentAngle + coolingAngle,
-                        radius
-                      )}
-                      fill="none"
-                      stroke="#06b6d4"
-                      strokeWidth="8"
-                      strokeLinecap="round"
-                      style={{ transition: 'all 0.5s ease' }}
-                    />
-                  )}
-                </>
-              );
-            })()}
+            {/* Simple solid color circle for current phase */}
+            {elapsedTime > 0 && (
+              <circle
+                cx="60"
+                cy="60"
+                r="50"
+                fill="none"
+                stroke={
+                  currentPhase === 'drying' ? '#10b981' :
+                  currentPhase === 'maillard' ? '#eab308' :
+                  currentPhase === 'development' ? '#f59e0b' :
+                  currentPhase === 'cooling' ? '#06b6d4' :
+                  '#374151'
+                }
+                strokeWidth="8"
+                style={{ transition: 'stroke 0.3s ease' }}
+              />
+            )}
           </svg>
           
           {/* Timer in center - Responsive sizing */}
@@ -152,8 +90,8 @@ const RoastTimer = ({
         </div>
       </div>
 
-      {/* Phase Indicators - Responsive layout */}
-      <div className="flex flex-row md:flex-col gap-2 sm:gap-4 md:gap-4 pt-4 sm:pt-8">
+      {/* Phase Indicators - 2x2 grid on mobile, row on desktop */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-4 md:flex md:flex-col pt-4 sm:pt-8">
         <div className={`flex items-center space-x-3 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition ${
           currentPhase === 'drying' 
             ? 'bg-indigo-100 dark:bg-dark-accent-primary/20 text-indigo-800 dark:text-dark-accent-primary' 
@@ -169,6 +107,20 @@ const RoastTimer = ({
         </div>
         
         <div className={`flex items-center space-x-3 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition ${
+          currentPhase === 'maillard' 
+            ? 'bg-indigo-100 dark:bg-dark-accent-primary/20 text-indigo-800 dark:text-dark-accent-primary' 
+            : 'text-gray-500 dark:text-dark-text-tertiary'
+        }`}>
+          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-yellow-500 flex-shrink-0"></div>
+          <div className="flex flex-col min-w-0">
+            <span className="font-medium text-sm sm:text-base truncate">Maillard</span>
+            <span className="text-xs sm:text-sm font-mono">
+              {milestonesMarked.dryEnd ? formatTime(maillardTime) : '—'}
+            </span>
+          </div>
+        </div>
+        
+        <div className={`flex items-center space-x-3 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition ${
           currentPhase === 'development' 
             ? 'bg-indigo-100 dark:bg-dark-accent-primary/20 text-indigo-800 dark:text-dark-accent-primary' 
             : 'text-gray-500 dark:text-dark-text-tertiary'
@@ -179,6 +131,12 @@ const RoastTimer = ({
             <span className="text-xs sm:text-sm font-mono">
               {milestonesMarked.firstCrack ? formatTime(developmentTime) : '—'}
             </span>
+            {/* Development percentage tracker */}
+            {milestonesMarked.firstCrack && developmentTime > 0 && (
+              <div className="text-xs text-gray-400 dark:text-gray-500">
+                {Math.round((developmentTime / (developmentTime + 60)) * 100)}% dev
+              </div>
+            )}
           </div>
         </div>
         

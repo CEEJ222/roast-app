@@ -61,7 +61,7 @@ const RoastCurveGraph = ({
     if (!showMilestones || mode !== 'live') return [];
     
     return data
-      .filter(event => ['FIRST_CRACK', 'SECOND_CRACK', 'COOL', 'END'].includes(event.kind))
+      .filter(event => ['DRY_END', 'FIRST_CRACK', 'SECOND_CRACK', 'COOL', 'END'].includes(event.kind))
       .map(event => ({
         time: event.t_offset_sec / 60, // Convert to minutes
         kind: event.kind,
@@ -85,7 +85,7 @@ const RoastCurveGraph = ({
     return baseData;
   }, [data, mode, filteredRoasts, milestones]);
 
-  // Calculate Rate of Rise (ROR) for live mode
+  // Calculate Rate of Rise (ROR) for live mode with validation
   const rorData = useMemo(() => {
     if (!showROR || mode !== 'live' || chartData.length < 2) return [];
 
@@ -93,12 +93,24 @@ const RoastCurveGraph = ({
       if (index === 0) return { ...point, ror: 0 };
       
       const prevPoint = chartData[index - 1];
-      const timeDiff = (point.time - prevPoint.time) / 60; // Convert to minutes
+      const timeDiff = point.time - prevPoint.time; // Time is already in minutes
       const tempDiff = point.temperature - prevPoint.temperature;
+      
+      let ror = 0;
+      if (timeDiff > 0) {
+        ror = tempDiff / timeDiff;
+        
+        // Validate ROR - coffee roasting typically ranges from -20 to 100 °F/min
+        // If ROR is outside this range, it's likely due to sparse data or errors
+        if (ror > 100 || ror < -20) {
+          // Use a more reasonable default or smooth with previous values
+          ror = Math.max(-20, Math.min(100, ror));
+        }
+      }
       
       return {
         ...point,
-        ror: timeDiff > 0 ? tempDiff / timeDiff : 0
+        ror: ror
       };
     });
   }, [chartData, showROR, mode]);
@@ -116,8 +128,8 @@ const RoastCurveGraph = ({
   }, [filteredRoasts, mode, showRoastLabels]);
 
   return (
-    <div className={`bg-white dark:bg-dark-bg-tertiary rounded-lg shadow-lg dark:shadow-dark-glow border-metallic border-gray-200 dark:border-gray-600 ${compact ? 'p-4' : 'p-6'} ${className}`}>
-      <div className={`${compact ? 'mb-3' : 'mb-4'}`}>
+    <div className={`bg-white dark:bg-dark-bg-tertiary rounded-lg shadow-lg dark:shadow-dark-glow border-metallic border-gray-200 dark:border-gray-600 ${compact ? 'p-4' : isMobile ? 'px-1 py-3' : 'p-6'} ${className}`}>
+      <div className={`${compact ? 'mb-3' : 'mb-4'} ${isMobile ? 'pl-3' : ''}`}>
         <h3 className={`${compact ? 'text-base' : 'text-lg'} font-semibold text-gray-800 dark:text-dark-text-primary`}>{title}</h3>
         {mode === 'live' && (
           <p className="text-sm text-gray-600 dark:text-dark-text-secondary">Real-time temperature monitoring</p>
@@ -147,14 +159,14 @@ const RoastCurveGraph = ({
         )}
       </div>
 
-      <div style={{ width: '100%', height: height, position: 'relative' }}>
+      <div style={{ width: '100%', height: height, position: 'relative', overflow: 'visible' }}>
         <ResponsiveContainer>
           <LineChart
             data={showROR && mode === 'live' ? rorData : chartData}
             margin={{ 
               top: 20, 
-              right: isMobile ? 10 : 30, 
-              left: isMobile ? 10 : 20, 
+              right: isMobile ? 5 : 30, 
+              left: isMobile ? -5 : 20, 
               bottom: isMobile ? 80 : 20 
             }}
             {...(enableZoom && { zoom: { enabled: true } })}
@@ -187,6 +199,8 @@ const RoastCurveGraph = ({
                 tickFormatter={(value) => `${value.toFixed(1)}°/m`}
                 stroke="#6b7280"
                 className="dark:stroke-dark-text-tertiary"
+                domain={[-20, 100]}
+                tick={{ fontSize: isMobile ? 10 : 12 }}
               />
             )}
             {showTooltip && (
@@ -217,26 +231,6 @@ const RoastCurveGraph = ({
                 strokeWidth={3}
                 dot={(props) => {
                   const { payload, cx, cy } = props;
-                  
-                  // Check if this is a milestone time
-                  const milestone = milestones.find(m => 
-                    Math.abs(m.time - payload.time) < 0.01 // Within 0.01 minutes
-                  );
-                  
-                  
-                  if (milestone) {
-                    const color = getMilestoneColor(milestone.kind);
-                    return (
-                      <circle
-                        cx={cx}
-                        cy={cy}
-                        r={8}
-                        fill={color}
-                        stroke="white"
-                        strokeWidth={2}
-                      />
-                    );
-                  }
                   
                   // Regular temperature dot
                   return (
@@ -289,26 +283,31 @@ const RoastCurveGraph = ({
               />
             )}
 
+            {/* Milestone markers as separate reference dots */}
+            {mode === 'live' && milestones.map((milestone, index) => {
+              // Find the temperature at the milestone time by interpolating from nearby points
+              const milestoneTime = milestone.time;
+              const tempAtMilestone = getTemperatureAtMilestoneTime(data, milestoneTime * 60);
+              
+              return (
+                <ReferenceDot
+                  key={`milestone-${index}`}
+                  x={milestoneTime}
+                  y={tempAtMilestone}
+                  r={8}
+                  fill={getMilestoneColor(milestone.kind)}
+                  stroke="white"
+                  strokeWidth={2}
+                />
+              );
+            })}
+
 
           </LineChart>
         </ResponsiveContainer>
         
       </div>
 
-      {/* Milestone legend */}
-      {milestones.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-4 text-sm">
-          {milestones.map((milestone, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <div 
-                className="w-4 h-4 rounded-full border-2 border-white dark:border-dark-bg-primary"
-                style={{ backgroundColor: getMilestoneColor(milestone.kind) }}
-              />
-              <span className="text-gray-600 dark:text-dark-text-secondary">{milestone.label}</span>
-            </div>
-          ))}
-        </div>
-      )}
 
     </div>
   );
@@ -394,7 +393,7 @@ const CustomTooltip = ({ active, payload, label, data }) => {
     
     // Find milestone events at this time
     const milestoneEvents = data.filter(event => 
-      ['FIRST_CRACK', 'SECOND_CRACK', 'COOL', 'END'].includes(event.kind) &&
+      ['DRY_END', 'FIRST_CRACK', 'SECOND_CRACK', 'COOL', 'END'].includes(event.kind) &&
       Math.abs(event.t_offset_sec - timeSeconds) < 30 // Within 30 seconds
     );
     
@@ -427,6 +426,7 @@ const CustomTooltip = ({ active, payload, label, data }) => {
 
 function getMilestoneLabel(kind) {
   const labels = {
+    'DRY_END': 'Dry End',
     'FIRST_CRACK': 'First Crack',
     'SECOND_CRACK': 'Second Crack',
     'COOL': 'Cool',
@@ -437,6 +437,7 @@ function getMilestoneLabel(kind) {
 
 function getMilestoneEmoji(kind) {
   const emojis = {
+    'DRY_END': '🌾',
     'FIRST_CRACK': '🔥',
     'SECOND_CRACK': '🔥🔥',
     'COOL': '🧊',
@@ -447,6 +448,7 @@ function getMilestoneEmoji(kind) {
 
 function getMilestoneColor(kind) {
   const colors = {
+    'DRY_END': '#eab308', // yellow
     'FIRST_CRACK': '#dc2626', // bright red
     'SECOND_CRACK': '#7c3aed', // purple
     'COOL': '#06b6d4', // cyan

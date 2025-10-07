@@ -17,7 +17,8 @@ const StartNewRoastModal = ({
   environmentalConditions,
   getAuthToken,
   setLoading,
-  setShowProfilePage
+  setShowProfilePage,
+  refreshUserProfile
 }) => {
   const [roastSetupStep, setRoastSetupStep] = useState('machine'); // 'machine', 'bean-profile', 'roast-parameters', 'review'
   const [beanProfileScreen, setBeanProfileScreen] = useState('choice'); // 'choice', 'select', 'create'
@@ -28,12 +29,14 @@ const StartNewRoastModal = ({
     address: '',
     roastLevel: 'City',
     weightBefore: '',
+    roastTime: 10, // Default 10 minutes
     notes: '',
     selectedBeanProfile: null,
     beanProfileMode: 'select' // 'select', 'create' - removed 'auto'
   });
   const [beanProfiles, setBeanProfiles] = useState([]);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
+  const [isRefreshingLocation, setIsRefreshingLocation] = useState(false);
 
   // Load bean profiles when modal opens
   useEffect(() => {
@@ -52,17 +55,32 @@ const StartNewRoastModal = ({
       });
       loadBeanProfiles();
       
-      // Check if location is available
+      // Check if location is available immediately
       if (userProfile?.address) {
         setIsLoadingLocation(false);
       } else {
-        // Wait a bit for userProfile to load
-        setTimeout(() => {
+        // Set a shorter timeout and add a fallback
+        const timeoutId = setTimeout(() => {
           setIsLoadingLocation(false);
-        }, 1000);
+        }, 500); // Reduced from 1000ms to 500ms
+        
+        // Clean up timeout if component unmounts or profile loads
+        return () => clearTimeout(timeoutId);
       }
     }
-  }, [isOpen]); // Removed userProfile.address dependency to prevent resetting formData
+  }, [isOpen, userProfile?.address]); // Re-added userProfile.address dependency for proper reactivity
+
+  // Separate effect to handle location loading state
+  useEffect(() => {
+    if (isOpen && userProfile?.address) {
+      setIsLoadingLocation(false);
+      // Update form data when profile loads
+      setFormData(prev => ({
+        ...prev,
+        address: userProfile.address
+      }));
+    }
+  }, [isOpen, userProfile?.address]);
 
   const loadBeanProfiles = async () => {
     try {
@@ -139,6 +157,7 @@ const StartNewRoastModal = ({
       bean_profile_id: formData.selectedBeanProfile?.id,
       desired_roast_level: formData.roastLevel,
       weight_before_g: parseFloat(formData.weightBefore) || null,
+      expected_roast_time_minutes: formData.roastTime,
       notes: formData.notes || null
     };
       console.log('Starting roast with data:', requestData);
@@ -160,8 +179,8 @@ const StartNewRoastModal = ({
       }
 
       const data = await response.json();
-      // Pass the roast data (bean profile will come from backend response)
-      onStart(data);
+      // Pass the roast data and roast time (bean profile will come from backend response)
+      onStart(data, formData.roastTime);
       onClose();
     } catch (error) {
       console.error('Error starting roast:', error);
@@ -174,6 +193,15 @@ const StartNewRoastModal = ({
   const handleCancel = () => {
     setRoastSetupStep('machine');
     onClose();
+  };
+
+  const handleLocationRefresh = async () => {
+    setIsRefreshingLocation(true);
+    if (refreshUserProfile) {
+      await refreshUserProfile();
+    }
+    setIsRefreshingLocation(false);
+    setShowProfilePage(true);
   };
 
   const handleBack = () => {
@@ -370,10 +398,11 @@ const StartNewRoastModal = ({
                             Set your location to get environmental data for your roasts.
                           </p>
                           <button
-                            onClick={() => setShowProfilePage(true)}
-                            className="mt-3 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                            onClick={handleLocationRefresh}
+                            disabled={isRefreshingLocation}
+                            className="mt-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                           >
-                            Set Location in Profile
+                            {isRefreshingLocation ? 'Refreshing...' : 'Set Location in Profile'}
                           </button>
                         </div>
                       </div>
@@ -585,29 +614,51 @@ const StartNewRoastModal = ({
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
-                      Weight Before Roast (grams) *
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.weightBefore}
-                      onChange={(e) => handleInputChange('weightBefore', e.target.value)}
-                      placeholder="e.g., 250"
-                      min="0"
-                      step="1"
-                      required
-                      className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary ${
-                        !formData.weightBefore && roastSetupStep === 'roast-parameters' 
-                          ? 'border-red-500 focus:ring-red-500' 
-                          : 'border-gray-300 dark:border-dark-border-primary focus:ring-indigo-500'
-                      }`}
-                    />
-                    {!formData.weightBefore && roastSetupStep === 'roast-parameters' && (
-                      <p className="text-sm text-red-500 dark:text-red-400 mt-1">
-                        Weight is required to start the roast
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
+                        Weight Before Roast (grams) *
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.weightBefore}
+                        onChange={(e) => handleInputChange('weightBefore', e.target.value)}
+                        placeholder="e.g., 250"
+                        min="0"
+                        step="1"
+                        required
+                        className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary ${
+                          !formData.weightBefore && roastSetupStep === 'roast-parameters' 
+                            ? 'border-red-500 focus:ring-red-500' 
+                            : 'border-gray-300 dark:border-dark-border-primary focus:ring-indigo-500'
+                        }`}
+                      />
+                      {!formData.weightBefore && roastSetupStep === 'roast-parameters' && (
+                        <p className="text-sm text-red-500 dark:text-red-400 mt-1">
+                          Weight is required to start the roast
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
+                        Expected Roast Time (minutes) *
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.roastTime}
+                        onChange={(e) => handleInputChange('roastTime', parseInt(e.target.value) || 10)}
+                        placeholder="e.g., 10"
+                        min="5"
+                        max="20"
+                        step="1"
+                        required
+                        className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Most FreshRoast roasts are 8-12 minutes
                       </p>
-                    )}
+                    </div>
                   </div>
 
                 </div>
@@ -679,6 +730,12 @@ const StartNewRoastModal = ({
                         <span className="text-gray-600 dark:text-dark-text-secondary">Weight:</span>
                         <span className="text-gray-900 dark:text-dark-text-primary">
                           {formData.weightBefore ? `${formData.weightBefore}g` : 'Not specified'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-dark-text-secondary">Expected Time:</span>
+                        <span className="text-gray-900 dark:text-dark-text-primary">
+                          {formData.roastTime ? `${formData.roastTime} minutes` : 'Not specified'}
                         </span>
                       </div>
                     </div>
@@ -773,3 +830,4 @@ const StartNewRoastModal = ({
 };
 
 export default StartNewRoastModal;
+

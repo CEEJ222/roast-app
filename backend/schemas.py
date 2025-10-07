@@ -11,6 +11,7 @@ class CreateRoastRequest(BaseModel):
     bean_profile_id: str  # Required - no more optional
     desired_roast_level: str
     weight_before_g: Optional[float] = None
+    expected_roast_time_minutes: Optional[int] = None
     notes: Optional[str] = None
     # Removed: coffee_region, coffee_subregion, coffee_type, coffee_process
 

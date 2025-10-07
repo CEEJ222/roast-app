@@ -71,19 +71,25 @@ function RoastAssistant() {
   const [roastDetails, setRoastDetails] = useState({});
   const [recentRoastDetails, setRecentRoastDetails] = useState({});
   const [milestonesMarked, setMilestonesMarked] = useState({
+    dryEnd: false,
     firstCrack: false,
     secondCrack: false,
     cool: false
   });
-  const [currentPhase, setCurrentPhase] = useState('drying'); // 'drying', 'development', 'cooling'
+  const [currentPhase, setCurrentPhase] = useState('drying'); // 'drying', 'maillard', 'development', 'cooling'
   const [developmentStartTime, setDevelopmentStartTime] = useState(null);
   const [developmentTime, setDevelopmentTime] = useState(0);
   
   // Phase timing state
   const [dryingStartTime, setDryingStartTime] = useState(null);
   const [dryingTime, setDryingTime] = useState(0);
+  const [maillardStartTime, setMaillardStartTime] = useState(null);
+  const [maillardTime, setMaillardTime] = useState(0);
   const [coolingStartTime, setCoolingStartTime] = useState(null);
   const [coolingTime, setCoolingTime] = useState(0);
+
+  // Roast duration (expected roast time + 3 min cooling buffer)
+  const [roastDuration, setRoastDuration] = useState(13); // Default 10 min roast + 3 min cooling
 
   // Pause state
   const [isPaused, setIsPaused] = useState(false);
@@ -126,10 +132,23 @@ function RoastAssistant() {
         setDryingTime(Math.max(0, dryTime));
       }
       
+      // Update maillard time if we're in maillard phase
+      if (currentPhase === 'maillard' && maillardStartTime) {
+        const maillardTime = Math.floor((currentTime - maillardStartTime - totalPausedTime) / 1000);
+        // Cap maillard time at reasonable maximum (e.g., 30 minutes)
+        const cappedMaillardTime = Math.min(Math.max(0, maillardTime), 1800);
+        if (cappedMaillardTime !== maillardTime) {
+          console.log('DEBUG: Timer - Capped maillard time from', maillardTime, 'to', cappedMaillardTime);
+        }
+        setMaillardTime(cappedMaillardTime);
+      }
+      
       // Update development time if we're in development phase
       if (currentPhase === 'development' && developmentStartTime) {
         const devTime = Math.floor((currentTime - developmentStartTime - totalPausedTime) / 1000);
-        setDevelopmentTime(Math.max(0, devTime));
+        // Cap development time at reasonable maximum (e.g., 20 minutes)
+        const cappedDevTime = Math.min(Math.max(0, devTime), 1200);
+        setDevelopmentTime(cappedDevTime);
       }
       
       // Update cooling time if we're in cooling phase
@@ -140,11 +159,16 @@ function RoastAssistant() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [startTs, currentPhase, dryingStartTime, developmentStartTime, coolingStartTime, isPaused, totalPausedTime]);
+  }, [startTs, currentPhase, dryingStartTime, maillardStartTime, developmentStartTime, coolingStartTime, isPaused, totalPausedTime]);
 
-  // Load user profile data
-  const loadUserProfile = async () => {
+  // Load user profile data with caching
+  const loadUserProfile = async (forceRefresh = false) => {
     if (!user) return;
+    
+    // Check if we already have profile data and don't need to refresh
+    if (!forceRefresh && userProfile && userProfile.address) {
+      return;
+    }
     
     try {
       const token = await getAuthToken();
@@ -286,6 +310,11 @@ function RoastAssistant() {
     loadHistoricalRoasts();
   }, [user, setupComplete, getAuthToken]);
 
+  // Add a function to refresh profile data when needed
+  const refreshUserProfile = () => {
+    loadUserProfile(true);
+  };
+
   const handleSetupComplete = () => {
     setShowSetupWizard(false);
     setSetupComplete(true);
@@ -311,16 +340,20 @@ function RoastAssistant() {
     if (timeDiff < 120 && !roast.weight_after_g) {
       // Resume this roast session
       setRoastId(roast.id);
-      setStartTs(Math.floor(new Date(roast.created_at).getTime() / 1000));
+      const roastStartTs = Math.floor(new Date(roast.created_at).getTime() / 1000);
+      setStartTs(roastStartTs);
       setRoastEnded(false); // Assume not ended if we're resuming
+      
+      // Set roast duration (default to 13 minutes if not specified)
+      setRoastDuration(13);
       
       // Reset pause state
       setIsPaused(false);
       setPauseStartTime(null);
       setTotalPausedTime(0);
       
-      // Load events for this roast
-      refreshEvents(roast.id);
+      // Load events for this roast with the correct startTs
+      refreshEvents(roast.id, roastStartTs);
       
       // Load environmental conditions from the roast data
       if (roast.temperature_c || roast.temperature_f || roast.humidity_pct) {
@@ -538,27 +571,42 @@ function RoastAssistant() {
     if (!roastId) return;
 
     // Check if milestone has already been marked
+    if (kind === 'DRY_END' && milestonesMarked.dryEnd) return;
     if (kind === 'FIRST_CRACK' && milestonesMarked.firstCrack) return;
     if (kind === 'SECOND_CRACK' && milestonesMarked.secondCrack) return;
     if (kind === 'COOL' && milestonesMarked.cool) return;
 
-      // For First Crack, Second Crack, and Cool, show temperature input modal
-      if (kind === 'FIRST_CRACK' || kind === 'SECOND_CRACK' || kind === 'COOL') {
-        setPendingMilestone(kind);
-        setShowTemperatureInput(true);
-      } else {
-        // For other milestones (END), no temperature needed
-        try {
-          await apiCall(`${API_BASE}/roasts/${roastId}/events`, {
-            method: 'POST',
-            body: JSON.stringify({ kind })
-          });
+    // For all milestones, no temperature input required - log directly
+    try {
+      await apiCall(`${API_BASE}/roasts/${roastId}/events`, {
+        method: 'POST',
+        body: JSON.stringify({ kind })
+      });
 
-          refreshEvents();
-        } catch (error) {
-          // Error already handled in apiCall
-        }
+      // Update milestone tracking and phase changes immediately
+      if (kind === 'DRY_END') {
+        setMilestonesMarked(prev => ({ ...prev, dryEnd: true }));
+        setCurrentPhase('maillard');
+        setMaillardStartTime(Date.now());
+        setMaillardTime(0);
+      } else if (kind === 'FIRST_CRACK') {
+        setMilestonesMarked(prev => ({ ...prev, firstCrack: true }));
+        setCurrentPhase('development');
+        setDevelopmentStartTime(Date.now());
+        setDevelopmentTime(0);
+      } else if (kind === 'SECOND_CRACK') {
+        setMilestonesMarked(prev => ({ ...prev, secondCrack: true }));
+      } else if (kind === 'COOL') {
+        setMilestonesMarked(prev => ({ ...prev, cool: true }));
+        setCurrentPhase('cooling');
+        setCoolingStartTime(Date.now());
+        setCoolingTime(0);
       }
+
+      refreshEvents();
+    } catch (error) {
+      // Error already handled in apiCall
+    }
   };
 
   const handleTemperatureConfirm = async (temperature) => {
@@ -574,7 +622,12 @@ function RoastAssistant() {
       });
 
         // Update milestone tracking and phase changes
-        if (pendingMilestone === 'FIRST_CRACK') {
+        if (pendingMilestone === 'DRY_END') {
+          setMilestonesMarked(prev => ({ ...prev, dryEnd: true }));
+          setCurrentPhase('maillard');
+          setMaillardStartTime(Date.now());
+          setMaillardTime(0);
+        } else if (pendingMilestone === 'FIRST_CRACK') {
           setMilestonesMarked(prev => ({ ...prev, firstCrack: true }));
           setCurrentPhase('development');
           setDevelopmentStartTime(Date.now());
@@ -597,19 +650,27 @@ function RoastAssistant() {
     }
   };
 
-  const refreshEvents = async (id = roastId) => {
+  const refreshEvents = async (id = roastId, startTsOverride = null) => {
     if (!id) return;
+    
+    // Use the provided startTs or fall back to the state
+    const effectiveStartTs = startTsOverride || startTs;
+    if (startTsOverride) {
+      console.log('DEBUG: Using startTs override:', startTsOverride, 'instead of state:', startTs);
+    }
     try {
       const data = await apiCall(`${API_BASE}/roasts/${id}/events`);
       // Your backend returns the array directly, not wrapped in an object
       setEvents(data); // This is correct
       
       // Check if milestones have already been marked
+      const hasDryEnd = data.some(event => event.kind === 'DRY_END');
       const hasFirstCrack = data.some(event => event.kind === 'FIRST_CRACK');
       const hasSecondCrack = data.some(event => event.kind === 'SECOND_CRACK');
       const hasCool = data.some(event => event.kind === 'COOL');
       
       setMilestonesMarked({
+        dryEnd: hasDryEnd,
         firstCrack: hasFirstCrack,
         secondCrack: hasSecondCrack,
         cool: hasCool
@@ -621,28 +682,123 @@ function RoastAssistant() {
         // Find the COOL event to set cooling start time
         const coolEvent = data.find(event => event.kind === 'COOL');
         if (coolEvent) {
-          const coolTime = startTs * 1000 + (coolEvent.t_offset_sec * 1000);
+          const coolTime = effectiveStartTs * 1000 + (coolEvent.t_offset_sec * 1000);
           setCoolingStartTime(coolTime);
           const currentCoolTime = Math.floor((Date.now() - coolTime) / 1000);
-          setCoolingTime(currentCoolTime);
+          setCoolingTime(Math.max(0, currentCoolTime));
+          
+          // Set all previous phase data
+          const roastStartTimeMs = effectiveStartTs * 1000;
+          setDryingStartTime(roastStartTimeMs);
+          
+          // Set maillard and development phase data
+          const dryEndEvent = data.find(event => event.kind === 'DRY_END');
+          const firstCrackEvent = data.find(event => event.kind === 'FIRST_CRACK');
+          
+          if (dryEndEvent && firstCrackEvent) {
+            const dryEndTimeMs = roastStartTimeMs + (dryEndEvent.t_offset_sec * 1000);
+            const firstCrackTimeMs = roastStartTimeMs + (firstCrackEvent.t_offset_sec * 1000);
+            
+            setDryingTime(dryEndEvent.t_offset_sec);
+            setMaillardStartTime(dryEndTimeMs);
+            setMaillardTime(firstCrackEvent.t_offset_sec - dryEndEvent.t_offset_sec);
+            setDevelopmentStartTime(firstCrackTimeMs);
+            setDevelopmentTime(coolEvent.t_offset_sec - firstCrackEvent.t_offset_sec);
+          } else if (firstCrackEvent) {
+            // No dry end, so all time until first crack is drying
+            setDryingTime(firstCrackEvent.t_offset_sec);
+            setMaillardStartTime(null);
+            setMaillardTime(0);
+            setDevelopmentStartTime(roastStartTimeMs + (firstCrackEvent.t_offset_sec * 1000));
+            setDevelopmentTime(coolEvent.t_offset_sec - firstCrackEvent.t_offset_sec);
+          } else {
+            // No first crack, so all time is drying
+            setDryingTime(coolEvent.t_offset_sec);
+            setMaillardStartTime(null);
+            setMaillardTime(0);
+            setDevelopmentStartTime(null);
+            setDevelopmentTime(0);
+          }
         }
       } else if (hasFirstCrack) {
         setCurrentPhase('development');
         // Calculate development time if we're resuming
         const firstCrackEvent = data.find(event => event.kind === 'FIRST_CRACK');
         if (firstCrackEvent) {
-          const firstCrackTime = startTs * 1000 + (firstCrackEvent.t_offset_sec * 1000);
+          const firstCrackTime = effectiveStartTs * 1000 + (firstCrackEvent.t_offset_sec * 1000);
           setDevelopmentStartTime(firstCrackTime);
           const currentDevTime = Math.floor((Date.now() - firstCrackTime) / 1000);
-          setDevelopmentTime(currentDevTime);
+          // Cap development time at reasonable maximum (e.g., 20 minutes)
+          const cappedDevTime = Math.min(Math.max(0, currentDevTime), 1200);
+          setDevelopmentTime(cappedDevTime);
+          
+          // Set drying phase data (completed)
+          const roastStartTimeMs = effectiveStartTs * 1000;
+          setDryingStartTime(roastStartTimeMs);
+          
+          // Set maillard phase data if dry end exists
+          const dryEndEvent = data.find(event => event.kind === 'DRY_END');
+          if (dryEndEvent) {
+            const dryEndTimeMs = roastStartTimeMs + (dryEndEvent.t_offset_sec * 1000);
+            setMaillardStartTime(dryEndTimeMs);
+            setMaillardTime(firstCrackEvent.t_offset_sec - dryEndEvent.t_offset_sec);
+            setDryingTime(dryEndEvent.t_offset_sec);
+          } else {
+            // No dry end, so all time is drying
+            setDryingTime(firstCrackEvent.t_offset_sec);
+            setMaillardStartTime(null);
+            setMaillardTime(0);
+          }
+          
+          // Reset cooling time
+          setCoolingStartTime(null);
+          setCoolingTime(0);
+        }
+      } else if (hasDryEnd) {
+        setCurrentPhase('maillard');
+        // Calculate maillard time if we're resuming
+        const dryEndEvent = data.find(event => event.kind === 'DRY_END');
+        if (dryEndEvent) {
+          // Calculate maillard time as elapsed time since dry end
+          const currentTime = Date.now();
+          const roastStartTimeMs = effectiveStartTs * 1000;
+          const dryEndTimeMs = roastStartTimeMs + (dryEndEvent.t_offset_sec * 1000);
+          const maillardTimeSeconds = Math.floor((currentTime - dryEndTimeMs) / 1000);
+          
+          console.log('DEBUG: Roast start:', roastStartTimeMs, 'Dry end offset:', dryEndEvent.t_offset_sec, 'Dry end time:', dryEndTimeMs, 'Current time:', currentTime, 'Maillard time:', maillardTimeSeconds);
+          
+          // Set drying phase data (completed)
+          setDryingStartTime(roastStartTimeMs);
+          setDryingTime(dryEndEvent.t_offset_sec);
+          
+          // Set maillard phase data
+          setMaillardStartTime(dryEndTimeMs);
+          // Cap maillard time at reasonable maximum (e.g., 30 minutes)
+          const cappedMaillardTime = Math.min(Math.max(0, maillardTimeSeconds), 1800);
+          console.log('DEBUG: Setting maillardTime to:', cappedMaillardTime);
+          setMaillardTime(cappedMaillardTime);
+          
+          // Reset other phase times
+          setDevelopmentStartTime(null);
+          setDevelopmentTime(0);
+          setCoolingStartTime(null);
+          setCoolingTime(0);
         }
       } else {
         setCurrentPhase('drying');
         // Drying phase starts when roast starts (startTs is in seconds)
-        const roastStartTimeMs = startTs * 1000;
+        const roastStartTimeMs = effectiveStartTs * 1000;
         setDryingStartTime(roastStartTimeMs);
         const currentDryingTime = Math.floor((Date.now() - roastStartTimeMs) / 1000);
         setDryingTime(Math.max(0, currentDryingTime));
+        
+        // Reset other phase times when in drying phase
+        setMaillardStartTime(null);
+        setMaillardTime(0);
+        setDevelopmentStartTime(null);
+        setDevelopmentTime(0);
+        setCoolingStartTime(null);
+        setCoolingTime(0);
       }
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -680,6 +836,7 @@ function RoastAssistant() {
         temp: ''
       });
       setMilestonesMarked({
+        dryEnd: false,
         firstCrack: false,
         secondCrack: false,
         cool: false
@@ -721,6 +878,7 @@ function RoastAssistant() {
         temp: ''
       });
       setMilestonesMarked({
+        dryEnd: false,
         firstCrack: false,
         secondCrack: false,
         cool: false
@@ -900,8 +1058,8 @@ function RoastAssistant() {
               <div className="mb-4">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-800 dark:text-dark-text-primary mb-2">Starting Your Roast</h3>
-              <p className="text-gray-600 dark:text-dark-text-secondary">Setting up your roast session...</p>
+              <h3 className="text-xl font-semibold text-gray-800 dark:text-dark-text-primary mb-2">Loading</h3>
+              <p className="text-gray-600 dark:text-dark-text-secondary">Please wait...</p>
             </div>
           </div>
         )}
@@ -981,9 +1139,11 @@ function RoastAssistant() {
               formatTime={formatTime}
               currentPhase={currentPhase}
               dryingTime={dryingTime}
+              maillardTime={maillardTime}
               developmentTime={developmentTime}
               coolingTime={coolingTime}
               milestonesMarked={milestonesMarked}
+              roastDuration={roastDuration}
               isPaused={isPaused}
               pauseRoast={pauseRoast}
               resumeRoast={resumeRoast}
@@ -1084,19 +1244,25 @@ function RoastAssistant() {
           setShowStartRoastWizard(false);
           setRoastSetupStep('machine');
         }}
-        onStart={(data) => {
+        onStart={(data, roastTime) => {
           console.log('DEBUG: onStart received data:', data);
           console.log('DEBUG: Backend bean_profile:', data.bean_profile);
           console.log('DEBUG: Backend bean_profile_id:', data.bean_profile_id);
+          console.log('DEBUG: Roast time:', roastTime);
           
           setRoastId(data.roast_id);
           setStartTs(data.start_ts);
           setEnvironmentalConditions(data.env);
           
+          // Set roast duration (roast time + 3 minutes for cooling)
+          setRoastDuration(roastTime + 3);
+          
           // Reset phase tracking for new roast
           setCurrentPhase('drying');
           setDryingStartTime(Date.now());
           setDryingTime(0);
+          setMaillardStartTime(null);
+          setMaillardTime(0);
           setDevelopmentStartTime(null);
           setDevelopmentTime(0);
           setCoolingStartTime(null);
@@ -1144,6 +1310,7 @@ function RoastAssistant() {
         getAuthToken={getAuthToken}
         setLoading={setLoading}
         setShowProfilePage={setShowProfilePage}
+        refreshUserProfile={refreshUserProfile}
       />
     </div>
   );

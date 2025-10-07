@@ -4,6 +4,7 @@ import RoastControls from './RoastControls';
 import EventsTable from './EventsTable';
 import AfterRoast from './AfterRoast';
 import RoastCurveGraph from '../shared/RoastCurveGraph';
+import PhaseTimeline from '../shared/PhaseTimeline';
 import EnvironmentalConditions from '../shared/EnvironmentalConditions';
 import GatedRoastChat from './GatedRoastChat';
 import { useDevMessageSeen } from '../../hooks/useDevMessageSeen';
@@ -20,9 +21,11 @@ const ActiveRoast = ({
   formatTime,
   currentPhase,
   dryingTime,
+  maillardTime,
   developmentTime,
   coolingTime,
   milestonesMarked,
+  roastDuration,
   isPaused,
   pauseRoast,
   resumeRoast,
@@ -69,6 +72,7 @@ const ActiveRoast = ({
     setPauseStartTime(null);
     setTotalPausedTime(0);
     setMilestonesMarked({
+      dryEnd: false,
       firstCrack: false,
       secondCrack: false,
       cool: false
@@ -119,6 +123,7 @@ const ActiveRoast = ({
                 formatTime={formatTime}
                 currentPhase={currentPhase}
                 dryingTime={dryingTime}
+                maillardTime={maillardTime}
                 developmentTime={developmentTime}
                 coolingTime={coolingTime}
                 milestonesMarked={milestonesMarked}
@@ -139,7 +144,18 @@ const ActiveRoast = ({
           </div>
 
           {/* Milestone Buttons */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
+            <button
+              onClick={() => markMilestone('DRY_END')}
+              disabled={loading || milestonesMarked.dryEnd || isPaused}
+              className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-medium transition text-sm sm:text-base ${
+                milestonesMarked.dryEnd 
+                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-yellow-600 to-orange-600 text-white hover:from-yellow-700 hover:to-orange-700 shadow-lg'
+              } ${loading || isPaused ? 'opacity-50' : ''}`}
+            >
+              {milestonesMarked.dryEnd ? '✅ Dry End' : '🌾 Dry End'}
+            </button>
             <button
               onClick={() => markMilestone('FIRST_CRACK')}
               disabled={loading || milestonesMarked.firstCrack || isPaused}
@@ -181,6 +197,20 @@ const ActiveRoast = ({
               🛑 End Roast
             </button>
           </div>
+
+          {/* Phase Timeline - Above the roast curve */}
+          <PhaseTimeline
+            elapsedTime={elapsedTime}
+            currentPhase={currentPhase}
+            dryingTime={dryingTime}
+            maillardTime={maillardTime}
+            developmentTime={developmentTime}
+            coolingTime={coolingTime}
+            milestonesMarked={milestonesMarked}
+            roastDuration={roastDuration}
+            height={80}
+            className="mb-4"
+          />
 
           {/* Live Roast Curve Graph */}
           <RoastCurveGraph

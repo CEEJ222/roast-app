@@ -95,6 +95,7 @@ async def create_roast(request: CreateRoastRequest, user_id: str = Depends(verif
             "timezone_abbreviation": env.get("timezone_abbreviation"),
             "desired_roast_level": request.desired_roast_level,
             "weight_before_g": request.weight_before_g,
+            "expected_roast_time_minutes": request.expected_roast_time_minutes,
             "notes": request.notes if request.notes else None,
             "bean_profile_id": request.bean_profile_id,
             "roast_status": "in_progress",  # Set initial status
@@ -162,8 +163,9 @@ async def log_event(roast_id: int, request: LogEventRequest, user_id: str = Depe
         sb.table("roast_events").insert(event_data).execute()
         
         # Update milestone fields for special events
-        if request.kind in ["FIRST_CRACK", "SECOND_CRACK", "COOL"]:
+        if request.kind in ["DRY_END", "FIRST_CRACK", "SECOND_CRACK", "COOL"]:
             col_map = {
+                "DRY_END": {"t_dry_end_sec": t_offset_sec, "t_dry_end": t_offset_sec // 60},
                 "FIRST_CRACK": {"t_first_crack_sec": t_offset_sec, "t_first_crack": t_offset_sec // 60},
                 "SECOND_CRACK": {"t_second_crack_sec": t_offset_sec, "t_second_crack": t_offset_sec // 60},
                 "COOL": {"t_drop_sec": t_offset_sec, "t_drop": t_offset_sec // 60},

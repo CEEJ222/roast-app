@@ -29,6 +29,7 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - **NEW:** Provide real-time roasting guidance based on similar past roasts
 - **NEW:** Enable intelligent roast planning and adjustment recommendations
 - **✅ IMPLEMENTED:** Fully functional AI chatbot with pre-roast planning, during-roast guidance, and event-triggered responses
+- **NEW:** Support community-standard protocols (WebSockets Artisan, BLE HiveBean) for temperature probe integration
 
 ## 3. User Stories
 
@@ -67,6 +68,7 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - I want to connect a temperature probe for automatic temperature logging
 - I want real-time roast curve updates during active roasting sessions
 - I want to share roast profiles with other users (with privacy controls)
+- I want to use my existing temperature probe that works with Artisan or HiveBean protocols
 - **NEW:** I want to manage my account settings and authentication preferences
 - **NEW:** I want to see environmental data overlaid on roast curves for correlation analysis
 - **NEW:** I want to configure unit preferences that apply across all features
@@ -254,6 +256,16 @@ The FreshRoast CoPilot is an intelligent roasting assistant designed to help hom
 - Automated Data Collection: Continuous temperature logging every 15-30 seconds
 - Multi-Probe Support: Bean temperature + environmental temperature monitoring
 - Hardware Compatibility: Support for popular probe brands (MEATER, ThermoWorks, etc.)
+
+#### 6.1.1 Community Protocol Support
+- **WebSockets Artisan Protocol**: Support for existing WebSocket-based protocol used by Artisan roasting software community
+- **BLE HiveBean Protocol**: Support for Bluetooth Low Energy protocol used by HiveBean roasting community
+- **Protocol Standardization**: Use existing, established protocols to avoid fragmentation and leverage community adoption
+- **Web Bluetooth API Integration**: Browser-based BLE device connection for temperature probe data streaming
+- **Real-Time Data Streaming**: Continuous temperature data flow during active roasting sessions
+- **Protocol Documentation**: Research and implement community-standard protocols rather than creating new proprietary formats
+- **Cross-Platform Compatibility**: Support for Chrome, Edge, and Opera browsers with Web Bluetooth API
+- **Fallback Support**: Manual temperature logging when BLE/probe connection is unavailable
 
 ### 6.2 Advanced Analytics
 - Curve Shape Analysis: Mathematical analysis of roast curve characteristics

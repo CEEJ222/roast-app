@@ -302,7 +302,7 @@ class DeepSeekRoastingCopilot:
                 
                 Keep response under 3 sentences and be VERY SPECIFIC about what to adjust.
                 """
-            elif event_data.get('kind') in ['FIRST_CRACK', 'SECOND_CRACK', 'COOL']:
+            elif event_data.get('kind') in ['DRY_END', 'FIRST_CRACK', 'SECOND_CRACK', 'COOL']:
                 milestone = event_data.get('kind').replace('_', ' ').lower()
                 temp_display = self._format_event_temperature(event_data, roast_progress)
                 prompt = f"""
