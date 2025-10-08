@@ -87,6 +87,7 @@ class UpdateRoastRequest(BaseModel):
     weight_before_g: Optional[float] = None
     weight_after_g: Optional[float] = None
     notes: Optional[str] = None
+    tasting_notes: Optional[str] = None
 
 
 class UserMachineRequest(BaseModel):

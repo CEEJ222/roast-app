@@ -329,11 +329,16 @@ const HistoricalRoasts = ({ onClose }) => {
                 </h3>
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                   <button
-                    onClick={() => setSelectedRoasts(roasts.map(r => r.id))}
-                    disabled={selectedRoasts.length === roasts.length}
-                    className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    onClick={() => {
+                      if (selectedRoasts.length === roasts.length) {
+                        setSelectedRoasts([]);
+                      } else {
+                        setSelectedRoasts(roasts.map(r => r.id));
+                      }
+                    }}
+                    className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm"
                   >
-                    ✓ Select All
+                    {selectedRoasts.length === roasts.length ? '✗ Deselect All' : '✓ Select All'}
                   </button>
                   <button
                     onClick={() => setShowGraph(true)}

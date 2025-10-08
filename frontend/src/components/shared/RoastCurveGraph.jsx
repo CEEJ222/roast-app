@@ -129,50 +129,79 @@ const RoastCurveGraph = ({
       };
     });
 
-    // Second pass: apply smoothing and outlier detection
-    return rawRorData.map((point, index) => {
-      if (index === 0) return { ...point, ror: 0 };
-      
-      let smoothedRor = point.ror;
-      
-      // Apply moving average smoothing for more stable RoR
-      const smoothingWindow = Math.min(3, index); // Use up to 3 previous points
-      if (smoothingWindow > 0) {
-        const windowStart = Math.max(0, index - smoothingWindow);
-        const windowData = rawRorData.slice(windowStart, index + 1);
-        const validRorValues = windowData
-          .map(p => p.ror)
-          .filter(ror => !isNaN(ror) && isFinite(ror));
-        
-        if (validRorValues.length > 0) {
-          smoothedRor = validRorValues.reduce((sum, ror) => sum + ror, 0) / validRorValues.length;
-        }
-      }
-      
-      // Outlier detection and correction
-      if (index > 0) {
-        const prevRor = rawRorData[index - 1].ror;
-        const rorChange = Math.abs(smoothedRor - prevRor);
-        
-        // If RoR change is too dramatic (>30°F/min change), smooth it more aggressively
-        if (rorChange > 30) {
-          smoothedRor = prevRor + (smoothedRor - prevRor) * 0.2; // Very gradual change
-        }
-        
-        // Additional check for extreme spikes (>100°F/min)
-        if (Math.abs(smoothedRor) > 100) {
-          smoothedRor = Math.sign(smoothedRor) * 100; // Cap at ±100°F/min
-        }
-      }
-      
-      // Final validation bounds
-      smoothedRor = Math.max(-20, Math.min(100, smoothedRor));
-      
-      return {
-        ...point,
-        ror: smoothedRor
-      };
-    });
+     // Second pass: apply aggressive smoothing and outlier detection
+     return rawRorData.map((point, index) => {
+       if (index === 0) return { ...point, ror: 0 };
+       
+       let smoothedRor = point.ror;
+       
+       // Apply exponential smoothing with larger window for more stable RoR
+       const smoothingWindow = Math.min(5, index); // Use up to 5 previous points
+       if (smoothingWindow > 0) {
+         const windowStart = Math.max(0, index - smoothingWindow);
+         const windowData = rawRorData.slice(windowStart, index + 1);
+         const validRorValues = windowData
+           .map(p => p.ror)
+           .filter(ror => !isNaN(ror) && isFinite(ror));
+         
+         if (validRorValues.length > 0) {
+           // Weighted average with more weight on recent values
+           let weightedSum = 0;
+           let totalWeight = 0;
+           validRorValues.forEach((ror, i) => {
+             const weight = (i + 1) / validRorValues.length; // Linear weight increase
+             weightedSum += ror * weight;
+             totalWeight += weight;
+           });
+           smoothedRor = weightedSum / totalWeight;
+         }
+       }
+       
+       // Apply exponential smoothing between consecutive points
+       if (index > 0) {
+         const prevSmoothedRor = index > 1 ? rawRorData[index - 1].ror : 0;
+         const alpha = 0.3; // Smoothing factor (0.1 = very smooth, 0.9 = less smooth)
+         smoothedRor = alpha * smoothedRor + (1 - alpha) * prevSmoothedRor;
+       }
+       
+       // Aggressive outlier detection and correction
+       if (index > 0) {
+         const prevRor = index > 1 ? rawRorData[index - 1].ror : 0;
+         const rorChange = Math.abs(smoothedRor - prevRor);
+         
+         // If RoR change is too dramatic (>20°F/min change), smooth it aggressively
+         if (rorChange > 20) {
+           smoothedRor = prevRor + (smoothedRor - prevRor) * 0.1; // Very gradual change
+         }
+         
+         // Additional check for extreme spikes (>80°F/min)
+         if (Math.abs(smoothedRor) > 80) {
+           smoothedRor = Math.sign(smoothedRor) * 80; // Cap at ±80°F/min
+         }
+       }
+       
+       // Apply additional smoothing for very volatile data
+       if (index > 2) {
+         const recentPoints = rawRorData.slice(Math.max(0, index - 2), index + 1);
+         const recentRorValues = recentPoints
+           .map(p => p.ror)
+           .filter(ror => !isNaN(ror) && isFinite(ror));
+         
+         if (recentRorValues.length > 1) {
+           const medianRor = recentRorValues.sort((a, b) => a - b)[Math.floor(recentRorValues.length / 2)];
+           // Blend with median to reduce extreme values
+           smoothedRor = smoothedRor * 0.7 + medianRor * 0.3;
+         }
+       }
+       
+       // Final validation bounds
+       smoothedRor = Math.max(-20, Math.min(80, smoothedRor));
+       
+       return {
+         ...point,
+         ror: smoothedRor
+       };
+     });
   }, [chartData, showROR, mode]);
 
   // Generate roast labels for historical mode
@@ -453,35 +482,76 @@ function processHistoricalData(roasts) {
     timePoints.push(i);
   }
 
-  return timePoints.map((time, timeIndex) => {
+  const rawData = timePoints.map((time, timeIndex) => {
     const dataPoint = { time };
     
     roasts.forEach((roast, index) => {
       const tempAtTime = getTemperatureAtTime(roast.events, time * 60);
       dataPoint[`temp_${roast.id || index}`] = tempAtTime;
       
-      // Calculate RoR for this roast at this time point
-      if (timeIndex > 0) {
-        const prevTime = timePoints[timeIndex - 1];
-        const prevTemp = getTemperatureAtTime(roast.events, prevTime * 60);
-        const timeDiff = time - prevTime;
-        
-        let ror = 0;
-        if (tempAtTime && prevTemp && timeDiff > 0) {
-          ror = (tempAtTime - prevTemp) / timeDiff;
-          
-          // Apply the same smoothing logic as live mode
-          ror = Math.max(-20, Math.min(100, ror));
-        }
-        
-        dataPoint[`ror_${roast.id || index}`] = ror;
-      } else {
-        dataPoint[`ror_${roast.id || index}`] = 0;
-      }
+       // Calculate RoR for this roast at this time point
+       if (timeIndex > 0) {
+         const prevTime = timePoints[timeIndex - 1];
+         const prevTemp = getTemperatureAtTime(roast.events, prevTime * 60);
+         const timeDiff = time - prevTime;
+         
+         let ror = 0;
+         if (tempAtTime && prevTemp && timeDiff > 0) {
+           ror = (tempAtTime - prevTemp) / timeDiff;
+           
+           // Apply basic bounds
+           ror = Math.max(-20, Math.min(80, ror));
+         }
+         
+         dataPoint[`ror_${roast.id || index}`] = ror;
+       } else {
+         dataPoint[`ror_${roast.id || index}`] = 0;
+       }
     });
     
     return dataPoint;
   });
+
+  // Apply aggressive smoothing to RoR data for each roast
+  const smoothedData = rawData.map((point, timeIndex) => {
+    const smoothedPoint = { ...point };
+    
+    roasts.forEach((roast, index) => {
+      const rorKey = `ror_${roast.id || index}`;
+      let smoothedRor = point[rorKey];
+      
+      if (timeIndex > 0 && smoothedRor !== undefined) {
+        // Apply exponential smoothing
+        const prevRor = timeIndex > 1 ? rawData[timeIndex - 1][rorKey] || 0 : 0;
+        const alpha = 0.4; // Smoothing factor
+        smoothedRor = alpha * smoothedRor + (1 - alpha) * prevRor;
+        
+        // Apply moving average smoothing
+        const smoothingWindow = Math.min(3, timeIndex);
+        if (smoothingWindow > 0) {
+          const windowStart = Math.max(0, timeIndex - smoothingWindow);
+          const windowRorValues = rawData
+            .slice(windowStart, timeIndex + 1)
+            .map(p => p[rorKey])
+            .filter(ror => ror !== undefined && !isNaN(ror));
+          
+          if (windowRorValues.length > 0) {
+            const avgRor = windowRorValues.reduce((sum, ror) => sum + ror, 0) / windowRorValues.length;
+            smoothedRor = smoothedRor * 0.6 + avgRor * 0.4; // Blend with average
+          }
+        }
+        
+        // Final bounds check
+        smoothedRor = Math.max(-20, Math.min(80, smoothedRor));
+      }
+      
+      smoothedPoint[rorKey] = smoothedRor;
+    });
+    
+    return smoothedPoint;
+  });
+
+  return smoothedData;
 }
 
 function getTemperatureAtTime(events, timeInSeconds) {

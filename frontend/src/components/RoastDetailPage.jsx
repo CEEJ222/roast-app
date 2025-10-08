@@ -25,6 +25,11 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
     notes: roast?.notes || ''
   });
   
+  // Tasting notes state
+  const [tastingNotes, setTastingNotes] = useState(roast?.tasting_notes || '');
+  const [savingTastingNotes, setSavingTastingNotes] = useState(false);
+  const [tastingNotesSaved, setTastingNotesSaved] = useState(false);
+  
   // Event editing state
   const [editingEventId, setEditingEventId] = useState(null);
   const [editingEventFormData, setEditingEventFormData] = useState({});
@@ -154,6 +159,41 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
       weight_after_g: roast?.weight_after_g || '',
       notes: roast?.notes || ''
     });
+  };
+
+  const handleSaveTastingNotes = async () => {
+    try {
+      setSavingTastingNotes(true);
+      const token = await getAuthToken();
+      
+      const response = await fetch(`${API_BASE}/roasts/${roast.id}`, {
+        method: 'PATCH',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          tasting_notes: tastingNotes
+        })
+      });
+
+      if (response.ok) {
+        // Update the roast object with new tasting notes
+        roast.tasting_notes = tastingNotes;
+        setTastingNotesSaved(true);
+        // Hide success message after 3 seconds
+        setTimeout(() => setTastingNotesSaved(false), 3000);
+        console.log('Tasting notes saved successfully');
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to save tasting notes');
+      }
+    } catch (error) {
+      console.error('Error saving tasting notes:', error);
+      setError(`Failed to save tasting notes: ${error.message}`);
+    } finally {
+      setSavingTastingNotes(false);
+    }
   };
 
   const formatDuration = (startTime, endTime) => {
@@ -504,13 +544,26 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
                   Add your tasting notes after trying this coffee
                 </p>
                 <textarea
+                  value={tastingNotes}
+                  onChange={(e) => setTastingNotes(e.target.value)}
                   placeholder="How did this roast taste? Any flavor notes, acidity, body, or other observations..."
                   className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent-primary focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary placeholder-gray-500 dark:placeholder-dark-text-tertiary"
                   rows={4}
                 />
-                <button className="mt-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition shadow-lg">
-                  Save Tasting Notes
-                </button>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={handleSaveTastingNotes}
+                    disabled={savingTastingNotes}
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {savingTastingNotes ? 'Saving...' : 'Save Tasting Notes'}
+                  </button>
+                  {tastingNotesSaved && (
+                    <span className="text-green-600 dark:text-green-400 text-sm font-medium flex items-center gap-1">
+                      ✅ Saved!
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
