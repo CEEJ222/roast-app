@@ -22,6 +22,38 @@ See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues and solutions, 
 
 ## 🆕 Latest Updates
 
+### 📈 ENHANCED ROAST CURVE VISUALIZATION (January 2025)
+- **🔧 Fixed Rate of Rise Calculation:** Corrected double time conversion bug that was causing unrealistic ROR values (25,000-100,000 °/m)
+- **📊 Professional ROR Smoothing:** Implemented advanced smoothing algorithm using linear regression over time windows for stable rate calculations
+- **🎯 Realistic Y-Axis Scaling:** ROR axis now displays meaningful range (-20 to 100 °/m) instead of scaling to extreme values
+- **🛡️ Outlier Detection:** Smart outlier detection and correction for ROR spikes caused by sparse data points
+- **📱 Mobile Optimization:** Improved chart layout and spacing for mobile devices with better touch interaction
+- **🔄 Historical Mode Enhancement:** Added ROR visualization for historical roasts with proper data filtering
+- **🎨 Visual Improvements:** Enhanced milestone markers, better color coding, and improved chart responsiveness
+- **📊 Data Quality:** Filtered out invalid temperature readings (0°F, non-SET events) for cleaner curve visualization
+- **⚡ Performance Optimization:** Reduced chart rendering overhead with optimized data processing
+
+### 🎯 ADVANCED ROR CURVE COMPARISON (January 2025)
+- **📊 Historical RoR Visualization:** Added RoR curves to compare roasts screens (dashboard and modal)
+- **🎨 Color-Matched RoR Curves:** RoR curves use same colors as temperature curves but with dotted lines and 60% opacity
+- **🔧 Improved Spike Detection:** Enhanced RoR spike detection and smoothing for real temperature jumps in roast data
+- **📈 Professional RoR Display:** RoR curves appear as dotted, semi-transparent lines alongside temperature curves
+- **🛡️ Better Data Filtering:** Fixed milestone events without temperature data causing RoR calculation spikes
+- **⚡ Optimized RoR Calculation:** Applied same smoothing logic to historical RoR calculations as live mode
+- **🎯 Enhanced Comparison:** Each roast now shows both temperature (solid) and RoR (dotted) curves for complete analysis
+
+### 🎯 ENHANCED ROAST PHASE TRACKING (January 2025)
+- **🌾 Dry End Milestone:** New milestone button to mark the end of the drying phase
+- **🟡 Maillard Phase Tracking:** Dedicated phase between drying and development with real-time timer
+- **📊 Development Percentage:** Smart percentage tracker showing progress through the development phase
+- **⏱️ Phase Timeline Visualization:** Interactive timeline showing all roast phases with proper time formatting
+- **🔄 State Persistence:** Complete roast phase data restoration after page refresh
+- **🎨 Visual Phase Indicators:** Color-coded phase indicators with elapsed time display
+- **📈 Enhanced Timeline:** Roast phases timeline with M:SS time format and proper phase transitions
+- **🛠️ Improved Milestone System:** No temperature requirement for milestone buttons (Dry End, First Crack, Second Crack, Cool)
+- **💾 Database Integration:** New `t_dry_end_sec` and `t_dry_end` columns in roast_entries table
+- **🔧 Robust Error Handling:** Fixed database constraint issues and improved event logging
+
 ### 🤖 RAG-POWERED ROASTING COPILOT (December 2024)
 - **🧠 AI-Powered Recommendations:** Intelligent pre-roast planning based on historical data and bean profiles
 - **📊 Enhanced Data Capture:** Roast outcomes, reflections, and tasting notes for AI learning
@@ -80,20 +112,36 @@ See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues and solutions, 
 - **During Roast:** Real-time logging with environmental conditions display and milestone tracking
 - **After Roast:** Complete event log review, final weight recording, and detailed notes
 
+### 🌾 Enhanced Roast Phase Tracking
+- **Four-Phase System:** Drying → Maillard → Development → Cooling with automatic transitions
+- **Dry End Milestone:** Mark the end of the drying phase to start Maillard phase tracking
+- **Real-Time Phase Timers:** Live timers for each phase showing elapsed time in M:SS format
+- **Development Percentage:** Smart percentage tracker showing progress through development phase
+- **Phase Timeline Visualization:** Interactive timeline showing all roast phases with color-coded segments
+- **State Persistence:** Complete roast phase data restoration after page refresh
+- **Visual Phase Indicators:** Color-coded indicators (Green: Drying, Yellow: Maillard, Orange: Development, Cyan: Cooling)
+- **Milestone System:** Simplified milestone buttons without temperature requirements
+- **Timeline Formatting:** Consistent M:SS time format across all phase displays
+
 ### 📊 Data Tracking & Environmental Data
 - **Machine Configuration:** SR800/SR450 support with extension tube tracking
 - **Coffee Details:** Origin, processing method, and roast level preferences
 - **Real-time Logging:** Fan/heat changes, temperature readings, and control adjustments
-- **Milestone Tracking:** First crack, second crack, and drop/cool events with temperature input
+- **Milestone Tracking:** Dry end, first crack, second crack, and drop/cool events (no temperature required)
 - **Environmental Conditions:** Automatic elevation, temperature, humidity, and pressure data
 - **Unit Preferences:** Configurable temperature (Fahrenheit/Celsius) and elevation (feet/meters)
 
 ### 📈 Roast Curve Visualization
 - **Live Roast Curve:** Real-time temperature and rate of rise graphing during roasting
-- **Milestone Markers:** Visual indicators for First Crack (red), Second Crack (purple), and Drop/Cool (cyan)
-- **Historical Comparison:** Compare multiple roasts with customizable line colors and labels
-- **Interactive Charts:** Built with Recharts for smooth, responsive data visualization
+- **Professional ROR Calculation:** Advanced smoothing algorithm using linear regression over time windows for stable rate calculations
+- **Realistic ROR Scaling:** Y-axis displays meaningful coffee roasting range (-20 to 100 °/m) with outlier detection
+- **Milestone Markers:** Visual indicators for Dry End (yellow), First Crack (red), Second Crack (purple), and Drop/Cool (cyan)
+- **Historical Comparison:** Compare multiple roasts with customizable line colors and ROR visualization
+- **Dual Curve Display:** Each roast shows both temperature (solid line) and RoR (dotted line) curves in matching colors
+- **RoR Comparison Mode:** RoR curves appear as dotted, semi-transparent lines alongside temperature curves
+- **Interactive Charts:** Built with Recharts for smooth, responsive data visualization with mobile optimization
 - **Custom Tooltips:** Hover to see detailed temperature and milestone information
+- **Data Quality Filtering:** Automatically filters out invalid readings (0°F, non-temperature events) for clean visualization
 - **Weight Tracking:** Before and after roast weights with automatic loss calculations
 - **Complete Event History:** Full roast session timeline with edit/delete capabilities
 
@@ -224,6 +272,11 @@ roast-app/
 - **JWT Authentication** - Secure token-based authentication
 - **Railway** - Cloud deployment platform
 
+### Database Schema Updates
+- **Enhanced Roast Entries:** Added `t_dry_end_sec` and `t_dry_end` columns for dry end milestone tracking
+- **Event Constraints:** Updated `roast_events_kind_check` constraint to include `DRY_END` event type
+- **Phase Data Storage:** Complete roast phase timing data stored in database for persistence
+
 ### Deployment
 - **Vercel** - Frontend hosting (deploys from `frontend` branch)
 - **Railway** - Backend API hosting (deploys from `backend` branch)
@@ -311,11 +364,14 @@ The API will be available at `http://localhost:8000`
 
 1. **Timer:** Watch the real-time roast timer with environmental conditions overlay
 2. **Environmental Data:** View temperature, humidity, elevation, and pressure in upper-right corner
-3. **Controls:** Adjust fan and heat levels as needed
-4. **Log Changes:** Click "Log Change" to record settings and temperature readings
-5. **Milestones:** Mark first crack, second crack, and drop/cool events
-6. **Event Management:** Edit or delete logged events inline
-7. **End Session:** Click "End Roast Session" when roasting is complete
+3. **Phase Tracking:** Monitor current roast phase (Drying, Maillard, Development, Cooling) with live timers
+4. **Phase Timeline:** Visual timeline showing all roast phases with color-coded segments
+5. **Controls:** Adjust fan and heat levels as needed
+6. **Log Changes:** Click "Log Change" to record settings and temperature readings
+7. **Milestones:** Mark dry end, first crack, second crack, and drop/cool events (no temperature required)
+8. **Development Percentage:** Track progress through the development phase with percentage indicator
+9. **Event Management:** Edit or delete logged events inline
+10. **End Session:** Click "End Roast Session" when roasting is complete
 
 ### Completing the Roast
 
