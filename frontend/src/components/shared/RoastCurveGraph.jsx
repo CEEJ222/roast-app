@@ -88,6 +88,7 @@ const RoastCurveGraph = ({
   // Calculate Rate of Rise (ROR) for live mode with proper smoothing
   const rorData = useMemo(() => {
     if (!showROR || mode !== 'live' || chartData.length < 2) return [];
+    
 
     // First pass: calculate raw RoR values using time-weighted approach
     const rawRorData = chartData.map((point, index) => {
@@ -153,9 +154,14 @@ const RoastCurveGraph = ({
         const prevRor = rawRorData[index - 1].ror;
         const rorChange = Math.abs(smoothedRor - prevRor);
         
-        // If RoR change is too dramatic (>50°F/min change), smooth it
-        if (rorChange > 50) {
-          smoothedRor = prevRor + (smoothedRor - prevRor) * 0.3; // Gradual change
+        // If RoR change is too dramatic (>30°F/min change), smooth it more aggressively
+        if (rorChange > 30) {
+          smoothedRor = prevRor + (smoothedRor - prevRor) * 0.2; // Very gradual change
+        }
+        
+        // Additional check for extreme spikes (>100°F/min)
+        if (Math.abs(smoothedRor) > 100) {
+          smoothedRor = Math.sign(smoothedRor) * 100; // Cap at ±100°F/min
         }
       }
       
@@ -244,7 +250,7 @@ const RoastCurveGraph = ({
               tick={{ fontSize: isMobile ? 10 : 12 }}
               domain={[200, 500]}
             />
-            {showROR && mode === 'live' && (
+            {(showROR && mode === 'live') || mode === 'historical' ? (
               <YAxis 
                 yAxisId="ror"
                 orientation="right"
@@ -254,7 +260,7 @@ const RoastCurveGraph = ({
                 domain={[-20, 100]}
                 tick={{ fontSize: isMobile ? 10 : 12 }}
               />
-            )}
+            ) : null}
             {showTooltip && (
               <Tooltip
                 content={<CustomTooltip data={data} />}
@@ -303,19 +309,36 @@ const RoastCurveGraph = ({
               // Historical mode - multiple lines
               filteredRoasts.map((roast, index) => {
                 const label = roastLabels[roast.id || index];
+                const color = getRoastColor(index);
                 return (
-                  <Line
-                    key={roast.id || index}
-                    yAxisId="temp"
-                    type="monotone"
-                    dataKey={`temp_${roast.id || index}`}
-                    stroke={getRoastColor(index)}
-                    strokeWidth={2}
-                    dot={false}
-                    name={label?.short || `Roast ${index + 1}`}
-                    connectNulls={false}
-                    isAnimationActive={false}
-                  />
+                  <React.Fragment key={roast.id || index}>
+                    {/* Temperature line */}
+                    <Line
+                      yAxisId="temp"
+                      type="monotone"
+                      dataKey={`temp_${roast.id || index}`}
+                      stroke={color}
+                      strokeWidth={2}
+                      dot={false}
+                      name={label?.short || `Roast ${index + 1}`}
+                      connectNulls={false}
+                      isAnimationActive={false}
+                    />
+                    {/* RoR line - same color but dotted and semi-transparent */}
+                    <Line
+                      yAxisId="ror"
+                      type="monotone"
+                      dataKey={`ror_${roast.id || index}`}
+                      stroke={color}
+                      strokeWidth={1.5}
+                      strokeDasharray="3 3"
+                      strokeOpacity={0.6}
+                      dot={false}
+                      name={`${label?.short || `Roast ${index + 1}`} RoR`}
+                      connectNulls={false}
+                      isAnimationActive={false}
+                    />
+                  </React.Fragment>
                 );
               })
             )}
@@ -368,12 +391,16 @@ const RoastCurveGraph = ({
 // Helper functions
 function processLiveData(events) {
   // Filter temperature events and convert to chart format
-  const tempEvents = events.filter(event => 
-    event.temp_f !== null && 
-    event.temp_f !== undefined && 
-    event.t_offset_sec !== null && 
-    event.t_offset_sec !== undefined
-  );
+  // Only include events that have actual temperature data (exclude milestone events without temps)
+  const tempEvents = events.filter(event => {
+    
+    return event.temp_f !== null && 
+           event.temp_f !== undefined && 
+           event.temp_f !== 0 && // Exclude 0 degree readings
+           event.t_offset_sec !== null && 
+           event.t_offset_sec !== undefined &&
+           event.kind === 'SET'; // Only include SET events which have temperature data
+  });
   
   // Sort by time and remove duplicates
   const sortedEvents = tempEvents
@@ -384,6 +411,7 @@ function processLiveData(events) {
       originalEvent: event
     }))
     .sort((a, b) => a.time - b.time);
+  
   
   // Remove duplicate time points (keep the latest temperature reading for each time)
   const uniqueEvents = [];
@@ -406,10 +434,16 @@ function processHistoricalData(roasts) {
   // Find the maximum time across all roasts, but only consider events with temperature data
   const maxTime = Math.max(...roasts.map(roast => {
     if (!roast.events || roast.events.length === 0) return 0;
-    const tempEvents = roast.events.filter(event => event.temp_f !== null && event.temp_f !== undefined);
+    const tempEvents = roast.events.filter(event => 
+      event.temp_f !== null && 
+      event.temp_f !== undefined && 
+      event.temp_f !== 0 && 
+      event.kind === 'SET'
+    );
     if (tempEvents.length === 0) return 0;
     return Math.max(...tempEvents.map(event => event.t_offset_sec / 60));
   }));
+  
 
   if (maxTime === 0) return [];
 
@@ -419,12 +453,31 @@ function processHistoricalData(roasts) {
     timePoints.push(i);
   }
 
-  return timePoints.map(time => {
+  return timePoints.map((time, timeIndex) => {
     const dataPoint = { time };
     
     roasts.forEach((roast, index) => {
       const tempAtTime = getTemperatureAtTime(roast.events, time * 60);
       dataPoint[`temp_${roast.id || index}`] = tempAtTime;
+      
+      // Calculate RoR for this roast at this time point
+      if (timeIndex > 0) {
+        const prevTime = timePoints[timeIndex - 1];
+        const prevTemp = getTemperatureAtTime(roast.events, prevTime * 60);
+        const timeDiff = time - prevTime;
+        
+        let ror = 0;
+        if (tempAtTime && prevTemp && timeDiff > 0) {
+          ror = (tempAtTime - prevTemp) / timeDiff;
+          
+          // Apply the same smoothing logic as live mode
+          ror = Math.max(-20, Math.min(100, ror));
+        }
+        
+        dataPoint[`ror_${roast.id || index}`] = ror;
+      } else {
+        dataPoint[`ror_${roast.id || index}`] = 0;
+      }
     });
     
     return dataPoint;
@@ -432,7 +485,13 @@ function processHistoricalData(roasts) {
 }
 
 function getTemperatureAtTime(events, timeInSeconds) {
-  const tempEvents = events.filter(event => event.temp_f !== null && event.temp_f !== undefined);
+  // Only use SET events with valid temperature data
+  const tempEvents = events.filter(event => 
+    event.temp_f !== null && 
+    event.temp_f !== undefined && 
+    event.temp_f !== 0 && 
+    event.kind === 'SET'
+  );
   
   if (tempEvents.length === 0) return null;
   
@@ -445,7 +504,13 @@ function getTemperatureAtTime(events, timeInSeconds) {
 }
 
 function getTemperatureAtMilestoneTime(events, milestoneTimeInSeconds) {
-  const tempEvents = events.filter(event => event.temp_f !== null && event.temp_f !== undefined);
+  // Only use SET events with valid temperature data
+  const tempEvents = events.filter(event => 
+    event.temp_f !== null && 
+    event.temp_f !== undefined && 
+    event.temp_f !== 0 && 
+    event.kind === 'SET'
+  );
   
   if (tempEvents.length === 0) {
     return 0;
