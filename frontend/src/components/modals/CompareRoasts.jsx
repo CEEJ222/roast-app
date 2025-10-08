@@ -141,7 +141,7 @@ const HistoricalRoasts = ({ onClose }) => {
     const result = selectedRoasts.map(roastId => {
       const roast = roasts.find(r => r.id === roastId);
       const events = roastDetails[roastId] || [];
-      console.log(`Roast ${roastId}:`, { roast, events: events.length });
+      
       return {
         id: roastId,
         name: `${roast?.coffee_type || 'Unknown'}`,
@@ -149,7 +149,6 @@ const HistoricalRoasts = ({ onClose }) => {
         events: events
       };
     });
-    console.log('Selected roasts data:', result);
     return result;
   };
 

@@ -339,6 +339,8 @@ const RoastCurveGraph = ({
               filteredRoasts.map((roast, index) => {
                 const label = roastLabels[roast.id || index];
                 const color = getRoastColor(index);
+                // Extract region from roast name (first word)
+                const region = roast.name ? roast.name.split(' ')[0] : 'Unknown';
                 return (
                   <React.Fragment key={roast.id || index}>
                     {/* Temperature line */}
@@ -363,7 +365,7 @@ const RoastCurveGraph = ({
                       strokeDasharray="3 3"
                       strokeOpacity={0.6}
                       dot={false}
-                      name={`${label?.short || `Roast ${index + 1}`} RoR`}
+                      name={`${region} RoR`}
                       connectNulls={false}
                       isAnimationActive={false}
                     />

@@ -330,6 +330,9 @@ async def get_roasts(limit: int = 100, user_id: str = Depends(verify_jwt_token))
                 # Add bean profile origin and process to roast data for display
                 if bean_profile.get('origin'):
                     roast_data['coffee_region'] = bean_profile['origin']
+                elif bean_profile.get('name'):
+                    # Extract region from bean profile name (first word)
+                    roast_data['coffee_region'] = bean_profile['name'].split()[0] if bean_profile['name'] else None
                 if bean_profile.get('process_method'):
                     roast_data['coffee_process'] = bean_profile['process_method']
             else:

@@ -208,6 +208,7 @@ const DashboardHistoricalRoasts = ({
                         (roast?.coffee_region && roast?.coffee_type 
                          ? `${roast.coffee_region} ${roast.coffee_type}` 
                          : roast?.coffee_type || roast?.coffee_region || 'Unknown Coffee');
+      
       return {
         id: roastId,
         name: coffeeName,
