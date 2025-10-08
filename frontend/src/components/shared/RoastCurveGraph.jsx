@@ -135,67 +135,31 @@ const RoastCurveGraph = ({
        
        let smoothedRor = point.ror;
        
-       // Apply exponential smoothing with larger window for more stable RoR
-       const smoothingWindow = Math.min(5, index); // Use up to 5 previous points
-       if (smoothingWindow > 0) {
-         const windowStart = Math.max(0, index - smoothingWindow);
-         const windowData = rawRorData.slice(windowStart, index + 1);
-         const validRorValues = windowData
-           .map(p => p.ror)
-           .filter(ror => !isNaN(ror) && isFinite(ror));
-         
-         if (validRorValues.length > 0) {
-           // Weighted average with more weight on recent values
-           let weightedSum = 0;
-           let totalWeight = 0;
-           validRorValues.forEach((ror, i) => {
-             const weight = (i + 1) / validRorValues.length; // Linear weight increase
-             weightedSum += ror * weight;
-             totalWeight += weight;
-           });
-           smoothedRor = weightedSum / totalWeight;
-         }
-       }
-       
-       // Apply exponential smoothing between consecutive points
+       // Apply same smoothing as historical mode for consistency
        if (index > 0) {
-         const prevSmoothedRor = index > 1 ? rawRorData[index - 1].ror : 0;
-         const alpha = 0.3; // Smoothing factor (0.1 = very smooth, 0.9 = less smooth)
-         smoothedRor = alpha * smoothedRor + (1 - alpha) * prevSmoothedRor;
-       }
-       
-       // Aggressive outlier detection and correction
-       if (index > 0) {
+         // Apply exponential smoothing (same as historical mode)
          const prevRor = index > 1 ? rawRorData[index - 1].ror : 0;
-         const rorChange = Math.abs(smoothedRor - prevRor);
+         const alpha = 0.4; // Same smoothing factor as historical mode
+         smoothedRor = alpha * smoothedRor + (1 - alpha) * prevRor;
          
-         // If RoR change is too dramatic (>20°F/min change), smooth it aggressively
-         if (rorChange > 20) {
-           smoothedRor = prevRor + (smoothedRor - prevRor) * 0.1; // Very gradual change
+         // Apply moving average smoothing (same as historical mode)
+         const smoothingWindow = Math.min(3, index);
+         if (smoothingWindow > 0) {
+           const windowStart = Math.max(0, index - smoothingWindow);
+           const windowRorValues = rawRorData
+             .slice(windowStart, index + 1)
+             .map(p => p.ror)
+             .filter(ror => ror !== undefined && !isNaN(ror));
+           
+           if (windowRorValues.length > 0) {
+             const avgRor = windowRorValues.reduce((sum, ror) => sum + ror, 0) / windowRorValues.length;
+             smoothedRor = smoothedRor * 0.6 + avgRor * 0.4; // Same blending as historical mode
+           }
          }
          
-         // Additional check for extreme spikes (>80°F/min)
-         if (Math.abs(smoothedRor) > 80) {
-           smoothedRor = Math.sign(smoothedRor) * 80; // Cap at ±80°F/min
-         }
+         // Final bounds check (same as historical mode)
+         smoothedRor = Math.max(-20, Math.min(80, smoothedRor));
        }
-       
-       // Apply additional smoothing for very volatile data
-       if (index > 2) {
-         const recentPoints = rawRorData.slice(Math.max(0, index - 2), index + 1);
-         const recentRorValues = recentPoints
-           .map(p => p.ror)
-           .filter(ror => !isNaN(ror) && isFinite(ror));
-         
-         if (recentRorValues.length > 1) {
-           const medianRor = recentRorValues.sort((a, b) => a - b)[Math.floor(recentRorValues.length / 2)];
-           // Blend with median to reduce extreme values
-           smoothedRor = smoothedRor * 0.7 + medianRor * 0.3;
-         }
-       }
-       
-       // Final validation bounds
-       smoothedRor = Math.max(-20, Math.min(80, smoothedRor));
        
        return {
          ...point,
@@ -380,10 +344,11 @@ const RoastCurveGraph = ({
                 yAxisId="ror"
                 type="monotone"
                 dataKey="ror"
-                stroke="#3b82f6"
-                strokeWidth={2}
+                stroke="#4f46e5"
+                strokeWidth={1.5}
                 dot={false}
-                strokeDasharray="5 5"
+                strokeDasharray="3 3"
+                strokeOpacity={0.6}
                 name="Rate of Rise (°/m)"
                 isAnimationActive={false}
               />

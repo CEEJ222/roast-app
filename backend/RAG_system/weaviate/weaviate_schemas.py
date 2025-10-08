@@ -515,6 +515,73 @@ def get_ai_coaching_schema() -> Dict[str, Any]:
         ]
     }
 
+def get_user_feedback_schema() -> Dict[str, Any]:
+    """Schema for user feedback with semantic search capabilities"""
+    return {
+        "class": "UserFeedback",
+        "description": "User feedback submissions with semantic search for analysis",
+        "vectorizer": "text2vec-transformers",
+        "moduleConfig": {
+            "text2vec-transformers": {
+                "model": "sentence-transformers/all-MiniLM-L6-v2",
+                "passageModel": "sentence-transformers/all-MiniLM-L6-v2",
+                "queryModel": "sentence-transformers/all-MiniLM-L6-v2"
+            }
+        },
+        "properties": [
+            {
+                "name": "feedback_id",
+                "dataType": ["text"],
+                "description": "Unique feedback identifier"
+            },
+            {
+                "name": "user_id",
+                "dataType": ["text"],
+                "description": "User who submitted feedback"
+            },
+            {
+                "name": "user_email",
+                "dataType": ["text"],
+                "description": "User email address"
+            },
+            {
+                "name": "feedback_text",
+                "dataType": ["text"],
+                "description": "Feedback content for semantic search"
+            },
+            {
+                "name": "feature",
+                "dataType": ["text"],
+                "description": "Feature category (ai_copilot, general_app, etc.)"
+            },
+            {
+                "name": "feedback_type",
+                "dataType": ["text"],
+                "description": "Type of feedback (general, bug, feature, improvement)"
+            },
+            {
+                "name": "status",
+                "dataType": ["text"],
+                "description": "Feedback status (new, development, reviewed, resolved)"
+            },
+            {
+                "name": "sentiment",
+                "dataType": ["text"],
+                "description": "Sentiment analysis (positive, negative, neutral)"
+            },
+            {
+                "name": "priority",
+                "dataType": ["text"],
+                "description": "Priority level (low, medium, high, critical)"
+            },
+            {
+                "name": "created_at",
+                "dataType": ["date"],
+                "description": "Submission timestamp"
+            }
+        ]
+    }
+
 def get_all_schemas() -> List[Dict[str, Any]]:
     """Get all schema definitions"""
     return [
@@ -522,7 +589,8 @@ def get_all_schemas() -> List[Dict[str, Any]]:
         get_roast_profile_schema(),
         get_roast_event_schema(),
         get_roast_outcome_schema(),
-        get_ai_coaching_schema()
+        get_ai_coaching_schema(),
+        get_user_feedback_schema()
     ]
 
 def get_schema_by_class(class_name: str) -> Dict[str, Any]:
@@ -532,6 +600,7 @@ def get_schema_by_class(class_name: str) -> Dict[str, Any]:
         "RoastProfile": get_roast_profile_schema(),
         "RoastEvent": get_roast_event_schema(),
         "RoastOutcome": get_roast_outcome_schema(),
-        "AICoaching": get_ai_coaching_schema()
+        "AICoaching": get_ai_coaching_schema(),
+        "UserFeedback": get_user_feedback_schema()
     }
     return schemas.get(class_name, {})

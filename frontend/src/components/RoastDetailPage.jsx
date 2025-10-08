@@ -576,8 +576,8 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
                 </div>
                 <div className="p-4">
                   <RoastCurveGraph
-                    data={events}
-                    mode="live"
+                    data={[{ id: roast?.id, name: roast?.bean_profile_name || 'Roast', events: events }]}
+                    mode="historical"
                     showROR={true}
                     showMilestones={true}
                     height={300}

@@ -141,11 +141,15 @@ const HistoricalRoasts = ({ onClose }) => {
     const result = selectedRoasts.map(roastId => {
       const roast = roasts.find(r => r.id === roastId);
       const events = roastDetails[roastId] || [];
+      const coffeeName = roast?.bean_profile_name || 
+                        (roast?.coffee_region && roast?.coffee_type 
+                         ? `${roast.coffee_region} ${roast.coffee_type}` 
+                         : roast?.coffee_type || roast?.coffee_region || 'Unknown Coffee');
       
       return {
         id: roastId,
-        name: `${roast?.coffee_type || 'Unknown'}`,
-        fullName: `${roast?.coffee_type || 'Unknown'} - ${formatDate(roast?.created_at)}`,
+        name: coffeeName,
+        fullName: `${coffeeName} - ${formatDate(roast?.created_at)}`,
         events: events
       };
     });

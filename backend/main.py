@@ -511,6 +511,68 @@ async def get_feedback_summary(user_id: str = Depends(verify_jwt_token)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/admin/feedback/migrate-to-supabase")
+async def migrate_feedback_to_supabase(user_id: str = Depends(verify_jwt_token)):
+    """Migrate all feedback from JSON to Supabase (admin only)"""
+    try:
+        # Check if user is admin
+        sb = get_supabase()
+        user_response = sb.auth.admin.get_user_by_id(user_id)
+        if not user_response.user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_meta = user_response.user.user_metadata or {}
+        if user_meta.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        from feedback_storage import feedback_storage
+        
+        result = feedback_storage.migrate_to_supabase()
+        
+        return {
+            "success": result.get("success", False),
+            "message": result.get("message", ""),
+            "details": {
+                "migrated": result.get("migrated", 0),
+                "failed": result.get("failed", 0),
+                "total": result.get("total", 0)
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/admin/feedback/migrate-to-weaviate")
+async def migrate_feedback_to_weaviate(user_id: str = Depends(verify_jwt_token)):
+    """Migrate all feedback from JSON to Weaviate (admin only)"""
+    try:
+        # Check if user is admin
+        sb = get_supabase()
+        user_response = sb.auth.admin.get_user_by_id(user_id)
+        if not user_response.user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_meta = user_response.user.user_metadata or {}
+        if user_meta.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        from feedback_storage import feedback_storage
+        
+        result = feedback_storage.migrate_to_weaviate()
+        
+        return {
+            "success": result.get("success", False),
+            "message": result.get("message", ""),
+            "details": {
+                "migrated": result.get("migrated", 0),
+                "failed": result.get("failed", 0),
+                "total": result.get("total", 0)
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # User Machines Endpoints
 @app.get("/user/machines")
 async def get_user_machines(user_id: str = Depends(verify_jwt_token)):

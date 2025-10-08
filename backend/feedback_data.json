@@ -146,5 +146,17 @@
     "feedback_type": "improvement",
     "timestamp": "2025-10-01T15:44:30.189457",
     "status": "new"
+  },
+  {
+    "id": "feedback_1efce939-ba8a-40ba-abe5-4a17bd93190f_1759951533",
+    "user_id": "1efce939-ba8a-40ba-abe5-4a17bd93190f",
+    "user_email": "britzchrisj@gmail.com",
+    "feedback_text": "testing improvment with new setup",
+    "feature": "general_app",
+    "feedback_type": "improvement",
+    "timestamp": "2025-10-08T12:25:33.522062",
+    "status": "new",
+    "sentiment": "neutral",
+    "priority": "medium"
   }
 ]
