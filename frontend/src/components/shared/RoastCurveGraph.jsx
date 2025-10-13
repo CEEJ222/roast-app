@@ -56,18 +56,7 @@ const RoastCurveGraph = ({
     return data.filter(roast => selectedRoasts.includes(roast.id));
   }, [data, mode, selectedRoasts]);
 
-  // Extract milestone data for markers
-  const milestones = useMemo(() => {
-    if (!showMilestones || mode !== 'live') return [];
-    
-    return data
-      .filter(event => ['DRY_END', 'FIRST_CRACK', 'SECOND_CRACK', 'COOL', 'END'].includes(event.kind))
-      .map(event => ({
-        time: event.t_offset_sec / 60, // Convert to minutes
-        kind: event.kind,
-        label: getMilestoneLabel(event.kind)
-      }));
-  }, [data, showMilestones, mode]);
+  // Milestone functionality removed - was causing display issues with purple dots
 
   // Process data for the chart
   const chartData = useMemo(() => {
@@ -83,7 +72,7 @@ const RoastCurveGraph = ({
     }
     
     return baseData;
-  }, [data, mode, filteredRoasts, milestones]);
+  }, [data, mode, filteredRoasts]);
 
   // Calculate Rate of Rise (ROR) for live mode with proper smoothing
   const rorData = useMemo(() => {
@@ -354,24 +343,7 @@ const RoastCurveGraph = ({
               />
             )}
 
-            {/* Milestone markers as separate reference dots */}
-            {mode === 'live' && milestones.map((milestone, index) => {
-              // Find the temperature at the milestone time by interpolating from nearby points
-              const milestoneTime = milestone.time;
-              const tempAtMilestone = getTemperatureAtMilestoneTime(data, milestoneTime * 60);
-              
-              return (
-                <ReferenceDot
-                  key={`milestone-${index}`}
-                  x={milestoneTime}
-                  y={tempAtMilestone}
-                  r={8}
-                  fill={getMilestoneColor(milestone.kind)}
-                  stroke="white"
-                  strokeWidth={2}
-                />
-              );
-            })}
+            {/* Milestone markers removed - were causing purple dots display issue */}
 
 
           </LineChart>

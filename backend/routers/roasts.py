@@ -295,6 +295,9 @@ async def update_roast(roast_id: int, request: UpdateRoastRequest, user_id: str 
             if weight_before:
                 loss_pct = ((weight_before - request.weight_after_g) / weight_before) * 100
                 update_data["weight_loss_pct"] = loss_pct
+            
+            # CRITICAL BUG FIX: Mark roast as completed when final weight is recorded
+            update_data["roast_status"] = "completed"
         
         sb.table("roast_entries").update(update_data).eq("id", roast_id).execute()
         return {"success": True}
