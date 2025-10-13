@@ -90,3 +90,4 @@ COMMENT ON COLUMN public.feedback.status IS 'Processing status (new, reviewed, i
 COMMENT ON COLUMN public.feedback.sentiment IS 'Sentiment analysis (positive, negative, neutral)';
 COMMENT ON COLUMN public.feedback.priority IS 'Priority level (low, medium, high, critical)';
 
+

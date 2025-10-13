@@ -330,3 +330,4 @@ cd backend
 
 **Summary:** Your feedback will now persist forever in Supabase, with optional semantic search via Weaviate for local development, and JSON backup for extra safety. Production feedback will never disappear again! 🎉
 
+

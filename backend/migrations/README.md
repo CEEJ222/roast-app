@@ -34,3 +34,4 @@ Creates the `feedback` table for persistent storage of user feedback.
 
 **Safe to run multiple times:** Yes (uses `IF NOT EXISTS`)
 
+
