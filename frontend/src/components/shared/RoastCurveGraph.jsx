@@ -536,7 +536,8 @@ function getTemperatureAtMilestoneTime(events, milestoneTimeInSeconds) {
 // Custom tooltip component
 const CustomTooltip = ({ active, payload, label, data }) => {
   if (active && payload && payload.length) {
-    const timeMinutes = label;
+    // Use the actual time value from the payload data instead of the label
+    const timeMinutes = payload[0]?.payload?.time || label;
     const timeSeconds = timeMinutes * 60;
     
     // Find milestone events at this time
