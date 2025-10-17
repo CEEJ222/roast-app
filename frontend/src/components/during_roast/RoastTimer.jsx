@@ -131,10 +131,15 @@ const RoastTimer = ({
             <span className="text-xs sm:text-sm font-mono">
               {milestonesMarked.firstCrack ? formatTime(developmentTime) : '—'}
             </span>
-            {/* Development percentage tracker */}
-            {milestonesMarked.firstCrack && developmentTime > 0 && (
+            {/* Development Time Ratio (DTR) tracker */}
+            {milestonesMarked.firstCrack && developmentTime > 0 && elapsedTime > 0 && (
               <div className="text-xs text-gray-400 dark:text-gray-500">
-                {Math.round((developmentTime / (developmentTime + 60)) * 100)}% dev
+                <div className="font-medium">
+                  {Math.round((developmentTime / elapsedTime) * 100)}% DTR
+                </div>
+                <div className="text-xs opacity-75">
+                  Target: 20-25%
+                </div>
               </div>
             )}
           </div>
