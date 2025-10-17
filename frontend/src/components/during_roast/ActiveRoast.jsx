@@ -131,6 +131,7 @@ const ActiveRoast = ({
                 pauseRoast={pauseRoast}
                 resumeRoast={resumeRoast}
                 loading={loading}
+                roastLevel={formData.roastLevel}
               />
 
               {/* Roaster Controls - Improved layout */}

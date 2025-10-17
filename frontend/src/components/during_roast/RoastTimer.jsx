@@ -12,8 +12,22 @@ const RoastTimer = ({
   isPaused,
   pauseRoast,
   resumeRoast,
-  loading
+  loading,
+  roastLevel = 'City'
 }) => {
+  // Get DTR target range based on roast level
+  const getDTRTarget = (level) => {
+    const targets = {
+      'City': '15-18%',
+      'City+': '17-20%', 
+      'Full City': '20-25%',
+      'Full City+': '22-28%'
+    };
+    return targets[level] || '20-25%';
+  };
+
+  const dtrTarget = getDTRTarget(roastLevel);
+
   return (
     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 lg:gap-8">
       {/* Circular Chart and Timer */}
@@ -138,7 +152,7 @@ const RoastTimer = ({
                   {Math.round((developmentTime / elapsedTime) * 100)}% DTR
                 </div>
                 <div className="text-xs opacity-75">
-                  Target: 20-25%
+                  Target: {dtrTarget}
                 </div>
               </div>
             )}
