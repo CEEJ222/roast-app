@@ -71,3 +71,4 @@ FROM roast_entries re
 LEFT JOIN roast_events re_events ON re.id = re_events.roast_id
 GROUP BY re.id, re.roast_status
 ORDER BY re.id;
+

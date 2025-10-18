@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import FeedbackManager from './FeedbackManager';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'
@@ -12,7 +11,6 @@ const FeatureFlagManager = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [showFeedbackManager, setShowFeedbackManager] = useState(false);
 
   useEffect(() => {
     loadFeatureFlags();
@@ -300,34 +298,6 @@ const FeatureFlagManager = () => {
         ))}
       </div>
 
-      {/* Feedback Manager Section */}
-      <div className="mt-6 sm:mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
-          <div className="flex-1">
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
-              User Feedback
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300 text-sm">
-              View and search all user feedback including general app feedback and AI Copilot development feedback
-            </p>
-          </div>
-          <button
-            onClick={() => setShowFeedbackManager(true)}
-            className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-medium rounded-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 text-sm"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
-            View Feedback
-          </button>
-        </div>
-      </div>
-
-      {/* Feedback Manager Modal */}
-      <FeedbackManager 
-        isOpen={showFeedbackManager}
-        onClose={() => setShowFeedbackManager(false)}
-      />
     </div>
   );
 };

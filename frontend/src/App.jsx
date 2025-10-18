@@ -23,7 +23,7 @@ import RoastTimer from './components/during_roast/RoastTimer';
 import AfterRoast from './components/during_roast/AfterRoast';
 import ActiveRoast from './components/during_roast/ActiveRoast';
 import Dashboard from './components/dashboard/Dashboard';
-import FeatureFlagManager from './components/admin/FeatureFlagManager';
+import AdminDashboard from './components/admin/AdminDashboard';
 import { Analytics } from '@vercel/analytics/react';
 
 const API_BASE = import.meta.env.DEV 
@@ -1026,7 +1026,7 @@ function RoastAssistant() {
                 </div>
                 <div>
                   <h1 className="text-lg sm:text-xl lg:text-2xl font-bold">Admin Panel</h1>
-                  <p className="text-xs sm:text-sm opacity-90">Feature flags and feedback management</p>
+                  <p className="text-xs sm:text-sm opacity-90">Analytics, feedback, and feature management</p>
                 </div>
               </div>
               <button
@@ -1040,9 +1040,7 @@ function RoastAssistant() {
               </button>
             </div>
           </div>
-          <div className="p-4 sm:p-6">
-            <FeatureFlagManager />
-          </div>
+          <AdminDashboard />
         </div>
       </div>
     );
