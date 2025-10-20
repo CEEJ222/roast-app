@@ -64,7 +64,7 @@ const RoastsPage = ({
       )}
 
       {/* Header */}
-      <div className={`bg-white dark:bg-black px-4 py-6 mt-6 ${isMobile ? '' : 'border-b border-gray-200 dark:border-dark-border-primary'}`}>
+      <div className={`bg-white dark:bg-black px-4 py-6 ${isMobile ? '' : 'border-b border-gray-200 dark:border-dark-border-primary'}`}>
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
             <div>
@@ -74,9 +74,9 @@ const RoastsPage = ({
             {historicalRoasts?.length > 0 && (
               <button
                 onClick={() => setShowHistoricalRoasts(true)}
-                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium text-sm sm:text-base"
+                className="bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-900 text-white px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-lg"
               >
-                Compare Roasts →
+                Compare
               </button>
             )}
           </div>
