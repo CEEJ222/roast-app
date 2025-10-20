@@ -251,36 +251,35 @@ const HistoricalRoasts = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white dark:bg-dark-card rounded-lg w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden shadow-2xl dark:shadow-dark-glow">
+      <div className="bg-white dark:bg-dark-card rounded-lg w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden shadow-2xl dark:shadow-dark-glow flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-4 sm:px-6 py-3 sm:py-4 text-white">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+        <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-3 sm:px-4 py-1.5 sm:py-2 text-white">
+          <div className="flex justify-between items-center">
             <div className="flex-1">
-              <h2 className="text-lg sm:text-2xl font-bold">📊 Historical Roast Analysis</h2>
-              <p className="text-sm sm:text-base opacity-90">Compare roast curves and analyze patterns</p>
+              <h2 className="text-base sm:text-lg font-bold">📊 Historical Roast Analysis</h2>
             </div>
             <button
               onClick={onClose}
-              className="text-white hover:text-gray-200 text-xl sm:text-2xl font-bold self-end sm:self-auto"
+              className="text-white hover:text-gray-200 text-lg font-bold"
             >
               ×
             </button>
           </div>
         </div>
 
-        <div className="p-3 sm:p-6 overflow-y-auto max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-120px)]">
+        <div className="p-3 sm:p-6 overflow-y-auto flex-1 min-h-0">
           {showGraph ? (
             /* Graph View */
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
+            <div className="space-y-6 -mx-3 sm:-mx-6">
+              <div className="flex justify-between items-center px-3 sm:px-6">
                 <h3 className="text-xl font-semibold text-gray-800 dark:text-dark-text-primary">
-                  Roast Curve Comparison ({selectedRoasts.length} roasts selected)
+                  Comparing {selectedRoasts.length} Roasts
                 </h3>
                 <button
                   onClick={() => setShowGraph(false)}
                   className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition"
                 >
-                  ← Back to List
+                  ← Back
                 </button>
               </div>
 
@@ -296,7 +295,7 @@ const HistoricalRoasts = ({ onClose }) => {
                     mode="historical"
                     showROR={false}
                     showMilestones={false}
-                    height={500}
+                    height={window.innerWidth < 768 ? 400 : 500}
                     title="Historical Roast Comparison"
                     units={{ temperature: 'F', time: 'min' }}
                     showLegend={true}
