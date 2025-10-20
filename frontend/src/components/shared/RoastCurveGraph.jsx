@@ -34,7 +34,9 @@ const RoastCurveGraph = ({
   showRoastLabels = true,
   // Styling options
   compact = false,
-  interactive = true
+  interactive = true,
+  // NEW: Remove all styling for mobile
+  noContainer = false
 }) => {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -170,8 +172,177 @@ const RoastCurveGraph = ({
     }, {});
   }, [filteredRoasts, mode, showRoastLabels]);
 
+  if (noContainer) {
+    return (
+      <div className="bg-black" style={{ width: '100vw', height: height, marginLeft: '-50vw', left: '50%', position: 'relative', backgroundColor: '#000000' }}>
+        <style jsx>{`
+          .recharts-wrapper {
+            background: #000000 !important;
+          }
+          .recharts-surface {
+            background: #000000 !important;
+          }
+          .recharts-cartesian-axis-tick-value {
+            fill: #6b7280;
+          }
+        `}</style>
+        <ResponsiveContainer width="100%" height={height}>
+          <LineChart
+            key={`chart-${isMobile ? 'mobile' : 'desktop'}`}
+            data={showROR && mode === 'live' ? rorData : chartData}
+            margin={{ 
+              top: 20, 
+              right: isMobile ? 0 : 30, 
+              left: isMobile ? -20 : 20, 
+              bottom: isMobile ? 10 : 20 
+            }}
+            style={{ background: '#000000' }}
+            {...(enableZoom && { zoom: { enabled: true } })}
+            {...(enablePan && { pan: { enabled: true } })}
+          >
+            {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-dark-border-primary" />}
+            <XAxis 
+              dataKey="time" 
+              type="number"
+              scale="linear"
+              domain={['dataMin', 'dataMax']}
+              tickFormatter={(value) => isMobile ? `${value.toFixed(0)}m` : `${value.toFixed(1)}m`}
+              stroke="#6b7280"
+              className="dark:stroke-dark-text-tertiary"
+              xAxisId="time"
+              tick={{ fontSize: isMobile ? 10 : 12 }}
+            />
+            <YAxis 
+              yAxisId="temp"
+              orientation="left"
+              tickFormatter={(value) => isMobile ? `${value}°` : `${value}°${units.temperature}`}
+              stroke="#6b7280"
+              className="dark:stroke-dark-text-tertiary"
+              tick={{ fontSize: isMobile ? 10 : 12 }}
+              domain={[200, 500]}
+            />
+            {(showROR && mode === 'live') || mode === 'historical' ? (
+              <YAxis 
+                yAxisId="ror"
+                orientation="right"
+                tickFormatter={(value) => `${value.toFixed(1)}°/m`}
+                stroke="#6b7280"
+                className="dark:stroke-dark-text-tertiary"
+                domain={[-20, 100]}
+                tick={{ fontSize: isMobile ? 10 : 12 }}
+              />
+            ) : null}
+            {showTooltip && !isMobile && (
+              <Tooltip
+                content={<CustomTooltip data={data} />}
+              />
+            )}
+            {showLegend && !isMobile && (
+              <Legend 
+                wrapperStyle={{
+                  paddingTop: isMobile ? '10px' : '20px',
+                  fontSize: isMobile ? '10px' : '12px'
+                }}
+                iconType="line"
+                layout="horizontal"
+                align="center"
+                verticalAlign="bottom"
+              />
+            )}
+
+            {/* Temperature line(s) */}
+            {mode === 'live' ? (
+              <Line
+                yAxisId="temp"
+                type="monotone"
+                dataKey="temperature"
+                stroke="#4f46e5"
+                strokeWidth={3}
+                dot={isMobile ? false : (props) => {
+                  const { payload, cx, cy } = props;
+                  
+                  // Regular temperature dot
+                  return (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={4}
+                      fill="#4f46e5"
+                      strokeWidth={2}
+                    />
+                  );
+                }}
+                activeDot={{ r: 6, stroke: '#4f46e5', strokeWidth: 2 }}
+                name={`Temperature (°${units.temperature})`}
+                isAnimationActive={false}
+              />
+            ) : (
+              // Historical mode - multiple lines
+              filteredRoasts.map((roast, index) => {
+                const label = roastLabels[roast.id || index];
+                const color = getRoastColor(index);
+                // Extract region from roast name (first word)
+                const region = roast.name ? roast.name.split(' ')[0] : 'Unknown';
+                return (
+                  <React.Fragment key={roast.id || index}>
+                    {/* Temperature line */}
+                    <Line
+                      yAxisId="temp"
+                      type="monotone"
+                      dataKey={`temp_${roast.id || index}`}
+                      stroke={color}
+                      strokeWidth={2}
+                      dot={false}
+                      name={label?.short || `Roast ${index + 1}`}
+                      connectNulls={false}
+                      isAnimationActive={false}
+                    />
+                    {/* RoR line - same color but dotted and semi-transparent */}
+                    <Line
+                      yAxisId="ror"
+                      type="monotone"
+                      dataKey={`ror_${roast.id || index}`}
+                      stroke={color}
+                      strokeWidth={1.5}
+                      strokeDasharray="3 3"
+                      strokeOpacity={0.6}
+                      dot={false}
+                      name={`${region} RoR`}
+                      connectNulls={false}
+                      isAnimationActive={false}
+                    />
+                  </React.Fragment>
+                );
+              })
+            )}
+
+            {/* Rate of Rise line (live mode only) */}
+            {showROR && mode === 'live' && (
+              <Line
+                yAxisId="ror"
+                type="monotone"
+                dataKey="ror"
+                stroke="#4f46e5"
+                strokeWidth={1.5}
+                dot={false}
+                strokeDasharray="3 3"
+                strokeOpacity={0.6}
+                name="Rate of Rise (°/m)"
+                isAnimationActive={false}
+              />
+            )}
+
+            {/* Milestone markers removed - were causing purple dots display issue */}
+
+
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  }
+
   return (
-    <div className={`bg-white dark:bg-dark-bg-tertiary rounded-lg shadow-lg dark:shadow-dark-glow border-metallic border-gray-200 dark:border-gray-600 ${compact ? 'p-4' : isMobile ? 'px-1 py-3' : 'p-6'} ${className}`}>
+    <div className={`bg-transparent rounded-lg shadow-lg dark:shadow-dark-glow border-metallic border-gray-200 dark:border-gray-600 ${compact ? 'p-4' : isMobile ? 'px-1 py-3' : 'p-6'} ${className}`}>
       <div className={`${compact ? 'mb-3' : 'mb-4'} ${isMobile ? 'pl-3' : ''}`}>
         <h3 className={`${compact ? 'text-base' : 'text-lg'} font-semibold text-gray-800 dark:text-dark-text-primary`}>{title}</h3>
         {mode === 'historical' && (
@@ -199,7 +370,18 @@ const RoastCurveGraph = ({
         )}
       </div>
 
-      <div style={{ width: '100%', height: height, position: 'relative', overflow: 'visible' }}>
+      <div style={{ width: '100%', height: height, position: 'relative', overflow: 'visible', backgroundColor: 'transparent' }}>
+        <style jsx>{`
+          .recharts-wrapper {
+            background: transparent !important;
+          }
+          .recharts-surface {
+            background: transparent !important;
+          }
+          .recharts-cartesian-axis-tick-value {
+            fill: #6b7280;
+          }
+        `}</style>
         <ResponsiveContainer width="100%" height={height}>
           <LineChart
             key={`chart-${isMobile ? 'mobile' : 'desktop'}`}

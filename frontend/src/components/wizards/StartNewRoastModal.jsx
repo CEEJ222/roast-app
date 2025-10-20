@@ -223,7 +223,7 @@ const StartNewRoastModal = ({
         <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-6 py-4 text-white">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold">🏁 Start New Roast</h2>
+              <h2 className="text-2xl font-bold">🔥 Start New Roast</h2>
               <p className="opacity-90">Configure your roast session</p>
             </div>
             <button
@@ -449,7 +449,7 @@ const StartNewRoastModal = ({
                       className="w-full p-4 border-2 border-gray-200 dark:border-dark-border-primary rounded-lg hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors text-left"
                     >
                       <div className="flex items-center">
-                        <span className="text-2xl mr-3">📋</span>
+                        <span className="text-2xl mr-3">☕</span>
                         <div>
                           <div className="font-medium text-gray-900 dark:text-dark-text-primary">Select Existing Profile</div>
                           <div className="text-sm text-gray-500 dark:text-dark-text-secondary">Choose from your saved bean profiles</div>
@@ -778,13 +778,13 @@ const StartNewRoastModal = ({
                 disabled={userMachines.length === 0}
                 className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               >
-                Next: Bean Profile
+                Add Green Coffee
               </button>
             )}
             
             {roastSetupStep === 'bean-profile' && beanProfileScreen === 'choice' && (
               <div className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                Choose an option above to continue
+                Select to continue
               </div>
             )}
             
@@ -808,7 +808,7 @@ const StartNewRoastModal = ({
                 disabled={!formData.weightBefore}
                 className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               >
-                Next: Review
+                Review
               </button>
             )}
             
@@ -818,7 +818,7 @@ const StartNewRoastModal = ({
                 disabled={!formData.selectedBeanProfile || !formData.weightBefore || userMachines.length === 0}
                 className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               >
-                🏁 Start Roast Session
+                Start Roast
               </button>
             )}
           </div>

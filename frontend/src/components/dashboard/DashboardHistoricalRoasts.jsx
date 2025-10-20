@@ -310,7 +310,7 @@ const DashboardHistoricalRoasts = ({
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-dark-card rounded-lg shadow dark:shadow-dark-glow">
+      <div className="bg-white dark:bg-black rounded-lg shadow dark:shadow-dark-glow">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-border-primary">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">All Roasts</h3>
         </div>
@@ -326,7 +326,7 @@ const DashboardHistoricalRoasts = ({
     <div className="space-y-6">
       {showGraph ? (
         /* Graph View */
-        <div className="bg-white dark:bg-dark-card rounded-lg shadow dark:shadow-dark-glow">
+        <div className="bg-white dark:bg-black rounded-lg shadow dark:shadow-dark-glow">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-border-primary">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">
@@ -419,7 +419,7 @@ const DashboardHistoricalRoasts = ({
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-dark-card rounded-lg p-6 max-w-md mx-4 shadow-2xl dark:shadow-dark-glow">
+          <div className="bg-white dark:bg-black rounded-lg p-6 max-w-md mx-4 shadow-2xl dark:shadow-dark-glow">
             <div className="text-center">
               <div className="text-6xl mb-4">⚠️</div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-2">
@@ -451,7 +451,7 @@ const DashboardHistoricalRoasts = ({
       {/* Bulk Delete Confirmation Modal */}
       {showBulkDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-dark-card rounded-lg p-6 max-w-md mx-4 shadow-2xl dark:shadow-dark-glow">
+          <div className="bg-white dark:bg-black rounded-lg p-6 max-w-md mx-4 shadow-2xl dark:shadow-dark-glow">
             <div className="text-center">
               <div className="text-6xl mb-4">⚠️</div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-2">

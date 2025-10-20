@@ -992,6 +992,14 @@ try:
 except ImportError as e:
     print(f"⚠️ Could not import LLM Roast Coaching router: {e}")
 
+# Include Notifications router
+try:
+    from routers.notifications import router as notifications_router
+    app.include_router(notifications_router, tags=["Push Notifications"])
+    print("✅ Notifications router included successfully")
+except ImportError as e:
+    print(f"⚠️ Could not import Notifications router: {e}")
+
 
 if __name__ == "__main__":
     import uvicorn

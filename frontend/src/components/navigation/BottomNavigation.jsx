@@ -17,8 +17,14 @@ const BottomNavigation = ({ activeTab, onTabChange }) => {
     {
       id: 'profile',
       label: 'Profile',
-      icon: '👤',
-      activeIcon: '👤'
+      icon: '⚙️',
+      activeIcon: '⚙️'
+    },
+    {
+      id: 'feedback',
+      label: 'Feedback',
+      icon: '💬',
+      activeIcon: '💬'
     }
   ];
 

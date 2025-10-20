@@ -58,7 +58,7 @@ const InitialRoasterSettings = ({
             ) : !weightBefore || parseFloat(weightBefore) <= 0 ? (
               '⚠️ Enter Valid Weight'
             ) : (
-              '🏁 Start Roast'
+              '🔥 Start Roast'
             )}
           </button>
           <button

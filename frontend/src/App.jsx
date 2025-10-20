@@ -23,6 +23,7 @@ import RoastTimer from './components/during_roast/RoastTimer';
 import AfterRoast from './components/during_roast/AfterRoast';
 import ActiveRoast from './components/during_roast/ActiveRoast';
 import Dashboard from './components/dashboard/Dashboard';
+import AppLayout from './components/layout/AppLayout';
 import AdminDashboard from './components/admin/AdminDashboard';
 import { Analytics } from '@vercel/analytics/react';
 
@@ -35,6 +36,7 @@ const API_BASE = import.meta.env.DEV
 function RoastAssistant() {
   const { user, getAuthToken, loading: authLoading } = useAuth();
   const [userProfile, setUserProfile] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
   const [userMachines, setUserMachines] = useState([]);
   const [showProfilePage, setShowProfilePage] = useState(false);
   const [environmentalConditions, setEnvironmentalConditions] = useState(null);
@@ -440,6 +442,17 @@ function RoastAssistant() {
       }));
     }
   }, [userMachines]);
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -1015,7 +1028,7 @@ function RoastAssistant() {
   if (showAdminPage && user?.user_metadata?.role === 'admin') {
     return (
       <div className="min-h-screen bg-light-gradient-blue dark:bg-dark-gradient p-2 sm:p-4">
-        <div className="max-w-7xl mx-auto bg-white dark:bg-dark-bg-secondary rounded-xl shadow-2xl dark:shadow-dark-xl overflow-hidden">
+        <div className="max-w-7xl mx-auto bg-transparent rounded-xl shadow-2xl dark:shadow-dark-xl overflow-hidden">
           <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-3 sm:px-6 py-2 sm:py-4 text-white">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center space-x-3">
@@ -1047,52 +1060,54 @@ function RoastAssistant() {
   }
 
   return (
-    <div className="min-h-screen bg-light-gradient-blue dark:bg-dark-gradient p-2 sm:p-4">
-      <div className="max-w-7xl mx-auto bg-white dark:bg-dark-bg-secondary rounded-xl shadow-2xl dark:shadow-dark-xl overflow-hidden">
-        {/* Loading Overlay */}
-        {loading && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl p-8 max-w-md mx-4 text-center">
-              <div className="mb-4">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-800 dark:text-dark-text-primary mb-2">Loading</h3>
-              <p className="text-gray-600 dark:text-dark-text-secondary">Please wait...</p>
-            </div>
+    <div className="min-h-screen bg-light-gradient-blue dark:bg-dark-gradient">
+      {/* Header - Full width, no border radius */}
+      <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-3 sm:px-6 py-2 sm:py-4 text-white">
+        <div className="flex justify-between items-center">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-3xl font-bold truncate">
+              {isMobile ? "🔥 ☕" : "🔥 Roast Buddy ☕"}
+            </h1>
+            <p className="opacity-90 text-xs sm:text-base hidden sm:block">Professional roast logging and analysis</p>
           </div>
-        )}
-
-        {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-3 sm:px-6 py-2 sm:py-4 text-white">
-          <div className="flex justify-between items-center">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-3xl font-bold truncate">🔥 Roast Buddy ☕</h1>
-              <p className="opacity-90 text-xs sm:text-base hidden sm:block">Professional roast logging and analysis</p>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-4 ml-3">
-              {user?.user_metadata?.role === 'admin' && (
-                <button
-                  onClick={() => setShowAdminPage(true)}
-                  className="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm"
-                  title="Admin Panel"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                  <span className="hidden sm:inline">Admin</span>
-                </button>
-              )}
-              <UserProfile />
-            </div>
+          <div className="flex items-center gap-2 sm:gap-4 ml-3">
+            {user?.user_metadata?.role === 'admin' && (
+              <button
+                onClick={() => setShowAdminPage(true)}
+                className="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm"
+                title="Admin Panel"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <span className="hidden sm:inline">Admin</span>
+              </button>
+            )}
+            {!isMobile && <UserProfile />}
           </div>
         </div>
+      </div>
 
+      <div className="">
+        <div className="max-w-7xl mx-auto bg-transparent rounded-xl shadow-2xl dark:shadow-dark-xl overflow-hidden">
+          {/* Loading Overlay */}
+          {loading && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl p-8 max-w-md mx-4 text-center">
+                <div className="mb-4">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-800 dark:text-dark-text-primary mb-2">Loading</h3>
+                <p className="text-gray-600 dark:text-dark-text-secondary">Please wait...</p>
+              </div>
+            </div>
+          )}
 
-        <div className="p-3 sm:p-6 dark:bg-dark-bg-secondary">
+          <div>
 
-          {/* Dashboard - Show when no active roast */}
+          {/* App Layout - Show when no active roast */}
           {!roastId && (
-            <Dashboard
+            <AppLayout
               historicalRoasts={historicalRoasts}
               recentRoastDetails={recentRoastDetails}
               userProfile={userProfile}
@@ -1109,6 +1124,12 @@ function RoastAssistant() {
               setRoastDetails={setRoastDetails}
               roastId={roastId}
               onDataChange={loadHistoricalRoasts}
+              setUserProfile={setUserProfile}
+              setLoading={setLoading}
+              setShowProfilePage={setShowProfilePage}
+              refreshUserProfile={refreshUserProfile}
+              triggerBeanProfileCreate={false}
+              onTriggerReset={() => {}}
             />
           )}
 
@@ -1310,6 +1331,7 @@ function RoastAssistant() {
         setShowProfilePage={setShowProfilePage}
         refreshUserProfile={refreshUserProfile}
       />
+      </div>
     </div>
   );
 }

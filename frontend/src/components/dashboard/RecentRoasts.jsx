@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardHistoricalRoasts from './DashboardHistoricalRoasts';
 
 const RecentRoasts = ({ 
@@ -13,6 +13,18 @@ const RecentRoasts = ({
   setShowStartRoastWizard
 }) => {
   const [showFullHistoricalRoasts, setShowFullHistoricalRoasts] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -23,31 +35,27 @@ const RecentRoasts = ({
   };
 
   return (
-    <div className="bg-white dark:bg-dark-bg-tertiary rounded-lg shadow dark:shadow-dark-lg border dark:border-dark-border-primary">
-      <div className="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-dark-border-primary">
+    <div className="bg-transparent">
+      <div className="px-4 sm:px-6 py-4">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">
-            {showFullHistoricalRoasts ? 'All Roasts' : 'Recent Roasts'}
+            {isMobile ? 'All Roasts' : (showFullHistoricalRoasts ? 'All Roasts' : 'Recent Roasts')}
           </h3>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-            <button
-              onClick={() => setShowStartRoastWizard(true)}
-              className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant text-white px-3 sm:px-4 py-2 rounded-lg hover:from-indigo-800 hover:via-purple-700 hover:to-purple-800 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-bold shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base"
-            >
-              🏁 Start New Roast
-            </button>
-            {historicalRoasts?.length > 0 && (
-              <button
-                onClick={() => setShowFullHistoricalRoasts(!showFullHistoricalRoasts)}
-                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium text-sm sm:text-base whitespace-nowrap"
-              >
-                {showFullHistoricalRoasts ? 'Show Recent Only →' : 'View All Roasts →'}
-              </button>
-            )}
-          </div>
+          {!isMobile && (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+              {historicalRoasts?.length > 0 && (
+                <button
+                  onClick={() => setShowFullHistoricalRoasts(!showFullHistoricalRoasts)}
+                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium text-sm sm:text-base whitespace-nowrap"
+                >
+                  {showFullHistoricalRoasts ? 'Show Recent Only →' : 'View All Roasts →'}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
-      {showFullHistoricalRoasts ? (
+      {showFullHistoricalRoasts && !isMobile ? (
         <div className="p-0">
           <DashboardHistoricalRoasts
             selectedRoasts={selectedRoasts}
@@ -74,7 +82,7 @@ const RecentRoasts = ({
             </div>
           ) : (
             <div className="space-y-3">
-              {historicalRoasts.slice(0, 5).map((roast) => (
+              {(isMobile ? historicalRoasts : historicalRoasts.slice(0, 5)).map((roast) => (
                 <div 
                   key={roast.id}
                   className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary cursor-pointer"
@@ -139,4 +147,5 @@ const RecentRoasts = ({
 };
 
 export default RecentRoasts;
+
 

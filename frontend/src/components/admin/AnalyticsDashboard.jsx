@@ -121,7 +121,7 @@ const AnalyticsDashboard = () => {
 
         {/* Tab Navigation */}
         <div className="mb-6">
-          <nav className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+          <nav className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
             {[
               { id: 'overview', label: 'Overview', icon: '📊' },
               { id: 'users', label: 'User Activity', icon: '👥' },
@@ -130,14 +130,14 @@ const AnalyticsDashboard = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
+                className={`flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 rounded-md transition-colors text-sm sm:text-base ${
                   activeTab === tab.id
                     ? 'bg-white dark:bg-gray-700 text-orange-600 shadow-sm'
                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
-                <span>{tab.icon}</span>
-                <span>{tab.label}</span>
+                <span className="text-lg">{tab.icon}</span>
+                <span className="truncate">{tab.label}</span>
               </button>
             ))}
           </nav>

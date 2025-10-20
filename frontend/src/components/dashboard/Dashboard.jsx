@@ -78,7 +78,7 @@ const Dashboard = ({
           </div>
         </div>
       )}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 ml-4 mt-6">
         <div className="flex-1">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Roast Dashboard</h2>
           <p className="text-gray-600 dark:text-dark-text-secondary text-sm sm:text-base">Your roasting history and quick actions</p>
@@ -106,7 +106,7 @@ const Dashboard = ({
                     }}
                     className="w-full text-left px-4 py-3 text-gray-700 dark:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-bg-quaternary flex items-center gap-3 transition-colors"
                   >
-                    <span className="text-lg">🏁</span>
+                    <span className="text-lg">🔥</span>
                     <span className="font-medium">Start New Roast</span>
                   </button>
                   <button
@@ -116,7 +116,7 @@ const Dashboard = ({
                     }}
                     className="w-full text-left px-4 py-3 text-gray-700 dark:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-bg-quaternary flex items-center gap-3 transition-colors"
                   >
-                    <span className="text-lg">📝</span>
+                    <span className="text-lg">☕</span>
                     <span className="font-medium">Add Bean Profile</span>
                   </button>
                 </div>
@@ -128,7 +128,7 @@ const Dashboard = ({
 
       {/* Roast Curve Visualization */}
       {historicalRoasts?.length > 0 && (
-        <div className="bg-white dark:bg-dark-bg-tertiary rounded-lg shadow dark:shadow-dark-lg border dark:border-dark-border-primary">
+        <div className="bg-transparent rounded-lg border dark:border-dark-border-primary">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-border-primary">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">All Roast Curves</h3>
@@ -220,7 +220,7 @@ const Dashboard = ({
             }}
             className="w-full bg-gradient-to-r from-emerald-700 to-green-900 text-white px-4 py-4 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors flex items-center gap-3 text-left"
           >
-            <span className="text-2xl">🏁</span>
+            <span className="text-2xl">🔥</span>
             <div>
               <div className="font-semibold text-lg">Start New Roast</div>
               <div className="text-sm opacity-90">Begin a new roasting session</div>

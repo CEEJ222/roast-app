@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import BeanProfileForm from '../bean_profile/BeanProfileForm';
 import StandardTable from '../shared/StandardTable';
+import FloatingActionButton from '../shared/FloatingActionButton';
+import BottomSheetModal from '../shared/BottomSheetModal';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'
@@ -20,6 +22,8 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
+  const [showFABMenu, setShowFABMenu] = useState(false);
 
   const loadBeanProfiles = async () => {
     setLoading(true);
@@ -46,6 +50,17 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
 
   useEffect(() => {
     loadBeanProfiles();
+  }, []);
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   // Handle external trigger to open create modal
@@ -297,8 +312,8 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-dark-bg-tertiary rounded-lg shadow dark:shadow-dark-lg border dark:border-dark-border-primary">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-border-primary">
+      <div className="bg-transparent">
+        <div className="px-4 sm:px-6 py-4">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">Bean Profiles</h3>
         </div>
         <div className="p-6 text-center">
@@ -310,32 +325,45 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
   }
 
   return (
-    <div className="bg-white dark:bg-dark-bg-tertiary rounded-lg shadow dark:shadow-dark-lg border dark:border-dark-border-primary">
-      <div className="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-dark-border-primary">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">Bean Profiles</h3>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-            <button
-              onClick={handleCreateProfile}
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-dark-accent-primary dark:to-dark-accent-secondary text-white px-3 sm:px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-medium shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base"
-            >
-              📝 Create New
-            </button>
-            {beanProfiles.length > 0 && (
+    <div className="bg-transparent">
+      {/* Header - only show on desktop */}
+      {!isMobile && (
+        <div className="px-4 sm:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">Bean Profiles</h3>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
               <button
-                onClick={() => setShowAll(!showAll)}
-                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium text-sm sm:text-base whitespace-nowrap"
+                onClick={handleCreateProfile}
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-dark-accent-primary dark:to-dark-accent-secondary text-white px-3 sm:px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-medium shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base"
               >
-                {showAll ? 'Show Recent Only →' : 'View All Profiles →'}
+                📝 Create New
               </button>
-            )}
+              {beanProfiles.length > 0 && (
+                <button
+                  onClick={() => setShowAll(!showAll)}
+                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium text-sm sm:text-base whitespace-nowrap"
+                >
+                  {showAll ? 'Show Recent Only →' : 'View All Profiles →'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
       
       {showAll ? (
         // Full table view with selection and delete functionality
-        <StandardTable
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary ml-4">Delete Bean Profiles</h3>
+            <button
+              onClick={() => setShowAll(false)}
+              className="mr-4 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+          <StandardTable
           data={beanProfiles}
           columns={columns}
           onDelete={(profile) => handleDeleteClick(profile, { stopPropagation: () => {} })}
@@ -352,10 +380,13 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
           emptyMessage="No Bean Profiles Yet. Create your first bean profile to track detailed coffee information for better AI coaching!"
           className=""
           onView={(profile) => handleViewProfile(profile)}
+          showHeader={true}
+          hideActionButtons={isMobile}
         />
+        </div>
       ) : (
         // Dashboard card view
-        <div className="p-4 sm:p-6">
+        <div className={isMobile ? "p-4" : "p-4 sm:p-6"}>
           {beanProfiles.length === 0 ? (
             <div className="text-center py-8 sm:py-12 text-gray-500 dark:text-dark-text-tertiary px-4">
               <div className="text-4xl sm:text-6xl mb-4">☕</div>
@@ -372,7 +403,7 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
             </div>
           ) : (
             <div className="space-y-3">
-              {beanProfiles.slice(0, 5).map((profile) => {
+              {beanProfiles.map((profile) => {
                 // Check if profile is good for espresso (check both database field and notes for backwards compatibility)
                 const isGoodForEspresso = profile.espresso_suitable === true || 
                                           profile.notes?.toLowerCase().includes('espresso') ||
@@ -395,21 +426,15 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
                         <p className="font-medium text-gray-900 dark:text-dark-text-primary text-sm sm:text-base break-words">
                           {profile.name}
                         </p>
-                        <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2 text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary mt-1">
+                        <div className="flex flex-row items-center space-x-2 text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary mt-1">
                           {profile.origin && (
-                            <span className="truncate sm:inline">{profile.origin}</span>
+                            <span className="truncate">{profile.origin}</span>
                           )}
                           {profile.variety && (
-                            <span className="hidden sm:inline">• {profile.variety}</span>
-                          )}
-                          {profile.variety && (
-                            <span className="sm:hidden text-gray-400 dark:text-gray-500">{profile.variety}</span>
+                            <span>• {profile.variety}</span>
                           )}
                           {profile.process_method && (
-                            <>
-                              <span className="hidden sm:inline">• {profile.process_method}</span>
-                              <span className="sm:hidden text-gray-400 dark:text-gray-500">{profile.process_method}</span>
-                            </>
+                            <span>• {profile.process_method}</span>
                           )}
                         </div>
                       </div>
@@ -435,7 +460,7 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
       {/* Profile Details Modal */}
       {showProfileModal && selectedProfile && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col mb-20 sm:mb-0">
             {/* Header */}
             <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 px-4 sm:px-6 py-3 sm:py-4 text-white flex-shrink-0">
               <div className="flex justify-between items-start">
@@ -692,6 +717,64 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
           </div>
         </div>
       )}
+
+      {/* Floating Action Button - only show on mobile */}
+      {isMobile && (
+        <FloatingActionButton
+          onClick={() => {
+            console.log('FAB clicked, setting showFABMenu to true');
+            setShowFABMenu(true);
+          }}
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          }
+          label="Quick Actions"
+          position="bottom-right"
+          className="mb-20 mr-4"
+        />
+      )}
+
+      {/* Mobile FAB Menu */}
+      <BottomSheetModal
+        isOpen={showFABMenu}
+        onClose={() => {
+          console.log('BottomSheetModal onClose called');
+          setShowFABMenu(false);
+        }}
+        title="Quick Actions"
+      >
+        <div className="space-y-4">
+          <button
+            onClick={() => {
+              handleCreateProfile();
+              setShowFABMenu(false);
+            }}
+            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-colors flex items-center gap-3 text-left"
+          >
+            <span className="text-2xl">📝</span>
+            <div>
+              <div className="font-semibold text-lg">Create Bean Profile</div>
+              <div className="text-sm opacity-90">Add a new coffee bean profile</div>
+            </div>
+          </button>
+          
+          <button
+            onClick={() => {
+              setShowAll(true);
+              setShowFABMenu(false);
+            }}
+            className="w-full bg-gradient-to-r from-red-600 to-pink-600 text-white px-4 py-4 rounded-lg hover:from-red-700 hover:to-pink-700 transition-colors flex items-center gap-3 text-left"
+          >
+            <span className="text-2xl">🗑️</span>
+            <div>
+              <div className="font-semibold text-lg">Delete Bean Profiles</div>
+              <div className="text-sm opacity-90">Manage and delete existing profiles</div>
+            </div>
+          </button>
+        </div>
+      </BottomSheetModal>
     </div>
   );
 };

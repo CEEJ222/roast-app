@@ -181,18 +181,31 @@ const ActiveRoast = ({
     <>
       {/* Active Roast - During */}
       {roastId && !roastEnded && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div className="space-y-6 mt-6 mx-2">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 relative">
+            {/* Mobile: Simple X button in top right, Desktop: Full button */}
             <button
               onClick={handleBackToDashboard}
-              className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition flex items-center gap-2 w-full sm:w-auto"
+              className="sm:block hidden bg-transparent border bottom-0 rounded-lg text-white px-4 py-2 hover:bg-gray-500 transition flex items-center gap-2"
             >
               ← Back to Dashboard
             </button>
+            
+            {/* Mobile: Simple X button in top right */}
+            <button
+              onClick={handleBackToDashboard}
+              className="sm:hidden absolute top-0 right-0 bg-gray-500 text-white w-8 h-8 rounded-full hover:bg-gray-600 transition flex items-center justify-center z-10"
+              title="Back to Dashboard"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
             <div className="text-center flex-1">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2">Active Roast Session</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-dark-text-primary mb-2 ml-4">Active Roast Session</h2>
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-32">
+            <div className="flex items-center gap-2 w-full sm:w-32 ml-4">
               <button
                 onClick={() => setShowChat(!showChat)}
                 className={`px-4 py-2 rounded-lg transition-all flex items-center gap-2 ${
@@ -243,7 +256,7 @@ const ActiveRoast = ({
           </div>
 
           {/* Milestone Buttons */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 ml-2 mr-2">
             <button
               onClick={() => markMilestone('DRY_END')}
               disabled={loading || milestonesMarked.dryEnd || isPaused}
@@ -320,7 +333,7 @@ const ActiveRoast = ({
             height={300}
             title="Live Roast Curve"
             units={{ temperature: userProfile?.units?.temperature === 'celsius' ? 'C' : 'F', time: 'min' }}
-            className="mb-6"
+            className="mb-6 mx-2"
             showLegend={true}
             showGrid={true}
             showTooltip={true}
@@ -332,34 +345,34 @@ const ActiveRoast = ({
 
           {/* Events Table and Weather Layout */}
           <div className="flex flex-col lg:flex-row gap-6">
-            {/* Events Table - Reduced Width */}
-            <EventsTable
-              events={events}
-              formatTime={formatTime}
-              editingEventId={editingEventId}
-              editingFormData={editingFormData}
-              setEditingFormData={setEditingFormData}
-              startEditEvent={startEditEvent}
-              saveEditedEvent={saveEditedEvent}
-              cancelEdit={cancelEdit}
-              deleteEvent={deleteEvent}
-            />
-            
-            {/* Weather Component - Bottom Right */}
-            <div className="flex-shrink-0">
-              <div className="w-80">
-                {/* Environmental Conditions - Compact */}
-                {environmentalConditions && (
-                  <div>
-                    <EnvironmentalConditions 
-                      conditions={environmentalConditions} 
-                      units={userProfile?.units}
-                      userProfile={userProfile}
-                    />
-                  </div>
-                )}
-              </div>
+            {/* Events Table - Takes full width on mobile, flexible on desktop */}
+            <div className="flex-1 min-w-0">
+              <EventsTable
+                events={events}
+                formatTime={formatTime}
+                editingEventId={editingEventId}
+                editingFormData={editingFormData}
+                setEditingFormData={setEditingFormData}
+                startEditEvent={startEditEvent}
+                saveEditedEvent={saveEditedEvent}
+                cancelEdit={cancelEdit}
+                deleteEvent={deleteEvent}
+              />
             </div>
+            
+             {/* Weather Component - Responsive width */}
+             <div className="flex-shrink-0 lg:ml-5 w-full lg:w-80">
+               {/* Environmental Conditions - Compact */}
+               {environmentalConditions && (
+                 <div className="mx-4">
+                   <EnvironmentalConditions 
+                     conditions={environmentalConditions} 
+                     units={userProfile?.units}
+                     userProfile={userProfile}
+                   />
+                 </div>
+               )}
+             </div>
           </div>
         </div>
       )}

@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import FeedbackManager from './FeedbackManager';
 import FeatureFlagManager from './FeatureFlagManager';
+import PushNotificationManager from './PushNotificationManager';
 
 const AdminDashboard = () => {
   const [activeView, setActiveView] = useState('analytics');
   const [showFeedbackManager, setShowFeedbackManager] = useState(false);
   const [showFeatureFlagManager, setShowFeatureFlagManager] = useState(false);
+  const [showPushNotificationManager, setShowPushNotificationManager] = useState(false);
 
   const navigationItems = [
     {
@@ -20,6 +22,12 @@ const AdminDashboard = () => {
       label: 'Feature Flags & Beta Program',
       icon: '🚩',
       description: 'Manage feature flags, beta users, and access controls'
+    },
+    {
+      id: 'notifications',
+      label: 'Push Notifications',
+      icon: '📱',
+      description: 'Send targeted notifications to iOS, Android, and Web users'
     }
   ];
 
@@ -29,6 +37,10 @@ const AdminDashboard = () => {
 
   const handleFeatureFlagsClick = () => {
     setShowFeatureFlagManager(true);
+  };
+
+  const handlePushNotificationsClick = () => {
+    setShowPushNotificationManager(true);
   };
 
   return (
@@ -59,6 +71,8 @@ const AdminDashboard = () => {
                   handleFeedbackClick();
                 } else if (item.id === 'feature-flags') {
                   handleFeatureFlagsClick();
+                } else if (item.id === 'notifications') {
+                  handlePushNotificationsClick();
                 } else {
                   setActiveView(item.id);
                 }
@@ -73,7 +87,8 @@ const AdminDashboard = () => {
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
                     {item.description}
                   </p>
-                  <div className="flex items-center justify-center">
+                  {/* Buttons - hidden on mobile, visible on desktop */}
+                  <div className="hidden md:flex items-center justify-start">
                     {item.id === 'feedback' ? (
                       <button className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200 text-sm font-medium">
                         <span>View Feedback</span>
@@ -81,7 +96,7 @@ const AdminDashboard = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                         </svg>
                       </button>
-                    ) : (
+                    ) : item.id === 'feature-flags' ? (
                       <button className="relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-all duration-300 text-sm font-medium shadow-lg hover:shadow-blue-500/25 transform hover:scale-105 overflow-hidden group">
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500"></div>
                         <span className="relative z-10">Manage Flags</span>
@@ -89,7 +104,14 @@ const AdminDashboard = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2z" />
                         </svg>
                       </button>
-                    )}
+                    ) : item.id === 'notifications' ? (
+                      <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200 text-sm font-medium">
+                        <span>Send Notifications</span>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM4 19h6v-6H4v6zM4 5h6V1H4v4zM15 5h5l-5-5v5z" />
+                        </svg>
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -130,6 +152,30 @@ const AdminDashboard = () => {
               </div>
               <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
                 <FeatureFlagManager />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Push Notification Manager Modal */}
+        {showPushNotificationManager && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] overflow-hidden">
+              <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Push Notifications
+                </h2>
+                <button
+                  onClick={() => setShowPushNotificationManager(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6">
+                <PushNotificationManager />
               </div>
             </div>
           </div>
