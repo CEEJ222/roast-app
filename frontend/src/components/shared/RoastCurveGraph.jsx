@@ -206,7 +206,7 @@ const RoastCurveGraph = ({
               type="number"
               scale="linear"
               domain={['dataMin', 'dataMax']}
-              tickFormatter={(value) => isMobile ? `${value.toFixed(0)}m` : `${value.toFixed(1)}m`}
+              tickFormatter={(value) => `${value.toFixed(0)}m`}
               stroke="#6b7280"
               className="dark:stroke-dark-text-tertiary"
               xAxisId="time"
@@ -225,7 +225,7 @@ const RoastCurveGraph = ({
               <YAxis 
                 yAxisId="ror"
                 orientation="right"
-                tickFormatter={(value) => `${value.toFixed(1)}°/m`}
+                tickFormatter={(value) => `${value.toFixed(0)}°/m`}
                 stroke="#6b7280"
                 className="dark:stroke-dark-text-tertiary"
                 domain={[-20, 100]}
@@ -347,9 +347,6 @@ const RoastCurveGraph = ({
         <h3 className={`${compact ? 'text-base' : 'text-lg'} font-semibold text-gray-800 dark:text-dark-text-primary`}>{title}</h3>
         {mode === 'historical' && (
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
-              Comparing {filteredRoasts.length} Roasts
-            </p>
             {onRoastToggle && (
               <div className="flex gap-2">
                 <button
@@ -401,7 +398,7 @@ const RoastCurveGraph = ({
               type="number"
               scale="linear"
               domain={['dataMin', 'dataMax']}
-              tickFormatter={(value) => isMobile ? `${value.toFixed(0)}m` : `${value.toFixed(1)}m`}
+              tickFormatter={(value) => `${value.toFixed(0)}m`}
               stroke="#6b7280"
               className="dark:stroke-dark-text-tertiary"
               xAxisId="time"
@@ -420,7 +417,7 @@ const RoastCurveGraph = ({
               <YAxis 
                 yAxisId="ror"
                 orientation="right"
-                tickFormatter={(value) => `${value.toFixed(1)}°/m`}
+                tickFormatter={(value) => `${value.toFixed(0)}°/m`}
                 stroke="#6b7280"
                 className="dark:stroke-dark-text-tertiary"
                 domain={[-20, 100]}
