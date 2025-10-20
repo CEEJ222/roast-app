@@ -3,6 +3,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import CustomDropdown from '../ux_ui/CustomDropdown';
 import URLInputModal from '../modals/URLInputModal';
 import LLMAnalysisModal from '../modals/LLMAnalysisModal';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'
@@ -104,6 +106,28 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
 
   const handleManualURLInput = () => {
     setShowURLModal(true);
+  };
+
+  const scanQRCode = async () => {
+    try {
+      // Add haptic feedback
+      await Haptics.impact({ style: ImpactStyle.Medium });
+      
+      const image = await Camera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.Base64,
+        source: CameraSource.Camera
+      });
+      
+      // For now, we'll use the existing URL parsing logic
+      // In a real implementation, you'd process the QR code from the image
+      alert('QR code scanning is ready! The image has been captured. In a full implementation, this would decode the QR code and extract bean information.');
+      
+    } catch (error) {
+      console.error('QR scan failed:', error);
+      alert('Failed to scan QR code: ' + error.message);
+    }
   };
 
   const handleAIAnalysis = async () => {
@@ -557,13 +581,21 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
               />
             </div>
             
-            <div className="flex justify-center">
+            <div className="flex justify-center gap-4">
               {/* AI Analysis Button */}
               <button
                 onClick={handleAIAnalysis}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
               >
                 🧠 Analyze with LLM
+              </button>
+              
+              {/* QR Code Scanner Button */}
+              <button
+                onClick={scanQRCode}
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+              >
+                📷 Scan QR Code
               </button>
             </div>
             

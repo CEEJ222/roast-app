@@ -1,4 +1,5 @@
 import React from 'react';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 const RoastControls = ({ 
   formData, 
@@ -159,9 +160,14 @@ const RoastControls = ({
             </div>
             
             <button
-              onClick={logChange}
+              onClick={async () => {
+                // Add haptic feedback
+                await Haptics.impact({ style: ImpactStyle.Medium });
+                logChange();
+              }}
               disabled={loading}
-              className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-2 rounded-lg text-sm font-bold transition-all duration-150 disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-2 rounded-lg text-sm font-bold transition-all duration-150 disabled:opacity-50 touch-manipulation"
+              style={{ minHeight: '44px' }} // iOS minimum touch target
             >
               LOG
             </button>

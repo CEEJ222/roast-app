@@ -3,6 +3,10 @@ import { useAuth } from '../contexts/AuthContext';
 import RoastCurveGraph from './shared/RoastCurveGraph';
 import EnvironmentalConditions from './shared/EnvironmentalConditions';
 import EventsTable from './during_roast/EventsTable';
+import useSwipeGestures from '../hooks/useSwipeGestures';
+import useClipboard from '../hooks/useClipboard';
+import BottomSheetModal from './shared/BottomSheetModal';
+import FloatingActionButton from './shared/FloatingActionButton';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'  // Local development
@@ -15,6 +19,8 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
   const [error, setError] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showActionMenu, setShowActionMenu] = useState(false);
   const [editFormData, setEditFormData] = useState({
     coffee_type: roast?.coffee_type || '',
     coffee_region: roast?.coffee_region || '',
@@ -24,6 +30,17 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
     weight_after_g: roast?.weight_after_g || '',
     notes: roast?.notes || ''
   });
+  
+  // Hooks for mobile features
+  const { copyRoastData, copyRoastEvents } = useClipboard();
+  
+  // Swipe gestures for navigation
+  const swipeRef = useSwipeGestures(
+    () => console.log('Swipe left - previous roast'), // onSwipeLeft
+    () => console.log('Swipe right - next roast'), // onSwipeRight
+    null, // onSwipeUp
+    null  // onSwipeDown
+  );
   
   // Tasting notes state
   const [tastingNotes, setTastingNotes] = useState(roast?.tasting_notes || '');
@@ -210,6 +227,22 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  // Clipboard functionality
+  const handleCopyRoastData = async () => {
+    const success = await copyRoastData(roast);
+    if (success) {
+      // Show success feedback
+      console.log('Roast data copied to clipboard');
+    }
+  };
+
+  const handleCopyEvents = async () => {
+    const success = await copyRoastEvents(events, formatTime);
+    if (success) {
+      console.log('Roast events copied to clipboard');
+    }
+  };
+
   // Event editing functions
   const startEditEvent = (event) => {
     setEditingEventId(event.id);
@@ -318,50 +351,71 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-dark-card rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden shadow-2xl dark:shadow-dark-glow">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div 
+        ref={swipeRef}
+        className="bg-white dark:bg-dark-card rounded-lg w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden shadow-2xl dark:shadow-dark-glow"
+        id="roast-detail"
+      >
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-6 py-4 text-white">
+        <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-4 sm:px-6 py-4 text-white">
           <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-2xl font-bold">☕ Roast Details</h2>
-              <p className="opacity-90">{roast.bean_profile_name || roast.coffee_type || 'Unknown Coffee'} • {formatDate(roast.created_at)}</p>
+            <div className="flex-1 min-w-0 mr-2">
+              <h2 className="text-xl sm:text-2xl font-bold">☕ Roast Details</h2>
+              <p className="opacity-90 text-sm sm:text-base truncate max-w-full">{roast.bean_profile_name || roast.coffee_type || 'Unknown Coffee'} • {formatDate(roast.created_at)}</p>
             </div>
-            <div className="flex items-center gap-3">
-              {!isEditing ? (
-                <>
-                  <button
-                    onClick={handleEdit}
-                    className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    ✏️ Edit
-                  </button>
-                  <button
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="bg-red-500/80 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    🗑️ Delete
-                  </button>
-                </>
-              ) : (
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              {isEditing ? (
                 <>
                   <button
                     onClick={handleSaveEdit}
-                    className="bg-green-500/80 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                    className="bg-green-500/80 hover:bg-green-500 text-white px-1.5 sm:px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
                   >
                     💾 Save
                   </button>
                   <button
                     onClick={handleCancelEdit}
-                    className="bg-gray-500/80 hover:bg-gray-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                    className="bg-gray-500/80 hover:bg-gray-500 text-white px-1.5 sm:px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
                   >
                     ❌ Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={handleCopyRoastData}
+                    className="bg-blue-500/80 hover:bg-blue-500 text-white px-2 sm:px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hidden sm:inline"
+                    title="Copy roast data"
+                  >
+                    📋 Copy
+                  </button>
+                  <button
+                    onClick={() => setShowShareModal(true)}
+                    className="bg-green-500/80 hover:bg-green-500 text-white px-2 sm:px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hidden sm:inline"
+                    title="Share roast"
+                  >
+                    📤 Share
+                  </button>
+                  <button
+                    onClick={handleEdit}
+                    className="bg-purple-500/80 hover:bg-purple-500 text-white px-2 sm:px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hidden sm:inline"
+                    title="Edit roast"
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="bg-red-500/80 hover:bg-red-500 text-white px-2 sm:px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hidden sm:inline"
+                    title="Delete roast"
+                  >
+                    🗑️ Delete
                   </button>
                 </>
               )}
               <button
                 onClick={onClose}
-                className="text-white hover:text-gray-200 text-2xl font-bold ml-2"
+                className="text-white hover:text-gray-200 text-xl sm:text-2xl font-bold p-1"
+                aria-label="Close modal"
               >
                 ×
               </button>
@@ -369,8 +423,8 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
           </div>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-120px)]">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Left Column - Roast Info */}
             <div className="lg:col-span-1 space-y-6">
               {/* Roast Overview */}
@@ -651,6 +705,109 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
           </div>
         </div>
       )}
+
+      {/* Share Modal */}
+      <BottomSheetModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        title="Share Roast"
+      >
+        <div className="space-y-4">
+          <button
+            onClick={handleCopyRoastData}
+            className="w-full bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-3"
+          >
+            📋 Copy Roast Summary
+          </button>
+          <button
+            onClick={handleCopyEvents}
+            className="w-full bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 transition-colors flex items-center gap-3"
+          >
+            📊 Copy Roast Events
+          </button>
+          <div className="text-sm text-gray-600 dark:text-dark-text-secondary">
+            Use these options to share your roast data via text, email, or other apps.
+          </div>
+        </div>
+      </BottomSheetModal>
+
+      {/* Floating Action Button */}
+      {!isEditing && (
+        <FloatingActionButton
+          onClick={() => setShowActionMenu(true)}
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          }
+          label="Roast Actions"
+        />
+      )}
+
+      {/* Action Menu Modal */}
+      <BottomSheetModal
+        isOpen={showActionMenu}
+        onClose={() => setShowActionMenu(false)}
+        title="Roast Actions"
+      >
+        <div className="space-y-4">
+          <button
+            onClick={() => {
+              handleCopyRoastData();
+              setShowActionMenu(false);
+            }}
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-4 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-colors flex items-center gap-3 text-left"
+          >
+            <span className="text-2xl">📋</span>
+            <div>
+              <div className="font-semibold text-lg">Copy Roast Data</div>
+              <div className="text-sm opacity-90">Copy roast summary to clipboard</div>
+            </div>
+          </button>
+          
+          <button
+            onClick={() => {
+              setShowShareModal(true);
+              setShowActionMenu(false);
+            }}
+            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-4 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors flex items-center gap-3 text-left"
+          >
+            <span className="text-2xl">📤</span>
+            <div>
+              <div className="font-semibold text-lg">Share Roast</div>
+              <div className="text-sm opacity-90">Share roast data with others</div>
+            </div>
+          </button>
+          
+          <button
+            onClick={() => {
+              handleEdit();
+              setShowActionMenu(false);
+            }}
+            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-4 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-colors flex items-center gap-3 text-left"
+          >
+            <span className="text-2xl">✏️</span>
+            <div>
+              <div className="font-semibold text-lg">Edit Roast</div>
+              <div className="text-sm opacity-90">Modify roast details</div>
+            </div>
+          </button>
+          
+          <button
+            onClick={() => {
+              setShowDeleteConfirm(true);
+              setShowActionMenu(false);
+            }}
+            className="w-full bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-4 rounded-lg hover:from-red-700 hover:to-red-800 transition-colors flex items-center gap-3 text-left"
+          >
+            <span className="text-2xl">🗑️</span>
+            <div>
+              <div className="font-semibold text-lg">Delete Roast</div>
+              <div className="text-sm opacity-90">Permanently remove this roast</div>
+            </div>
+          </button>
+        </div>
+      </BottomSheetModal>
     </div>
   );
 };

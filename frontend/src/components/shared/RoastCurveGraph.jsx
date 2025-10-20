@@ -40,7 +40,8 @@ const RoastCurveGraph = ({
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640);
+      const newIsMobile = window.innerWidth < 640;
+      setIsMobile(newIsMobile);
     };
     
     checkMobile();
@@ -199,8 +200,9 @@ const RoastCurveGraph = ({
       </div>
 
       <div style={{ width: '100%', height: height, position: 'relative', overflow: 'visible' }}>
-        <ResponsiveContainer>
+        <ResponsiveContainer width="100%" height={height}>
           <LineChart
+            key={`chart-${isMobile ? 'mobile' : 'desktop'}`}
             data={showROR && mode === 'live' ? rorData : chartData}
             margin={{ 
               top: 20, 
@@ -243,12 +245,12 @@ const RoastCurveGraph = ({
                 tick={{ fontSize: isMobile ? 10 : 12 }}
               />
             ) : null}
-            {showTooltip && (
+            {showTooltip && !isMobile && (
               <Tooltip
                 content={<CustomTooltip data={data} />}
               />
             )}
-            {showLegend && (
+            {showLegend && !isMobile && (
               <Legend 
                 wrapperStyle={{
                   paddingTop: isMobile ? '10px' : '20px',
@@ -269,7 +271,7 @@ const RoastCurveGraph = ({
                 dataKey="temperature"
                 stroke="#4f46e5"
                 strokeWidth={3}
-                dot={(props) => {
+                dot={isMobile ? false : (props) => {
                   const { payload, cx, cy } = props;
                   
                   // Regular temperature dot

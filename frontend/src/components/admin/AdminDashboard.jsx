@@ -73,7 +73,7 @@ const AdminDashboard = () => {
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
                     {item.description}
                   </p>
-                  <div className="flex items-center justify-end">
+                  <div className="flex items-center justify-center">
                     {item.id === 'feedback' ? (
                       <button className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200 text-sm font-medium">
                         <span>View Feedback</span>

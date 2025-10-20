@@ -1,4 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { PushNotifications } from '@capacitor/push-notifications';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { announceToScreenReader, formatTimeForScreenReader, getRoastPhaseDescription } from '../../utils/accessibility';
 
 const RoastTimer = ({
   elapsedTime,
@@ -27,6 +30,48 @@ const RoastTimer = ({
   };
 
   const dtrTarget = getDTRTarget(roastLevel);
+
+  // Setup push notifications
+  useEffect(() => {
+    // Request notification permissions
+    PushNotifications.requestPermissions().then(result => {
+      if (result.receive === 'granted') {
+        PushNotifications.register();
+      }
+    });
+
+    // Handle notification events
+    PushNotifications.addListener('registration', token => {
+      console.log('Push registration success, token: ' + token);
+      // Send token to backend for future use
+    });
+
+    PushNotifications.addListener('registrationError', err => {
+      console.error('Push registration error: ' + JSON.stringify(err));
+    });
+
+    PushNotifications.addListener('pushNotificationReceived', notification => {
+      console.log('Push notification received: ', notification);
+    });
+  }, []);
+
+  // Schedule milestone notifications
+  const scheduleMilestoneNotification = async (milestone, time) => {
+    try {
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            title: "Roast Milestone",
+            body: `${milestone} should occur around ${formatTime(time)}`,
+            id: Date.now(),
+            schedule: { at: new Date(Date.now() + time * 1000) }
+          }
+        ]
+      });
+    } catch (error) {
+      console.error('Failed to schedule notification:', error);
+    }
+  };
 
   return (
     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 lg:gap-8">
@@ -68,14 +113,20 @@ const RoastTimer = ({
           {/* Timer in center - Responsive sizing */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="flex flex-col items-center justify-center gap-2 sm:gap-3">
-              <div className="text-3xl sm:text-3xl md:text-4xl lg:text-4xl font-bold text-green-400 text-center" style={{
-                fontFamily: '"Orbitron", "Seven Segment", "DS-Digital", monospace',
-                letterSpacing: '0.1em',
-                textShadow: '0 0 3px #22c55e',
-                fontWeight: '900',
-                fontVariantNumeric: 'tabular-nums',
-                lineHeight: '1'
-              }}>
+              <div 
+                className="text-3xl sm:text-3xl md:text-4xl lg:text-4xl font-bold text-green-400 text-center" 
+                style={{
+                  fontFamily: '"Orbitron", "Seven Segment", "DS-Digital", monospace',
+                  letterSpacing: '0.1em',
+                  textShadow: '0 0 3px #22c55e',
+                  fontWeight: '900',
+                  fontVariantNumeric: 'tabular-nums',
+                  lineHeight: '1'
+                }}
+                role="timer"
+                aria-label={`Roast timer: ${formatTimeForScreenReader(elapsedTime)}`}
+                aria-live="polite"
+              >
                 {formatTime(elapsedTime)}
               </div>
               
@@ -106,12 +157,19 @@ const RoastTimer = ({
 
       {/* Phase Indicators - 2x2 grid on mobile, row on desktop */}
       <div className="grid grid-cols-2 gap-2 sm:gap-4 md:flex md:flex-col pt-4 sm:pt-8">
-        <div className={`flex items-center space-x-3 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition ${
-          currentPhase === 'drying' 
-            ? 'bg-indigo-100 dark:bg-dark-accent-primary/20 text-indigo-800 dark:text-dark-accent-primary' 
-            : 'text-gray-500 dark:text-dark-text-tertiary'
-        }`}>
-          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-green-500 flex-shrink-0"></div>
+        <div 
+          className={`flex items-center space-x-3 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition ${
+            currentPhase === 'drying' 
+              ? 'bg-indigo-100 dark:bg-dark-accent-primary/20 text-indigo-800 dark:text-dark-accent-primary' 
+              : 'text-gray-500 dark:text-dark-text-tertiary'
+          }`}
+          role="status"
+          aria-label={`Drying phase: ${formatTimeForScreenReader(dryingTime)}`}
+        >
+          <div 
+            className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-green-500 flex-shrink-0"
+            aria-hidden="true"
+          ></div>
           <div className="flex flex-col min-w-0">
             <span className="font-medium text-sm sm:text-base truncate">Drying</span>
             <span className="text-xs sm:text-sm font-mono">

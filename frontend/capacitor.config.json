@@ -1,0 +1,42 @@
+{
+  "appId": "com.roastbuddy.app",
+  "appName": "Roast Buddy",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "Camera": {
+      "permissions": ["camera"]
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    },
+    "BackgroundMode": {
+      "enabled": true
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon",
+      "iconColor": "#488AFF",
+      "sound": "beep.wav"
+    },
+    "Haptics": {
+      "enabled": true
+    },
+    "Device": {
+      "enabled": true
+    },
+    "Network": {
+      "enabled": true
+    }
+  },
+  "ios": {
+    "scheme": "Roast Buddy",
+    "contentInset": "automatic"
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  }
+}
