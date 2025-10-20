@@ -273,7 +273,7 @@ const HistoricalRoasts = ({ onClose }) => {
             <div className="space-y-6 -mx-3 sm:-mx-6">
               <div className="flex justify-between items-center px-3 sm:px-6">
                 <h3 className="text-xl font-semibold text-gray-800 dark:text-dark-text-primary">
-                  Comparing {selectedRoasts.length} Roasts
+                  <strong>{selectedRoasts.length}</strong> Roasts Selected
                 </h3>
                 <button
                   onClick={() => setShowGraph(false)}
@@ -295,8 +295,8 @@ const HistoricalRoasts = ({ onClose }) => {
                     mode="historical"
                     showROR={false}
                     showMilestones={false}
-                    height={window.innerWidth < 768 ? 400 : 500}
-                    title="Historical Roast Comparison"
+                    height={window.innerWidth < 768 ? 300 : 350}
+                    title="Roast Curve Comparison"
                     units={{ temperature: 'F', time: 'min' }}
                     showLegend={true}
                     showGrid={true}

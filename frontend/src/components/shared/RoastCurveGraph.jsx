@@ -348,7 +348,7 @@ const RoastCurveGraph = ({
         {mode === 'historical' && (
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
-              Compare multiple roast curves ({filteredRoasts.length} selected)
+              Comparing {filteredRoasts.length} Roasts
             </p>
             {onRoastToggle && (
               <div className="flex gap-2">
