@@ -71,6 +71,14 @@ const RoastsPage = ({
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-dark-text-primary mb-2">Roast Curves</h1>
               <p className="text-gray-600 dark:text-dark-text-secondary text-sm sm:text-base">Track and analyze temperature curves</p>
             </div>
+            {historicalRoasts?.length > 0 && (
+              <button
+                onClick={() => setShowHistoricalRoasts(true)}
+                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium text-sm sm:text-base"
+              >
+                Compare Roasts →
+              </button>
+            )}
           </div>
         </div>
       </div>

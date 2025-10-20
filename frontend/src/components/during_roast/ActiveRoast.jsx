@@ -186,7 +186,7 @@ const ActiveRoast = ({
             {/* Mobile: Simple X button in top right, Desktop: Full button */}
             <button
               onClick={handleBackToDashboard}
-              className="sm:block hidden bg-transparent border bottom-0 rounded-lg text-white px-4 py-2 hover:bg-gray-500 transition flex items-center gap-2"
+              className="hidden sm:flex bg-transparent border bottom-0 rounded-lg text-white px-4 py-2 hover:bg-gray-500 transition items-center gap-2"
             >
               ← Back to Dashboard
             </button>
