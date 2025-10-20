@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import RoastCurveGraph from '../shared/RoastCurveGraph';
-import MobileRoastCurveGraph from '../shared/MobileRoastCurveGraph';
 import RecentRoasts from '../dashboard/RecentRoasts';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
 import FloatingActionButton from '../shared/FloatingActionButton';
@@ -20,6 +19,7 @@ const RoastsPage = ({
   roastId,
   getAuthToken,
   onDataChange = null,
+  setActiveTab,
 }) => {
   const [showFABMenu, setShowFABMenu] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -43,6 +43,7 @@ const RoastsPage = ({
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
 
   return (
     <div ref={pullToRefreshRef} className={`bg-transparent ${isMobile ? 'pb-24' : ''}`}>
@@ -71,7 +72,7 @@ const RoastsPage = ({
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-dark-text-primary mb-2">Roast Curves</h1>
               <p className="text-gray-600 dark:text-dark-text-secondary text-sm sm:text-base">Track and analyze temperature curves</p>
             </div>
-            {historicalRoasts?.length > 0 && (
+            {historicalRoasts?.length > 0 && !isMobile && (
               <button
                 onClick={() => setShowHistoricalRoasts(true)}
                 className="bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-900 text-white px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-lg"
@@ -211,15 +212,15 @@ const RoastsPage = ({
           
           <button
             onClick={() => {
-              // TODO: Add bean profile creation functionality
+              setShowHistoricalRoasts(true);
               setShowFABMenu(false);
             }}
-            className="w-full bg-gradient-to-r from-purple-700 to-indigo-900 text-white px-4 py-4 rounded-lg hover:from-purple-600 hover:to-indigo-800 transition-colors flex items-center gap-3 text-left"
+            className="w-full bg-gradient-to-r from-blue-700 to-indigo-800 text-white px-4 py-4 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-colors flex items-center gap-3 text-left"
           >
-            <span className="text-2xl">☕</span>
+            <span className="text-2xl">📊</span>
             <div>
-              <div className="font-semibold text-lg">Create Bean Profile</div>
-              <div className="text-sm opacity-90">Add a new coffee bean profile</div>
+              <div className="font-semibold text-lg">Compare Roasts</div>
+              <div className="text-sm opacity-90">Analyze and compare roast curves</div>
             </div>
           </button>
         </div>

@@ -25,9 +25,7 @@ const AppLayout = ({
   setUserProfile,
   setLoading,
   setShowProfilePage,
-  refreshUserProfile,
-  triggerBeanProfileCreate,
-  onTriggerReset
+  refreshUserProfile
 }) => {
   const [activeTab, setActiveTab] = useState('roasts');
   const [isMobile, setIsMobile] = useState(false);
@@ -102,6 +100,7 @@ const AppLayout = ({
             roastId={roastId}
             getAuthToken={getAuthToken}
             onDataChange={onDataChange}
+            setActiveTab={setActiveTab}
           />
         );
       case 'beans':
@@ -109,8 +108,6 @@ const AppLayout = ({
           <BeansPage
             getAuthToken={getAuthToken}
             onDataChange={onDataChange}
-            triggerBeanProfileCreate={triggerBeanProfileCreate}
-            onTriggerReset={onTriggerReset}
           />
         );
       case 'profile':

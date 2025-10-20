@@ -753,7 +753,7 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
             }}
             className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-colors flex items-center gap-3 text-left"
           >
-            <span className="text-2xl">📝</span>
+            <span className="text-2xl">☕</span>
             <div>
               <div className="font-semibold text-lg">Create Bean Profile</div>
               <div className="text-sm opacity-90">Add a new coffee bean profile</div>

@@ -57,14 +57,14 @@ const FeedbackPage = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-dark-text-primary mb-2">Send Feedback</h1>
-              <p className="text-gray-600 dark:text-dark-text-secondary text-sm sm:text-base">Help us improve the app with your thoughts and suggestions</p>
+              <p className="text-gray-600 dark:text-dark-text-secondary text-sm sm:text-base">Help us improve the app with your suggestions</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Back Button */}
-      <div className="bg-white dark:bg-dark-bg-primary px-4 pb-4">
+      <div className="bg-white dark:bg-dark-bg-primary px-4">
         <div className="max-w-7xl mx-auto">
           <button
             onClick={() => window.history.back()}
