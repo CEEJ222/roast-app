@@ -1,5 +1,5 @@
 import React from 'react';
-import RoastCurveGraph from '../shared/RoastCurveGraph';
+import RoastCurveGraph from '../../shared/RoastCurveGraph';
 
 const RoastCurveSection = ({ 
   roast, 

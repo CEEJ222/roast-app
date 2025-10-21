@@ -1,11 +1,12 @@
 import React from 'react';
-import BottomSheetModal from '../shared/BottomSheetModal';
+import BottomSheetModal from '../../shared/BottomSheetModal';
 
 const RoastActionMenu = ({ 
   isOpen, 
   onClose, 
   onCopyRoastData,
   onShare,
+  onExport,
   onEdit,
   onDelete 
 }) => {
@@ -41,6 +42,20 @@ const RoastActionMenu = ({
           <div>
             <div className="font-semibold text-lg">Share Roast</div>
             <div className="text-sm opacity-90">Share roast data with others</div>
+          </div>
+        </button>
+        
+        <button
+          onClick={() => {
+            onExport();
+            onClose();
+          }}
+          className="w-full bg-gradient-to-r from-orange-600 to-amber-600 text-white px-4 py-4 rounded-lg hover:from-orange-700 hover:to-amber-700 transition-colors flex items-center gap-3 text-left"
+        >
+          <span className="text-2xl">📊</span>
+          <div>
+            <div className="font-semibold text-lg">Export to CSV</div>
+            <div className="text-sm opacity-90">Download roast data as CSV file</div>
           </div>
         </button>
         

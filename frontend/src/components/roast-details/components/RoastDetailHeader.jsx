@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatDate } from '../../utils/dateUtils';
+import { formatDate } from '../../../utils/dateUtils';
 import RoastActionButtons from './RoastActionButtons';
 
 const RoastDetailHeader = ({ 
@@ -10,6 +10,7 @@ const RoastDetailHeader = ({
   onCancelEdit,
   onCopyRoastData,
   onShare,
+  onExport,
   onDelete,
   onClose 
 }) => {
@@ -29,6 +30,7 @@ const RoastDetailHeader = ({
           onCancelEdit={onCancelEdit}
           onCopyRoastData={onCopyRoastData}
           onShare={onShare}
+          onExport={onExport}
           onDelete={onDelete}
           onClose={onClose}
         />

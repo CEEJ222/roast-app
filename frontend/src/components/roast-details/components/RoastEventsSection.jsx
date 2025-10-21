@@ -1,5 +1,5 @@
 import React from 'react';
-import EventsTable from '../during_roast/EventsTable';
+import EventsTable from '../../during_roast/EventsTable';
 
 const RoastEventsSection = ({ 
   events, 

@@ -1,26 +1,27 @@
 import React, { useState, memo } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import useSwipeGestures from '../hooks/useSwipeGestures';
-import useRoastData from '../hooks/useRoastData';
-import useRoastEditing from '../hooks/useRoastEditing';
-import useRoastActions from '../hooks/useRoastActions';
-import useTastingNotes from '../hooks/useTastingNotes';
-import useEventEditing from '../hooks/useEventEditing';
-import RoastOverviewCard from './roast-details/components/RoastOverviewCard';
-import RoastWeightsCard from './roast-details/components/RoastWeightsCard';
-import RoastNotesCard from './roast-details/components/RoastNotesCard';
-import TastingNotesCard from './roast-details/components/TastingNotesCard';
-import RoastDetailHeader from './roast-details/components/RoastDetailHeader';
-import RoastCurveSection from './roast-details/RoastCurveSection';
-import RoastEventsSection from './roast-details/components/RoastEventsSection';
-import EnvironmentalConditionsCard from './roast-details/EnvironmentalConditionsCard';
-import RoastActionMenu from './roast-details/RoastActionMenu';
-import RoastDeleteModal from './roast-details/RoastDeleteModal';
-import RoastShareModal from './roast-details/components/RoastShareModal';
-import RoastFloatingActionButton from './roast-details/components/RoastFloatingActionButton';
-import LoadingState from './roast-details/LoadingState';
-import ErrorState from './roast-details/ErrorState';
-import { formatDate } from '../utils/dateUtils';
+import { useAuth } from '../../contexts/AuthContext';
+import useSwipeGestures from '../../hooks/useSwipeGestures';
+import useRoastData from '../../hooks/useRoastData';
+import useRoastEditing from '../../hooks/useRoastEditing';
+import useRoastActions from '../../hooks/useRoastActions';
+import useTastingNotes from '../../hooks/useTastingNotes';
+import useEventEditing from '../../hooks/useEventEditing';
+import RoastOverviewCard from './components/RoastOverviewCard';
+import RoastWeightsCard from './components/RoastWeightsCard';
+import RoastNotesCard from './components/RoastNotesCard';
+import TastingNotesCard from './components/TastingNotesCard';
+import RoastDetailHeader from './components/RoastDetailHeader';
+import RoastCurveSection from './components/RoastCurveSection';
+import RoastEventsSection from './components/RoastEventsSection';
+import EnvironmentalConditionsCard from './components/EnvironmentalConditionsCard';
+import RoastActionMenu from './components/RoastActionMenu';
+import RoastDeleteModal from './components/RoastDeleteModal';
+import RoastShareModal from './components/RoastShareModal';
+import RoastFloatingActionButton from './components/RoastFloatingActionButton';
+import LoadingState from './components/LoadingState';
+import ErrorState from './components/ErrorState';
+import { formatDate } from '../../utils/dateUtils';
+import { exportRoastDetails } from '../../utils/csvExport';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'  // Local development
@@ -63,6 +64,17 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  // CSV Export functionality
+  const handleExport = () => {
+    try {
+      exportRoastDetails(roast, events, userProfile);
+    } catch (error) {
+      console.error('Error exporting roast:', error);
+      // You could add a toast notification here if you have one
+      alert('Failed to export roast data. Please try again.');
+    }
+  };
+
 
 
   // Loading and error states
@@ -95,6 +107,7 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
           onCancelEdit={handleCancelEdit}
           onCopyRoastData={handleCopyRoastData}
           onShare={() => setShowShareModal(true)}
+          onExport={handleExport}
           onDelete={() => setShowDeleteConfirm(true)}
           onClose={onClose}
         />
@@ -198,6 +211,7 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
         onClose={() => setShowActionMenu(false)}
         onCopyRoastData={handleCopyRoastData}
         onShare={() => setShowShareModal(true)}
+        onExport={handleExport}
         onEdit={handleEdit}
         onDelete={() => setShowDeleteConfirm(true)}
       />

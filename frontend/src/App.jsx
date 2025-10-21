@@ -8,11 +8,11 @@ import ProfilePage from './components/user_profile/ProfilePage';
 import StartNewRoastModal from './components/wizards/StartNewRoastModal';
 import EnvironmentalConditions from './components/shared/EnvironmentalConditions';
 import RoastCurveGraph from './components/shared/RoastCurveGraph';
-import HistoricalRoasts from './components/modals/CompareRoasts';
+import HistoricalRoasts from './pages/CompareRoasts';
 import { COFFEE_REGIONS } from './data/coffeeRegions';
 import CustomDropdown from './components/ux_ui/CustomDropdown';
 import DashboardHistoricalRoasts from './components/dashboard/DashboardHistoricalRoasts';
-import RoastDetailPage from './components/RoastDetailPage';
+import RoastDetailPage from './components/roast-details/RoastDetailPage';
 import ConfirmationModal from './components/modals/ConfirmationModal';
 import TemperatureInputModal from './components/modals/TemperatureInputModal';
 import ThemeToggle from './components/user_profile/ThemeToggle';
@@ -316,6 +316,22 @@ function RoastAssistant() {
   const refreshUserProfile = () => {
     loadUserProfile(true);
   };
+
+  // Disable pull-to-refresh when modals are open
+  useEffect(() => {
+    if (showRoastDetail || showHistoricalRoasts) {
+      document.body.style.overscrollBehavior = 'none';
+      document.body.style.touchAction = 'pan-x pan-y';
+    } else {
+      document.body.style.overscrollBehavior = '';
+      document.body.style.touchAction = '';
+    }
+
+    return () => {
+      document.body.style.overscrollBehavior = '';
+      document.body.style.touchAction = '';
+    };
+  }, [showRoastDetail, showHistoricalRoasts]);
 
   const handleSetupComplete = () => {
     setShowSetupWizard(false);

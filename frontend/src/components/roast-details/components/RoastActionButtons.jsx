@@ -7,6 +7,7 @@ const RoastActionButtons = ({
   onCancelEdit,
   onCopyRoastData,
   onShare,
+  onExport,
   onDelete,
   onClose 
 }) => {
@@ -51,6 +52,13 @@ const RoastActionButtons = ({
         title="Share roast"
       >
         📤 Share
+      </button>
+      <button 
+        onClick={onExport} 
+        className="bg-orange-500/80 hover:bg-orange-500 text-white px-2 sm:px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hidden sm:inline"
+        title="Export to CSV"
+      >
+        📊 Export
       </button>
       <button 
         onClick={onEdit} 

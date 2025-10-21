@@ -1,5 +1,5 @@
 import React from 'react';
-import BottomSheetModal from '../shared/BottomSheetModal';
+import BottomSheetModal from '../../shared/BottomSheetModal';
 
 const RoastShareModal = ({ 
   isOpen, 

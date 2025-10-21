@@ -1,5 +1,5 @@
 import React from 'react';
-import EnvironmentalConditions from '../shared/EnvironmentalConditions';
+import EnvironmentalConditions from '../../shared/EnvironmentalConditions';
 
 const EnvironmentalConditionsCard = ({ 
   roast, 

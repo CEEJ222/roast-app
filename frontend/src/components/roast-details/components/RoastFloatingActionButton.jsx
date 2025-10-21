@@ -1,5 +1,5 @@
 import React from 'react';
-import FloatingActionButton from '../shared/FloatingActionButton';
+import FloatingActionButton from '../../shared/FloatingActionButton';
 
 const RoastFloatingActionButton = ({ 
   isEditing, 
