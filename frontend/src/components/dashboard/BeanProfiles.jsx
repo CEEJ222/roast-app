@@ -462,7 +462,7 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {beanProfiles.map((profile) => {
                 // Check if profile is good for espresso (check both database field and notes for backwards compatibility)
                 const isGoodForEspresso = profile.espresso_suitable === true || 
