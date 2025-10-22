@@ -166,9 +166,63 @@ except JWTError:  # Not jwt.InvalidTokenError
 - Fix JWT error handling
 - Verify all environment variables are set
 
+### 9. Modal Confirmation Issues
+
+**Problem**: Confirmation modals work for close button (X icon) but not for swipe-to-close gestures
+
+**Root Cause**: Touch handlers in modal components call `onClose()` directly instead of going through the confirmation logic
+
+**Symptoms**:
+- Close button shows confirmation dialog ✅
+- Swipe-to-close bypasses confirmation ❌
+- Users can accidentally lose form data
+
+**Solution**: Update touch handlers to use the confirmation handler instead of direct close
+
+```javascript
+// ❌ WRONG - Bypasses confirmation
+const handleTouchEnd = (e) => {
+  if (deltaY > threshold) {
+    onClose(); // Direct close, no confirmation
+  }
+};
+
+// ✅ CORRECT - Shows confirmation
+const handleTouchEnd = (e) => {
+  if (deltaY > threshold) {
+    handleClose(); // Goes through confirmation logic
+  }
+};
+```
+
+**Files to Check**:
+- `BeanProfileForm.jsx` - Line 184 in `handleTouchEnd`
+- `StartNewRoastModal.jsx` - Touch handlers
+- Any modal with swipe-to-close functionality
+
+**Debug Steps**:
+1. Check if modal has separate touch handlers
+2. Verify touch handlers call confirmation function, not direct close
+3. Test both close button and swipe gestures
+4. Ensure confirmation modal has proper z-index
+
+### 10. Modal Z-Index Issues
+
+**Problem**: Confirmation modals appear behind other content
+
+**Solution**: Add explicit z-index to confirmation modals
+
+```javascript
+<div 
+  className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4" 
+  style={{zIndex: 100}}
+>
+```
+
 ## Remember
 
 - **Railway + CORS = Always use custom middleware**
 - **JWT Secret = Always required for authentication**
+- **Modal touch handlers = Must use confirmation logic**
 - **Check logs first when debugging**
 - **Test with curl to isolate frontend vs backend issues**

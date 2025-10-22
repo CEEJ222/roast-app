@@ -220,85 +220,117 @@ const StartNewRoastModal = ({
         className="max-w-5xl"
         headerClassName="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant text-white"
       >
-      {/* Progress Steps */}
-      <div className="bg-gray-50 dark:bg-dark-bg-tertiary px-6 py-4 border-b dark:border-dark-border-primary">
-        <div className="flex items-center justify-center space-x-4">
-          <div className="flex items-center">
-            <div className="flex items-center justify-center">
-              <span className={`text-xl ${
+      {/* Progress Steps - Mobile Optimized */}
+      <div className="bg-gray-50 dark:bg-dark-bg-tertiary px-4 sm:px-6 py-3 sm:py-4 border-b dark:border-dark-border-primary">
+        <div className="flex items-center justify-between sm:justify-center sm:space-x-4">
+          {/* Mobile: Show current step prominently with progress bar */}
+          <div className="flex-1 sm:hidden">
+            <div className="text-center">
+              <div className="text-2xl mb-1">
+                {roastSetupStep === 'machine' && '⚙️'}
+                {roastSetupStep === 'bean-profile' && '☕'}
+                {roastSetupStep === 'roast-parameters' && '🔥'}
+                {roastSetupStep === 'review' && '✅'}
+              </div>
+              <div className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
+                {roastSetupStep === 'machine' && 'Machine Setup'}
+                {roastSetupStep === 'bean-profile' && 'Bean Profile'}
+                {roastSetupStep === 'roast-parameters' && 'Roast Parameters'}
+                {roastSetupStep === 'review' && 'Review & Start'}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Step {['machine', 'bean-profile', 'roast-parameters', 'review'].indexOf(roastSetupStep) + 1} of 4
+              </div>
+              {/* Mobile progress bar */}
+              <div className="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                <div 
+                  className="bg-indigo-600 h-1.5 rounded-full transition-all duration-300"
+                  style={{ 
+                    width: `${((['machine', 'bean-profile', 'roast-parameters', 'review'].indexOf(roastSetupStep) + 1) / 4) * 100}%` 
+                  }}
+                ></div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Desktop: Full progress bar */}
+          <div className="hidden sm:flex items-center space-x-4">
+            <div className="flex items-center">
+              <div className="flex items-center justify-center">
+                <span className={`text-xl ${
+                  roastSetupStep === 'machine' ? 'text-indigo-600' : 
+                  ['bean-profile', 'coffee-details', 'roast-parameters', 'review'].includes(roastSetupStep) ? 'text-green-600' : 'text-gray-400'
+                }`}>
+                  ⚙️
+                </span>
+              </div>
+              <span className={`ml-2 text-xs font-medium ${
                 roastSetupStep === 'machine' ? 'text-indigo-600' : 
-                ['bean-profile', 'coffee-details', 'roast-parameters', 'review'].includes(roastSetupStep) ? 'text-green-600' : 'text-gray-400'
+                ['bean-profile', 'coffee-details', 'roast-parameters', 'review'].includes(roastSetupStep) ? 'text-green-600' : 'text-gray-500'
               }`}>
-                ⚙️
+                Machine
               </span>
             </div>
-            <span className={`ml-2 text-xs font-medium hidden sm:block ${
-              roastSetupStep === 'machine' ? 'text-indigo-600' : 
-              ['bean-profile', 'coffee-details', 'roast-parameters', 'review'].includes(roastSetupStep) ? 'text-green-600' : 'text-gray-500'
-            }`}>
-              Machine
-            </span>
-          </div>
-          <div className="w-6 h-0.5 bg-gray-300"></div>
-          <div className="flex items-center">
-            <div className="flex items-center justify-center">
-              <span className={`text-xl ${
+            <div className="w-6 h-0.5 bg-gray-300"></div>
+            <div className="flex items-center">
+              <div className="flex items-center justify-center">
+                <span className={`text-xl ${
+                  roastSetupStep === 'bean-profile' ? 'text-indigo-600' : 
+                  ['coffee-details', 'roast-parameters', 'review'].includes(roastSetupStep) ? 'text-green-600' : 'text-gray-400'
+                }`}>
+                  ☕
+                </span>
+              </div>
+              <span className={`ml-2 text-xs font-medium ${
                 roastSetupStep === 'bean-profile' ? 'text-indigo-600' : 
-                ['coffee-details', 'roast-parameters', 'review'].includes(roastSetupStep) ? 'text-green-600' : 'text-gray-400'
+                ['coffee-details', 'roast-parameters', 'review'].includes(roastSetupStep) ? 'text-green-600' : 'text-gray-500'
               }`}>
-                ☕
+                Bean Profile
               </span>
             </div>
-            <span className={`ml-2 text-xs font-medium hidden sm:block ${
-              roastSetupStep === 'bean-profile' ? 'text-indigo-600' : 
-              ['coffee-details', 'roast-parameters', 'review'].includes(roastSetupStep) ? 'text-green-600' : 'text-gray-500'
-            }`}>
-              Bean Profile
-            </span>
-          </div>
-          <div className="w-6 h-0.5 bg-gray-300"></div>
-          <div className="flex items-center">
-            <div className="flex items-center justify-center">
-              <span className={`text-xl ${
+            <div className="w-6 h-0.5 bg-gray-300"></div>
+            <div className="flex items-center">
+              <div className="flex items-center justify-center">
+                <span className={`text-xl ${
+                  roastSetupStep === 'roast-parameters' ? 'text-indigo-600' : 
+                  roastSetupStep === 'review' ? 'text-green-600' : 'text-gray-400'
+                }`}>
+                  🔥
+                </span>
+              </div>
+              <span className={`ml-2 text-xs font-medium ${
                 roastSetupStep === 'roast-parameters' ? 'text-indigo-600' : 
-                roastSetupStep === 'review' ? 'text-green-600' : 'text-gray-400'
+                roastSetupStep === 'review' ? 'text-green-600' : 'text-gray-500'
               }`}>
-                🔥
+                Roast Parameters
               </span>
             </div>
-            <span className={`ml-2 text-xs font-medium hidden sm:block ${
-              roastSetupStep === 'roast-parameters' ? 'text-indigo-600' : 
-              roastSetupStep === 'review' ? 'text-green-600' : 'text-gray-500'
-            }`}>
-              Roast Parameters
-            </span>
-          </div>
-          <div className="w-6 h-0.5 bg-gray-300"></div>
-          <div className="flex items-center">
-            <div className="flex items-center justify-center">
-              <span className={`text-xl ${
-                roastSetupStep === 'review' ? 'text-indigo-600' : 'text-gray-400'
+            <div className="w-6 h-0.5 bg-gray-300"></div>
+            <div className="flex items-center">
+              <div className="flex items-center justify-center">
+                <span className={`text-xl ${
+                  roastSetupStep === 'review' ? 'text-indigo-600' : 'text-gray-400'
+                }`}>
+                  ✅
+                </span>
+              </div>
+              <span className={`ml-2 text-xs font-medium ${
+                roastSetupStep === 'review' ? 'text-indigo-600' : 'text-gray-500'
               }`}>
-                ✅
+                Review & Start
               </span>
             </div>
-            <span className={`ml-2 text-xs font-medium hidden sm:block ${
-              roastSetupStep === 'review' ? 'text-indigo-600' : 'text-gray-500'
-            }`}>
-              Review & Start
-            </span>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-6 max-h-[80vh] overflow-y-auto">
+      {/* Content - Mobile Optimized */}
+      <div className="p-4 sm:p-6 max-h-[calc(80vh-80px)] overflow-y-auto flex-1 min-h-0">
         {roastSetupStep === 'machine' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {/* Machine Setup */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">Machine Setup</h3>
                 
                 {userMachines.length === 0 ? (
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
@@ -313,7 +345,7 @@ const StartNewRoastModal = ({
                         </p>
                         <button
                           onClick={() => setShowProfilePage(true)}
-                          className="mt-3 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-red-600"
+                          className="mt-3 bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors border border-red-600 min-h-[44px] flex items-center justify-center touch-manipulation"
                         >
                           Add Machine to Profile
                         </button>
@@ -355,7 +387,6 @@ const StartNewRoastModal = ({
 
               {/* Location Setup */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">Location</h3>
                 
                 {isLoadingLocation ? (
                   <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
@@ -385,7 +416,7 @@ const StartNewRoastModal = ({
                         <button
                           onClick={handleLocationRefresh}
                           disabled={isRefreshingLocation}
-                          className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                          className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 min-h-[44px] flex items-center justify-center touch-manipulation"
                         >
                           {isRefreshingLocation ? 'Refreshing...' : 'Set Location'}
                         </button>
@@ -406,7 +437,7 @@ const StartNewRoastModal = ({
                         <button
                           onClick={handleLocationRefresh}
                           disabled={isRefreshingLocation}
-                          className="mt-2 text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200"
+                          className="mt-2 text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 py-2 px-3 rounded min-h-[36px] flex items-center justify-center touch-manipulation"
                         >
                           {isRefreshingLocation ? 'Refreshing...' : 'Refresh Location'}
                         </button>
@@ -419,22 +450,18 @@ const StartNewRoastModal = ({
           </div>
         )}
 
-        {/* Bean Profile Step */}
+        {/* Bean Profile Step - Mobile Optimized */}
         {roastSetupStep === 'bean-profile' && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {beanProfileScreen === 'choice' && (
-              <div className="space-y-6">
-                <div className="text-center">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-2">Choose Bean Profile</h3>
-                  <p className="text-gray-600 dark:text-dark-text-secondary">Select an existing bean profile or create a new one</p>
-                </div>
+              <div className="space-y-4 sm:space-y-6">
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   <button
                     onClick={() => setBeanProfileScreen('select')}
-                    className="p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors text-center"
+                    className="p-4 sm:p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors text-center min-h-[120px] sm:min-h-[140px] flex flex-col items-center justify-center touch-manipulation"
                   >
-                    <div className="text-4xl mb-2">☕</div>
+                    <div className="text-3xl sm:text-4xl mb-2">☕</div>
                     <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary">Select Existing</h4>
                     <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-1">
                       Choose from your saved bean profiles
@@ -443,9 +470,9 @@ const StartNewRoastModal = ({
                   
                   <button
                     onClick={() => setBeanProfileScreen('create')}
-                    className="p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors text-center"
+                    className="p-4 sm:p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors text-center min-h-[120px] sm:min-h-[140px] flex flex-col items-center justify-center touch-manipulation"
                   >
-                    <div className="text-4xl mb-2">➕</div>
+                    <div className="text-3xl sm:text-4xl mb-2">➕</div>
                     <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary">Create New</h4>
                     <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-1">
                       Add a new bean profile
@@ -463,6 +490,7 @@ const StartNewRoastModal = ({
                   handleInputChange('selectedBeanProfile', profile);
                   setRoastSetupStep('roast-parameters');
                 }}
+                defaultOpen={true}
               />
             )}
 
@@ -476,20 +504,19 @@ const StartNewRoastModal = ({
                 }}
                 getAuthToken={getAuthToken}
                 onDataUpdate={loadBeanProfiles}
+                hideHeader={true}
+                showBackButton={true}
+                onBack={() => setBeanProfileScreen('choice')}
               />
             )}
           </div>
         )}
 
-        {/* Roast Parameters Step */}
+        {/* Roast Parameters Step - Mobile Optimized */}
         {roastSetupStep === 'roast-parameters' && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-2">Roast Parameters</h3>
-              <p className="text-gray-600 dark:text-dark-text-secondary">Set your roast preferences</p>
-            </div>
+          <div className="space-y-4 sm:space-y-6">
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
@@ -517,7 +544,7 @@ const StartNewRoastModal = ({
                     type="number"
                     value={formData.roastTime}
                     onChange={(e) => handleInputChange('roastTime', parseInt(e.target.value) || 10)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-card dark:text-dark-text-primary"
+                    className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-card dark:text-dark-text-primary text-base"
                     min="5"
                     max="30"
                   />
@@ -533,7 +560,7 @@ const StartNewRoastModal = ({
                     type="number"
                     value={formData.weightBefore}
                     onChange={(e) => handleInputChange('weightBefore', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-card dark:text-dark-text-primary"
+                    className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-card dark:text-dark-text-primary text-base"
                     placeholder="Enter weight in grams"
                     min="0"
                     step="0.1"
@@ -547,7 +574,7 @@ const StartNewRoastModal = ({
                   <textarea
                     value={formData.notes}
                     onChange={(e) => handleInputChange('notes', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-card dark:text-dark-text-primary"
+                    className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-card dark:text-dark-text-primary text-base"
                     placeholder="Any special notes for this roast..."
                     rows="3"
                   />
@@ -557,52 +584,59 @@ const StartNewRoastModal = ({
           </div>
         )}
 
-        {/* Review Step */}
+        {/* Review Step - Mobile Optimized */}
         {roastSetupStep === 'review' && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-2">Review & Start</h3>
-              <p className="text-gray-600 dark:text-dark-text-secondary">Review your roast configuration</p>
-            </div>
-            
-            <div className="bg-gray-50 dark:bg-dark-bg-tertiary rounded-lg p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary">Machine</h4>
-                  <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
-                    {userMachines.find(m => m.id === formData.selectedMachineId)?.name || 'Unknown'}
-                  </p>
+          <div className="space-y-3">
+            <div className="bg-gray-50 dark:bg-dark-bg-tertiary rounded-lg p-3 sm:p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <div className="space-y-2">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-sm">Machine</h4>
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                      {userMachines.find(m => m.id === formData.selectedMachineId)?.name || 'Unknown'}
+                    </p>
+                  </div>
                   
-                  <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary">Bean Profile</h4>
-                  <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
-                    {formData.selectedBeanProfile?.name || 'Not selected'}
-                  </p>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-sm">Bean Profile</h4>
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                      {formData.selectedBeanProfile?.name || 'Not selected'}
+                    </p>
+                  </div>
                   
-                  <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary">Location</h4>
-                  <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
-                    {formData.address || 'Not set'}
-                  </p>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-sm">Location</h4>
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                      {formData.address || 'Not set'}
+                    </p>
+                  </div>
                 </div>
                 
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary">Roast Level</h4>
-                  <p className="text-sm text-gray-600 dark:text-dark-text-secondary">{formData.roastLevel}</p>
+                <div className="space-y-2">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-sm">Roast Level</h4>
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary">{formData.roastLevel}</p>
+                  </div>
                   
-                  <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary">Weight Before</h4>
-                  <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
-                    {formData.weightBefore ? `${formData.weightBefore}g` : 'Not set'}
-                  </p>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-sm">Weight Before</h4>
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                      {formData.weightBefore ? `${formData.weightBefore}g` : 'Not set'}
+                    </p>
+                  </div>
                   
-                  <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary">Expected Time</h4>
-                  <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
-                    {formData.roastTime} minutes
-                  </p>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-sm">Expected Time</h4>
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                      {formData.roastTime} minutes
+                    </p>
+                  </div>
                 </div>
               </div>
               
               {formData.notes && (
-                <div className="mt-4">
-                  <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary">Notes</h4>
+                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                  <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-sm">Notes</h4>
                   <p className="text-sm text-gray-600 dark:text-dark-text-secondary">{formData.notes}</p>
                 </div>
               )}
@@ -610,60 +644,51 @@ const StartNewRoastModal = ({
           </div>
         )}
 
-        {/* Navigation Buttons */}
-        <div className="flex justify-between items-center pt-6 border-t dark:border-dark-border-primary">
-          <div>
-            {roastSetupStep !== 'machine' && (
-              <button
-                onClick={handleBack}
-                className="px-4 py-2 text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary font-medium transition"
-              >
-                ← Back
-              </button>
-            )}
-          </div>
+      </div>
+
+      {/* Navigation Buttons - Always Visible at Bottom */}
+      <div className="flex justify-between items-center pt-4 sm:pt-6 border-t dark:border-dark-border-primary bg-white dark:bg-dark-card flex-shrink-0">
+        <div>
+          {roastSetupStep !== 'machine' && (
+            <button
+              onClick={handleBack}
+              className="px-4 py-3 text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary font-medium transition min-h-[44px] flex items-center justify-center touch-manipulation"
+            >
+              <span className="mr-1">←</span> Back
+            </button>
+          )}
+        </div>
+        
+        <div>
+          {roastSetupStep === 'machine' && (
+            <button
+              onClick={handleMachineSetup}
+              disabled={userMachines.length === 0}
+              className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg min-h-[44px] flex items-center justify-center touch-manipulation"
+            >
+              Next
+            </button>
+          )}
           
-          <div>
-            {roastSetupStep === 'machine' && (
-              <button
-                onClick={handleMachineSetup}
-                disabled={userMachines.length === 0}
-                className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-              >
-                Next
-              </button>
-            )}
-            
-            {roastSetupStep === 'bean-profile' && beanProfileScreen === 'choice' && (
-              <button
-                onClick={handleBeanProfileSetup}
-                disabled={!formData.selectedBeanProfile}
-                className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-              >
-                Next
-              </button>
-            )}
-            
-            {roastSetupStep === 'roast-parameters' && (
-              <button
-                onClick={handleRoastParametersSetup}
-                disabled={!formData.weightBefore}
-                className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-              >
-                Review
-              </button>
-            )}
-            
-            {roastSetupStep === 'review' && (
-              <button
-                onClick={handleStartRoast}
-                disabled={!formData.selectedBeanProfile || !formData.weightBefore || userMachines.length === 0}
-                className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-              >
-                Start Roast
-              </button>
-            )}
-          </div>
+          {roastSetupStep === 'roast-parameters' && (
+            <button
+              onClick={handleRoastParametersSetup}
+              disabled={!formData.weightBefore}
+              className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg min-h-[44px] flex items-center justify-center touch-manipulation"
+            >
+              Review
+            </button>
+          )}
+          
+          {roastSetupStep === 'review' && (
+            <button
+              onClick={handleStartRoast}
+              disabled={!formData.selectedBeanProfile || !formData.weightBefore || userMachines.length === 0}
+              className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg min-h-[44px] flex items-center justify-center touch-manipulation"
+            >
+              Start Roast
+            </button>
+          )}
         </div>
       </div>
       </MobileModal>

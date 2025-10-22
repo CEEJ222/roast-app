@@ -10,7 +10,7 @@ const API_BASE = import.meta.env.DEV
   ? 'http://localhost:8000'
   : 'https://roast-backend-production-8883.up.railway.app';
 
-const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthToken, beanProfileId = null, onDataUpdate = null }) => {
+const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthToken, beanProfileId = null, onDataUpdate = null, hideHeader = false, showBackButton = false, onBack = null }) => {
   const [formData, setFormData] = useState({
     // Basic Info (from roast form)
     name: '',
@@ -641,26 +641,40 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
           <div className="w-8 h-1 bg-gray-800 dark:bg-gray-200 rounded-full"></div>
         </div>
 
-        {/* Header */}
-        <div className="bg-white dark:bg-dark-card px-4 sm:px-6 py-3 sm:py-4 text-gray-900 dark:text-dark-text-primary flex-shrink-0">
-          <div className="flex justify-between items-center">
-            <div className="flex-1">
-              <h2 className="text-xl sm:text-2xl font-bold">
-                {beanProfileId ? 'Edit Bean Profile' : 'Add Bean Profile'}
-              </h2>
-              <p className="opacity-90 text-sm sm:text-base">
-                {beanProfileId ? 'Update detailed information about the green coffee' : 'Add detailed information about the green coffee'}
-              </p>
+        {/* Header - Conditionally rendered */}
+        {!hideHeader && (
+          <div className="bg-white dark:bg-dark-card px-4 sm:px-6 py-3 sm:py-4 text-gray-900 dark:text-dark-text-primary flex-shrink-0">
+            <div className="flex justify-between items-center">
+              <div className="flex-1">
+                <h2 className="text-xl sm:text-2xl font-bold">
+                  {beanProfileId ? 'Edit Bean Profile' : 'Add Bean Profile'}
+                </h2>
+                <p className="opacity-90 text-sm sm:text-base">
+                  {beanProfileId ? 'Update detailed information about the green coffee' : 'Add detailed information about the green coffee'}
+                </p>
+              </div>
+              {/* Desktop only close button */}
+              <button
+                onClick={handleClose}
+                className="text-gray-900 dark:text-dark-text-primary hover:text-gray-600 dark:hover:text-gray-300 text-xl sm:text-2xl hidden sm:block"
+              >
+                ✕
+              </button>
             </div>
-            {/* Desktop only close button */}
+          </div>
+        )}
+
+        {/* Back Button - Show when embedded in another modal */}
+        {showBackButton && onBack && (
+          <div className="bg-gray-50 dark:bg-dark-bg-tertiary px-4 sm:px-6 py-3 border-b dark:border-dark-border-primary flex-shrink-0">
             <button
-              onClick={handleClose}
-              className="text-gray-900 dark:text-dark-text-primary hover:text-gray-600 dark:hover:text-gray-300 text-xl sm:text-2xl hidden sm:block"
+              onClick={onBack}
+              className="flex items-center text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary font-medium transition min-h-[44px] touch-manipulation"
             >
-              ✕
+              <span className="mr-2">←</span> Back to Bean Profile Selection
             </button>
           </div>
-        </div>
+        )}
 
         <div 
           className="modal-content p-4 sm:p-6 overflow-y-auto flex-1 min-h-0"
