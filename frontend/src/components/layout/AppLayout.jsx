@@ -85,6 +85,7 @@ const AppLayout = ({
           roastId={roastId}
           getAuthToken={getAuthToken}
           onDataChange={onDataChange}
+          showStartRoastWizard={showStartRoastWizard}
         />
       );
     }
@@ -108,6 +109,7 @@ const AppLayout = ({
             getAuthToken={getAuthToken}
             onDataChange={onDataChange}
             setActiveTab={setActiveTab}
+            showStartRoastWizard={showStartRoastWizard}
           />
         );
       case 'beans':

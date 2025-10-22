@@ -82,11 +82,8 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
 
   // Handle close with confirmation
   const handleClose = () => {
-    if (hasUnsavedChanges()) {
-      setShowConfirmClose(true);
-    } else {
-      onClose();
-    }
+    // Always show confirmation to be safe
+    setShowConfirmClose(true);
   };
 
   // Initialize form with existing data if editing
@@ -137,17 +134,59 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Touch handlers for mobile modal
+  // Touch handlers for swipe-to-close
+  const [touchStartY, setTouchStartY] = useState(null);
+  const [touchCurrentY, setTouchCurrentY] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+
   const handleTouchStart = (e) => {
-    // Touch start handler for mobile modal
+    // Check if we're at the top of the modal content
+    const modalContent = e.currentTarget.querySelector('.modal-content');
+    const isAtTop = !modalContent || modalContent.scrollTop <= 5;
+    
+    // Only allow swipe-to-close if we're at the very top
+    if (!isAtTop) {
+      return; // Don't start swipe detection if not at top
+    }
+    
+    setTouchStartY(e.touches[0].clientY);
+    setTouchCurrentY(e.touches[0].clientY);
+    setIsDragging(true);
   };
 
   const handleTouchMove = (e) => {
-    // Touch move handler for mobile modal
+    if (!isDragging) return;
+    setTouchCurrentY(e.touches[0].clientY);
   };
 
   const handleTouchEnd = (e) => {
-    // Touch end handler for mobile modal
+    if (!isDragging || !touchStartY || !touchCurrentY) {
+      setIsDragging(false);
+      return;
+    }
+
+    const deltaY = touchCurrentY - touchStartY;
+    const threshold = 200; // Much higher threshold - need a significant swipe
+
+    // Double-check we're still at the top before allowing close
+    const modalContent = e.currentTarget.querySelector('.modal-content');
+    const isAtTop = !modalContent || modalContent.scrollTop <= 5;
+    
+    if (!isAtTop) {
+      setIsDragging(false);
+      setTouchStartY(null);
+      setTouchCurrentY(null);
+      return;
+    }
+
+    if (deltaY > threshold) {
+      // Swipe down detected - show confirmation
+      handleClose();
+    }
+
+    setIsDragging(false);
+    setTouchStartY(null);
+    setTouchCurrentY(null);
   };
 
   const handleManualURLInput = () => {
@@ -624,7 +663,7 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
         </div>
 
         <div 
-          className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0"
+          className="modal-content p-4 sm:p-6 overflow-y-auto flex-1 min-h-0"
           style={{ overscrollBehavior: 'none', touchAction: 'pan-y' }}
         >
 
@@ -1028,20 +1067,20 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
 
       {/* Confirmation Modal */}
       {showConfirmClose && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4" style={{zIndex: 100}}>
           <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-md w-full p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-2">
-              Discard Changes?
+              Cancel Bean Profile?
             </h3>
             <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
-              You have unsaved changes. Are you sure you want to close without saving?
+              Are you sure you want to close without saving your bean profile?
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowConfirmClose(false)}
                 className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-dark-text-primary hover:bg-gray-50 dark:hover:bg-gray-800"
               >
-                Cancel
+                Continue Editing
               </button>
               <button
                 onClick={() => {
@@ -1050,7 +1089,7 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
                 }}
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
               >
-                Discard
+                Cancel Profile
               </button>
             </div>
           </div>

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 const MobileModal = ({ 
   isOpen, 
   onClose, 
+  onSwipeClose = null,
   title, 
   subtitle,
   children, 
@@ -56,7 +57,7 @@ const MobileModal = ({
     
     // Check if we're at the top of the modal content
     const modalContent = e.currentTarget.querySelector('.modal-content');
-    const isAtTop = !modalContent || modalContent.scrollTop <= 10;
+    const isAtTop = !modalContent || modalContent.scrollTop <= 5;
     
     // Only allow swipe-to-close if we're at the top
     if (!isAtTop) {
@@ -80,11 +81,11 @@ const MobileModal = ({
     }
 
     const deltaY = touchCurrentY - touchStartY;
-    const threshold = 100; // Minimum swipe distance
+    const threshold = 200; // Much higher threshold - need a significant swipe
 
     // Double-check we're still at the top before allowing close
     const modalContent = e.currentTarget.querySelector('.modal-content');
-    const isAtTop = !modalContent || modalContent.scrollTop <= 10;
+    const isAtTop = !modalContent || modalContent.scrollTop <= 5;
     
     if (!isAtTop) {
       setIsDragging(false);
@@ -95,7 +96,11 @@ const MobileModal = ({
 
     if (deltaY > threshold) {
       // Swipe down detected
-      handleClose();
+      if (onSwipeClose) {
+        onSwipeClose();
+      } else {
+        handleClose();
+      }
     }
 
     setIsDragging(false);

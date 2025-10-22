@@ -20,6 +20,7 @@ const RoastsPage = ({
   getAuthToken,
   onDataChange = null,
   setActiveTab,
+  showStartRoastWizard = false,
 }) => {
   const [showFABMenu, setShowFABMenu] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -168,8 +169,8 @@ const RoastsPage = ({
           />
       </div>
 
-      {/* Floating Action Button - only show on mobile */}
-      {isMobile && (
+      {/* Floating Action Button - only show on mobile and when Start New Roast modal is not open */}
+      {isMobile && !showStartRoastWizard && (
         <FloatingActionButton
           onClick={() => {
             console.log('FAB clicked, setting showFABMenu to true');

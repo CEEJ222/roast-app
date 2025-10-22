@@ -38,6 +38,7 @@ const StartNewRoastModal = ({
   const [beanProfiles, setBeanProfiles] = useState([]);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [isRefreshingLocation, setIsRefreshingLocation] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
   // Load bean profiles when modal opens
   useEffect(() => {
@@ -179,6 +180,15 @@ const StartNewRoastModal = ({
     onClose();
   };
 
+  const handleCloseAttempt = () => {
+    setShowCloseConfirm(true);
+  };
+
+  const handleConfirmClose = () => {
+    setShowCloseConfirm(false);
+    handleCancel();
+  };
+
   const handleLocationRefresh = async () => {
     setIsRefreshingLocation(true);
     if (refreshUserProfile) {
@@ -201,14 +211,15 @@ const StartNewRoastModal = ({
   if (!isOpen) return null;
 
   return (
-    <MobileModal
-      isOpen={isOpen}
-      onClose={handleCancel}
-      title="🔥 Start New Roast"
-      subtitle="Configure your roast session"
-      className="max-w-5xl"
-      headerClassName="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant text-white"
-    >
+    <>
+      <MobileModal
+        isOpen={isOpen}
+        onClose={handleCloseAttempt}
+        title="🔥 Start New Roast"
+        subtitle="Configure your roast session"
+        className="max-w-5xl"
+        headerClassName="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant text-white"
+      >
       {/* Progress Steps */}
       <div className="bg-gray-50 dark:bg-dark-bg-tertiary px-6 py-4 border-b dark:border-dark-border-primary">
         <div className="flex items-center justify-center space-x-4">
@@ -655,7 +666,36 @@ const StartNewRoastModal = ({
           </div>
         </div>
       </div>
-    </MobileModal>
+      </MobileModal>
+
+      {/* Close Confirmation Modal */}
+      {showCloseConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4" style={{zIndex: 100}}>
+          <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-2">
+              Cancel Roast Setup?
+            </h3>
+            <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
+              You have entered some roast configuration data. Are you sure you want to cancel and lose your progress?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCloseConfirm(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-dark-text-primary hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                Continue Setup
+              </button>
+              <button
+                onClick={handleConfirmClose}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Cancel Setup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

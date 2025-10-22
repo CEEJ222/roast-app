@@ -41,6 +41,7 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
   const [showURLModal, setShowURLModal] = useState(false);
   const [showLLMModal, setShowLLMModal] = useState(false);
   const [llmAnalysisResult, setLlmAnalysisResult] = useState(null);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
   // Check if form has unsaved changes
   const hasUnsavedChanges = () => {
@@ -49,6 +50,17 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
            formData.origin !== '' || 
            formData.variety !== '' ||
            formData.process_method !== '';
+  };
+
+  // Handle close with confirmation
+  const handleClose = () => {
+    // Always show confirmation to be safe
+    setShowCloseConfirm(true);
+  };
+
+  const handleConfirmClose = () => {
+    setShowCloseConfirm(false);
+    onClose();
   };
 
   // ... all your existing handlers (handleInputChange, handleSave, etc.)
@@ -139,7 +151,7 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
     <>
       <MobileModal
         isOpen={isOpen}
-        onClose={onClose}
+        onClose={handleClose}
         title="Add Bean Profile"
         subtitle="Add detailed information about the green coffee"
         hasUnsavedChanges={hasUnsavedChanges}
@@ -174,6 +186,34 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
         onClose={() => setShowLLMModal(false)}
         analysisResult={llmAnalysisResult}
       />
+
+      {/* Close Confirmation Modal */}
+      {showCloseConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4" style={{zIndex: 100}}>
+          <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-2">
+              Cancel Bean Profile?
+            </h3>
+            <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
+              Are you sure you want to close without saving your bean profile?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCloseConfirm(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-dark-text-primary hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                Continue Editing
+              </button>
+              <button
+                onClick={handleConfirmClose}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Cancel Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
