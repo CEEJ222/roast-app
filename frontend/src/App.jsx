@@ -309,6 +309,13 @@ function RoastAssistant() {
     loadHistoricalRoasts();
   }, [user, setupComplete, getAuthToken]);
 
+  // Load roast details when historical roasts are loaded
+  useEffect(() => {
+    if (historicalRoasts.length > 0) {
+      loadAllRoastDetails(historicalRoasts);
+    }
+  }, [historicalRoasts]);
+
   // Add a function to refresh profile data when needed
   const refreshUserProfile = () => {
     loadUserProfile(true);

@@ -168,10 +168,6 @@ const DashboardHistoricalRoasts = ({
   ];
 
   const getSelectedRoastsData = () => {
-    console.log('getSelectedRoastsData: selectedRoasts', selectedRoasts);
-    console.log('getSelectedRoastsData: roastDetails', roastDetails);
-    console.log('getSelectedRoastsData: roasts', roasts.length);
-    
     const result = selectedRoasts.map(roastId => {
       const roast = roasts.find(r => r.id === roastId);
       // Use the roast details from the parent component
@@ -181,9 +177,6 @@ const DashboardHistoricalRoasts = ({
                          ? `${roast.coffee_region} ${roast.coffee_type}` 
                          : roast?.coffee_type || roast?.coffee_region || 'Unknown Coffee');
       
-      console.log(`getSelectedRoastsData: Roast ${roastId} has ${events.length} events`);
-      console.log(`getSelectedRoastsData: First few events:`, events.slice(0, 3));
-      
       return {
         id: roastId,
         name: coffeeName,
@@ -191,7 +184,6 @@ const DashboardHistoricalRoasts = ({
         events: events
       };
     });
-    console.log('getSelectedRoastsData: Final result', result);
     return result;
   };
 

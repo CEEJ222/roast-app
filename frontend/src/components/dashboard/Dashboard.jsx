@@ -60,8 +60,6 @@ const Dashboard = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-  console.log('Dashboard: recentRoastDetails', recentRoastDetails);
-  console.log('Dashboard: historicalRoasts', historicalRoasts?.length);
   
   return (
     <div className="space-y-6" ref={pullToRefreshRef} id="dashboard">
