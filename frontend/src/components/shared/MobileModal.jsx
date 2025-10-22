@@ -143,7 +143,7 @@ const MobileModal = ({
         </div>
 
         {/* Header */}
-        <div className={`bg-white dark:bg-dark-card px-4 sm:px-6 py-3 sm:py-4 text-gray-900 dark:text-dark-text-primary flex-shrink-0 ${headerClassName}`}>
+        <div className={`bg-white dark:bg-dark-card px-4 sm:px-6 py-3 sm:py-4 text-gray-900 dark:text-dark-text-primary flex-shrink-0 rounded-t-xl sm:rounded-t-xl ${headerClassName}`}>
           <div className="flex justify-between items-center">
             <div className="flex-1">
               <h2 className="text-xl sm:text-2xl font-bold">{title}</h2>

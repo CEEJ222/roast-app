@@ -31,7 +31,6 @@ const StartNewRoastModal = ({
     roastLevel: 'City',
     weightBefore: '',
     roastTime: 10, // Default 10 minutes
-    notes: '',
     selectedBeanProfile: null,
     beanProfileMode: 'select' // 'select', 'create' - removed 'auto'
   });
@@ -39,12 +38,14 @@ const StartNewRoastModal = ({
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [isRefreshingLocation, setIsRefreshingLocation] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [isStartingRoast, setIsStartingRoast] = useState(false);
 
   // Load bean profiles when modal opens
   useEffect(() => {
     if (isOpen) {
       setRoastSetupStep('machine');
       setIsLoadingLocation(true);
+      setIsStartingRoast(false);
       setFormData(prev => {
         const firstMachine = userMachines.length > 0 ? userMachines[0] : null;
         return {
@@ -127,7 +128,7 @@ const StartNewRoastModal = ({
   };
 
   const handleStartRoast = async () => {
-    if (!formData.selectedBeanProfile || !formData.weightBefore || userMachines.length === 0) {
+    if (!formData.selectedBeanProfile || !formData.weightBefore || userMachines.length === 0 || isStartingRoast) {
       return;
     }
 
@@ -142,11 +143,11 @@ const StartNewRoastModal = ({
       bean_profile_id: formData.selectedBeanProfile?.id,
       desired_roast_level: formData.roastLevel,
       weight_before_g: parseFloat(formData.weightBefore) || null,
-      expected_roast_time_minutes: formData.roastTime,
-      notes: formData.notes || null
+      expected_roast_time_minutes: formData.roastTime
     };
     console.log('Starting roast with data:', requestData);
     
+    setIsStartingRoast(true);
     setLoading(true);
     try {
       const token = await getAuthToken();
@@ -172,6 +173,7 @@ const StartNewRoastModal = ({
       alert('Failed to start roast. Please try again.');
     } finally {
       setLoading(false);
+      setIsStartingRoast(false);
     }
   };
 
@@ -324,11 +326,11 @@ const StartNewRoastModal = ({
         </div>
       </div>
 
-      {/* Content - Mobile Optimized */}
-      <div className="p-4 sm:p-6 max-h-[calc(80vh-80px)] overflow-y-auto flex-1 min-h-0">
+      {/* Content - Responsive Layout */}
+      <div className="p-4 sm:p-6 lg:p-8 max-h-[calc(80vh-80px)] overflow-y-auto flex-1 min-h-0">
         {roastSetupStep === 'machine' && (
-          <div className="space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
               {/* Machine Setup */}
               <div className="space-y-4">
                 
@@ -353,7 +355,7 @@ const StartNewRoastModal = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4 lg:p-6">
                     <div className="flex items-start">
                       <div className="flex-shrink-0">
                         <span className="text-2xl">✅</span>
@@ -376,7 +378,7 @@ const StartNewRoastModal = ({
                             value={formData.selectedMachineId}
                             onChange={(value) => handleInputChange('selectedMachineId', value)}
                             placeholder="Select machine..."
-                            className="mt-2"
+                            className="mt-3"
                           />
                         )}
                       </div>
@@ -424,12 +426,12 @@ const StartNewRoastModal = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4 lg:p-6">
                     <div className="flex items-start">
                       <div className="flex-shrink-0">
                         <span className="text-2xl">✅</span>
                       </div>
-                      <div className="ml-3">
+                      <div className="ml-3 flex-1">
                         <h4 className="text-sm font-medium text-green-800 dark:text-green-200">Location Set</h4>
                         <p className="text-sm text-green-700 dark:text-green-300 mt-1">
                           {formData.address}
@@ -437,7 +439,7 @@ const StartNewRoastModal = ({
                         <button
                           onClick={handleLocationRefresh}
                           disabled={isRefreshingLocation}
-                          className="mt-2 text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 py-2 px-3 rounded min-h-[36px] flex items-center justify-center touch-manipulation"
+                          className="mt-3 text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 py-2 px-3 rounded min-h-[36px] flex items-center justify-center touch-manipulation"
                         >
                           {isRefreshingLocation ? 'Refreshing...' : 'Refresh Location'}
                         </button>
@@ -450,31 +452,31 @@ const StartNewRoastModal = ({
           </div>
         )}
 
-        {/* Bean Profile Step - Mobile Optimized */}
+        {/* Bean Profile Step - Responsive Layout */}
         {roastSetupStep === 'bean-profile' && (
-          <div className="space-y-4 sm:space-y-6">
+          <div className="space-y-4 sm:space-y-6 lg:space-y-8">
             {beanProfileScreen === 'choice' && (
-              <div className="space-y-4 sm:space-y-6">
+              <div className="space-y-6 lg:space-y-8">
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
                   <button
                     onClick={() => setBeanProfileScreen('select')}
-                    className="p-4 sm:p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors text-center min-h-[120px] sm:min-h-[140px] flex flex-col items-center justify-center touch-manipulation"
+                    className="p-6 lg:p-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors text-center min-h-[140px] lg:min-h-[160px] flex flex-col items-center justify-center touch-manipulation"
                   >
-                    <div className="text-3xl sm:text-4xl mb-2">☕</div>
-                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary">Select Existing</h4>
-                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-1">
+                    <div className="text-4xl lg:text-5xl mb-3">☕</div>
+                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-lg">Select Existing</h4>
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-2">
                       Choose from your saved bean profiles
                     </p>
                   </button>
                   
                   <button
                     onClick={() => setBeanProfileScreen('create')}
-                    className="p-4 sm:p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors text-center min-h-[120px] sm:min-h-[140px] flex flex-col items-center justify-center touch-manipulation"
+                    className="p-6 lg:p-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors text-center min-h-[140px] lg:min-h-[160px] flex flex-col items-center justify-center touch-manipulation"
                   >
-                    <div className="text-3xl sm:text-4xl mb-2">➕</div>
-                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary">Create New</h4>
-                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-1">
+                    <div className="text-4xl lg:text-5xl mb-3">➕</div>
+                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-lg">Create New</h4>
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-2">
                       Add a new bean profile
                     </p>
                   </button>
@@ -512,134 +514,109 @@ const StartNewRoastModal = ({
           </div>
         )}
 
-        {/* Roast Parameters Step - Mobile Optimized */}
+        {/* Roast Parameters Step - Compact Layout */}
         {roastSetupStep === 'roast-parameters' && (
-          <div className="space-y-4 sm:space-y-6">
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
-                    Desired Roast Level
-                  </label>
-                  <CustomDropdown
-                    options={[
-                      { value: 'City', label: 'City' },
-                      { value: 'City+', label: 'City+' },
-                      { value: 'Full City', label: 'Full City' },
-                      { value: 'Full City+', label: 'Full City+' }
-                    ]}
-                    value={formData.roastLevel}
-                    onChange={(value) => handleInputChange('roastLevel', value)}
-                    placeholder="Select roast level..."
-                    className="w-full"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
-                    Expected Roast Time (minutes)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.roastTime}
-                    onChange={(e) => handleInputChange('roastTime', parseInt(e.target.value) || 10)}
-                    className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-card dark:text-dark-text-primary text-base"
-                    min="5"
-                    max="30"
-                  />
-                </div>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
+                  Desired Roast Level
+                </label>
+                <CustomDropdown
+                  options={[
+                    { value: 'City', label: 'City' },
+                    { value: 'City+', label: 'City+' },
+                    { value: 'Full City', label: 'Full City' },
+                    { value: 'Full City+', label: 'Full City+' }
+                  ]}
+                  value={formData.roastLevel}
+                  onChange={(value) => handleInputChange('roastLevel', value)}
+                  placeholder="Select roast level..."
+                  className="w-full"
+                />
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
-                    Weight Before Roasting (grams)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.weightBefore}
-                    onChange={(e) => handleInputChange('weightBefore', e.target.value)}
-                    className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-card dark:text-dark-text-primary text-base"
-                    placeholder="Enter weight in grams"
-                    min="0"
-                    step="0.1"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
+                  Expected Roast Time (minutes)
+                </label>
+                <input
+                  type="number"
+                  value={formData.roastTime}
+                  onChange={(e) => handleInputChange('roastTime', parseInt(e.target.value) || 10)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-card dark:text-dark-text-primary text-base"
+                  min="5"
+                  max="30"
+                />
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
-                    Notes (optional)
-                  </label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) => handleInputChange('notes', e.target.value)}
-                    className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-card dark:text-dark-text-primary text-base"
-                    placeholder="Any special notes for this roast..."
-                    rows="3"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
+                  Weight Before Roasting (grams)
+                </label>
+                <input
+                  type="number"
+                  value={formData.weightBefore}
+                  onChange={(e) => handleInputChange('weightBefore', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-card dark:text-dark-text-primary text-base"
+                  placeholder="Enter weight in grams"
+                  min="0"
+                  step="0.1"
+                />
               </div>
             </div>
           </div>
         )}
 
-        {/* Review Step - Mobile Optimized */}
+        {/* Review Step - Responsive Layout */}
         {roastSetupStep === 'review' && (
-          <div className="space-y-3">
-            <div className="bg-gray-50 dark:bg-dark-bg-tertiary rounded-lg p-3 sm:p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                <div className="space-y-2">
+          <div className="space-y-4 lg:space-y-6">
+            <div className="bg-gray-50 dark:bg-dark-bg-tertiary rounded-lg p-4 sm:p-6 lg:p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+                <div className="space-y-4">
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-sm">Machine</h4>
-                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-base">Machine</h4>
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-1">
                       {userMachines.find(m => m.id === formData.selectedMachineId)?.name || 'Unknown'}
                     </p>
                   </div>
                   
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-sm">Bean Profile</h4>
-                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-base">Bean Profile</h4>
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-1">
                       {formData.selectedBeanProfile?.name || 'Not selected'}
                     </p>
                   </div>
                   
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-sm">Location</h4>
-                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-base">Location</h4>
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-1">
                       {formData.address || 'Not set'}
                     </p>
                   </div>
                 </div>
                 
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-sm">Roast Level</h4>
-                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary">{formData.roastLevel}</p>
+                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-base">Roast Level</h4>
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-1">{formData.roastLevel}</p>
                   </div>
                   
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-sm">Weight Before</h4>
-                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-base">Weight Before</h4>
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-1">
                       {formData.weightBefore ? `${formData.weightBefore}g` : 'Not set'}
                     </p>
                   </div>
                   
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-sm">Expected Time</h4>
-                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                    <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-base">Expected Time</h4>
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-1">
                       {formData.roastTime} minutes
                     </p>
                   </div>
                 </div>
               </div>
-              
-              {formData.notes && (
-                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                  <h4 className="font-semibold text-gray-900 dark:text-dark-text-primary text-sm">Notes</h4>
-                  <p className="text-sm text-gray-600 dark:text-dark-text-secondary">{formData.notes}</p>
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -680,15 +657,22 @@ const StartNewRoastModal = ({
             </button>
           )}
           
-          {roastSetupStep === 'review' && (
-            <button
-              onClick={handleStartRoast}
-              disabled={!formData.selectedBeanProfile || !formData.weightBefore || userMachines.length === 0}
-              className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg min-h-[44px] flex items-center justify-center touch-manipulation"
-            >
-              Start Roast
-            </button>
-          )}
+            {roastSetupStep === 'review' && (
+              <button
+                onClick={handleStartRoast}
+                disabled={!formData.selectedBeanProfile || !formData.weightBefore || userMachines.length === 0 || isStartingRoast}
+                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg min-h-[44px] flex items-center justify-center touch-manipulation"
+              >
+                {isStartingRoast ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Starting...
+                  </>
+                ) : (
+                  'Start Roast'
+                )}
+              </button>
+            )}
         </div>
       </div>
       </MobileModal>

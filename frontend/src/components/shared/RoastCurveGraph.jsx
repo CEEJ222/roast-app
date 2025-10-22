@@ -305,9 +305,7 @@ const RoastCurveGraph = ({
                       stroke={color}
                       strokeWidth={1.5}
                       strokeDasharray="3 3"
-                      strokeOpacity={0.6}
                       dot={false}
-                      name={`${region} RoR`}
                       connectNulls={false}
                       isAnimationActive={false}
                     />
@@ -497,9 +495,7 @@ const RoastCurveGraph = ({
                       stroke={color}
                       strokeWidth={1.5}
                       strokeDasharray="3 3"
-                      strokeOpacity={0.6}
                       dot={false}
-                      name={`${region} RoR`}
                       connectNulls={false}
                       isAnimationActive={false}
                     />
