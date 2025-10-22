@@ -125,7 +125,7 @@ const MobileModal = ({
       }}
     >
       <div 
-        className={`bg-white dark:bg-dark-card rounded-t-xl sm:rounded-xl shadow-2xl w-full h-[calc(100vh-1rem)] sm:h-auto sm:max-h-[95vh] overflow-hidden flex flex-col ${className}`}
+        className={`bg-white dark:bg-dark-card rounded-t-xl sm:rounded-xl shadow-2xl w-full h-[calc(100vh-1rem)] sm:h-auto sm:max-h-[95vh] flex flex-col ${className}`}
         style={{ overscrollBehavior: 'none', touchAction: 'pan-y' }}
         onClick={(e) => e.stopPropagation()}
         onTouchStart={handleTouchStart}
@@ -160,8 +160,8 @@ const MobileModal = ({
 
         {/* Content */}
         <div 
-          className="modal-content p-4 sm:p-6 overflow-visible flex-1 min-h-0"
-          style={{ overscrollBehavior: 'none', touchAction: 'pan-y' }}
+          className="modal-content p-4 sm:p-6 overflow-y-auto flex-1 min-h-0"
+          style={{ overscrollBehavior: 'auto', touchAction: 'pan-y' }}
         >
           {children}
         </div>
