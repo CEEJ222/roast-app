@@ -52,3 +52,4 @@ const useTastingNotes = (roast, getAuthToken) => {
 };
 
 export default useTastingNotes;
+

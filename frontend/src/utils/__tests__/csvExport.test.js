@@ -186,3 +186,4 @@ if (typeof window !== 'undefined') {
   window.testCsvExport = testCsvExport;
   console.log('🧪 CSV Export test available as window.testCsvExport()');
 }
+

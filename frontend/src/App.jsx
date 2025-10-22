@@ -229,8 +229,8 @@ function RoastAssistant() {
         const sortedRoasts = roasts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         setHistoricalRoasts(sortedRoasts);
         
-        // Load details for all roasts to display curves on dashboard
-        await loadAllRoastDetails(sortedRoasts);
+        // Don't load roast details upfront - let lazy loading handle it
+        // This significantly improves initial load performance
       }
     } catch (error) {
       console.error('Error loading historical roasts:', error);

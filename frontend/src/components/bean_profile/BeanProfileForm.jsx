@@ -50,11 +50,78 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
   const [showURLModal, setShowURLModal] = useState(false);
   const [showLLMModal, setShowLLMModal] = useState(false);
   const [llmAnalysisResult, setLlmAnalysisResult] = useState(null);
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
+  const [touchStartY, setTouchStartY] = useState(null);
+  const [touchCurrentY, setTouchCurrentY] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Reset dataLoaded when beanProfileId or initialData changes
   useEffect(() => {
     setDataLoaded(false);
   }, [beanProfileId, initialData]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  // Check if form has unsaved changes
+  const hasUnsavedChanges = () => {
+    return formData.name.trim() !== '' || 
+           formData.notes.trim() !== '' || 
+           formData.origin !== '' || 
+           formData.variety !== '' ||
+           formData.process_method !== '';
+  };
+
+  // Handle close with confirmation
+  const handleClose = () => {
+    if (hasUnsavedChanges()) {
+      setShowConfirmClose(true);
+    } else {
+      onClose();
+    }
+  };
+
+  // Handle touch events for swipe-to-close
+  const handleTouchStart = (e) => {
+    setTouchStartY(e.touches[0].clientY);
+    setTouchCurrentY(e.touches[0].clientY);
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging) return;
+    setTouchCurrentY(e.touches[0].clientY);
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging || !touchStartY || !touchCurrentY) {
+      setIsDragging(false);
+      return;
+    }
+
+    const deltaY = touchCurrentY - touchStartY;
+    const threshold = 100; // Minimum swipe distance
+
+    if (deltaY > threshold) {
+      // Swipe down detected
+      handleClose();
+    }
+
+    setIsDragging(false);
+    setTouchStartY(null);
+    setTouchCurrentY(null);
+  };
 
   // Initialize form with existing data if editing
   useEffect(() => {
@@ -526,35 +593,57 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 pb-20 sm:pb-4"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 pt-4 sm:items-center sm:p-4"
+      style={{ 
+        position: 'fixed', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0,
+        overscrollBehavior: 'none',
+        touchAction: 'none'
+      }}
       onClick={(e) => {
         // Only close if clicking the backdrop, not the modal content
         if (e.target === e.currentTarget) {
-          onClose();
+          handleClose();
         }
       }}
     >
       <div 
-        className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-white dark:bg-dark-card rounded-t-xl sm:rounded-xl shadow-2xl w-full h-[calc(100vh-1rem)] sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col"
+        style={{ overscrollBehavior: 'none', touchAction: 'pan-y' }}
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
+        {/* Mobile drag handle */}
+        <div className="flex justify-center pt-2 pb-1 sm:hidden">
+          <div className="w-8 h-1 bg-gray-800 dark:bg-gray-200 rounded-full"></div>
+        </div>
+
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 px-6 py-4 text-white flex-shrink-0">
+        <div className="bg-white dark:bg-dark-card px-4 sm:px-6 py-3 sm:py-4 text-gray-900 dark:text-dark-text-primary flex-shrink-0">
           <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-2xl font-bold">Add Bean Profile</h2>
-              <p className="opacity-90">Add detailed information about the green coffee</p>
+            <div className="flex-1">
+              <h2 className="text-xl sm:text-2xl font-bold">Add Bean Profile</h2>
+              <p className="opacity-90 text-sm sm:text-base">Add detailed information about the green coffee</p>
             </div>
+            {/* Desktop only close button */}
             <button
-              onClick={onClose}
-              className="text-white hover:text-gray-200 text-2xl"
+              onClick={handleClose}
+              className="text-gray-900 dark:text-dark-text-primary hover:text-gray-600 dark:hover:text-gray-300 text-xl sm:text-2xl hidden sm:block"
             >
               ✕
             </button>
           </div>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1 min-h-0">
+        <div 
+          className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0"
+          style={{ overscrollBehavior: 'none', touchAction: 'pan-y' }}
+        >
 
           {/* Bean Name */}
           <div className="mb-6">
@@ -923,7 +1012,7 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
         </div>
 
         {/* Save Button */}
-        <div className="bg-gray-50 dark:bg-gray-800 px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <div className="bg-gray-50 dark:bg-gray-800 px-4 sm:px-6 py-3 sm:py-4 pb-20 sm:pb-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
           <button
             onClick={handleSave}
             disabled={loading || !formData.name.trim()}
@@ -953,6 +1042,37 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
         onClose={() => setShowLLMModal(false)}
         analysisResult={llmAnalysisResult}
       />
+
+      {/* Confirmation Modal */}
+      {showConfirmClose && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+          <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-2">
+              Discard Changes?
+            </h3>
+            <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
+              You have unsaved changes. Are you sure you want to close without saving?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirmClose(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-dark-text-primary hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowConfirmClose(false);
+                  onClose();
+                }}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

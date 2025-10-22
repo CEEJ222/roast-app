@@ -86,3 +86,4 @@ const useEventEditing = (roast, getAuthToken, loadRoastEvents) => {
 };
 
 export default useEventEditing;
+

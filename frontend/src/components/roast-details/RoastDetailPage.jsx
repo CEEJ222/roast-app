@@ -220,3 +220,4 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
 };
 
 export default memo(RoastDetailPage);
+

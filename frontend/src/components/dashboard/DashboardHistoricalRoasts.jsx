@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import RoastCurveGraph from '../shared/RoastCurveGraph';
 import StandardTable from '../shared/StandardTable';
+import LazyRoastCard from './LazyRoastCard';
+import useLazyRoastDetails from '../../hooks/useLazyRoastDetails';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'  // Local development
@@ -25,22 +27,16 @@ const DashboardHistoricalRoasts = ({
   const [deletingRoast, setDeletingRoast] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  
+  // Use lazy loading hook for roast details
+  const { loadRoastDetails, roastDetails: lazyRoastDetails, loading: lazyLoading, error: lazyError } = useLazyRoastDetails(getAuthToken);
 
   useEffect(() => {
     loadHistoricalRoasts();
   }, []);
 
-  // Load roast details for all roasts to calculate duration
-  useEffect(() => {
-    if (roasts.length > 0) {
-      // Load details for all roasts to show duration
-      roasts.forEach(roast => {
-        if (!roastDetails[roast.id]) {
-          loadRoastDetails(roast.id);
-        }
-      });
-    }
-  }, [roasts]);
+  // Roast details will be loaded lazily when cards come into view
+  // This significantly improves initial load performance
 
   const loadHistoricalRoasts = async () => {
     try {
@@ -66,28 +62,15 @@ const DashboardHistoricalRoasts = ({
     }
   };
 
-  const loadRoastDetails = async (roastId) => {
-    if (roastDetails[roastId]) return; // Already loaded
-
-    try {
-      const token = await getAuthToken();
-      const response = await fetch(`${API_BASE}/roasts/${roastId}/events`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const events = await response.json();
-        setRoastDetails(prev => ({
-          ...prev,
-          [roastId]: events
-        }));
-      } else {
-        console.error('Failed to load roast details:', response.status);
-      }
-    } catch (error) {
-      console.error('Error loading roast details:', error);
+  const loadRoastDetailsData = async (roastId) => {
+    // Use the lazy loading hook instead of direct API calls
+    const events = await loadRoastDetails(roastId);
+    if (events) {
+      // Update the parent component's roast details state
+      setRoastDetails(prev => ({
+        ...prev,
+        [roastId]: events
+      }));
     }
   };
 
@@ -110,14 +93,14 @@ const DashboardHistoricalRoasts = ({
       setLoadingDetails(true);
       // Load details for all selected roasts that don't have them yet
       const promises = selectedRoasts
-        .filter(roastId => !roastDetails[roastId])
-        .map(roastId => loadRoastDetails(roastId));
+        .filter(roastId => !lazyRoastDetails[roastId] && !roastDetails[roastId])
+        .map(roastId => loadRoastDetailsData(roastId));
       
       Promise.all(promises).finally(() => {
         setLoadingDetails(false);
       });
     }
-  }, [showGraph, selectedRoasts]);
+  }, [showGraph, selectedRoasts, lazyRoastDetails, roastDetails, loadRoastDetails]);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -203,7 +186,8 @@ const DashboardHistoricalRoasts = ({
   const getSelectedRoastsData = () => {
     const result = selectedRoasts.map(roastId => {
       const roast = roasts.find(r => r.id === roastId);
-      const events = roastDetails[roastId] || [];
+      // Use lazy loaded data if available, otherwise fall back to parent state
+      const events = lazyRoastDetails[roastId] || roastDetails[roastId] || [];
       const coffeeName = roast?.bean_profile_name || 
                         (roast?.coffee_region && roast?.coffee_type 
                          ? `${roast.coffee_region} ${roast.coffee_type}` 
