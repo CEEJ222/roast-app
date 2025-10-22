@@ -270,13 +270,7 @@ async def update_roast(roast_id: int, request: UpdateRoastRequest, user_id: str 
         
         update_data = {}
         
-        # Update all provided fields
-        if request.coffee_type is not None:
-            update_data["coffee_type"] = request.coffee_type
-        if request.coffee_region is not None:
-            update_data["coffee_region"] = request.coffee_region
-        if request.coffee_process is not None:
-            update_data["coffee_process"] = request.coffee_process
+        # Update only fields that exist in roast_entries table
         if request.desired_roast_level is not None:
             update_data["desired_roast_level"] = request.desired_roast_level
         if request.weight_before_g is not None:
@@ -299,10 +293,17 @@ async def update_roast(roast_id: int, request: UpdateRoastRequest, user_id: str 
             # CRITICAL BUG FIX: Mark roast as completed when final weight is recorded
             update_data["roast_status"] = "completed"
         
-        sb.table("roast_entries").update(update_data).eq("id", roast_id).execute()
-        return {"success": True}
+        print(f"DEBUG: Updating roast {roast_id} with data: {update_data}")
+        try:
+            result = sb.table("roast_entries").update(update_data).eq("id", roast_id).execute()
+            print(f"DEBUG: Update result: {result}")
+            return {"success": True}
+        except Exception as supabase_error:
+            print(f"DEBUG: Supabase update error: {supabase_error}")
+            raise HTTPException(status_code=400, detail=f"Database update failed: {str(supabase_error)}")
         
     except Exception as e:
+        print(f"DEBUG: General error in update_roast: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

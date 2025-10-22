@@ -3,6 +3,7 @@ import BeanProfileForm from '../bean_profile/BeanProfileForm';
 import StandardTable from '../shared/StandardTable';
 import FloatingActionButton from '../shared/FloatingActionButton';
 import BottomSheetModal from '../shared/BottomSheetModal';
+import MobileModal from '../shared/MobileModal';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'
@@ -459,25 +460,13 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
 
       {/* Profile Details Modal */}
       {showProfileModal && selectedProfile && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 sm:p-6">
-          <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 px-4 sm:px-6 py-3 sm:py-4 text-white flex-shrink-0">
-              <div className="flex justify-between items-start">
-                <div className="flex-1 min-w-0 pr-4">
-                  <h2 className="text-lg sm:text-2xl font-bold break-words">{selectedProfile.name}</h2>
-                  <p className="opacity-90 text-sm sm:text-base">Bean Profile Details</p>
-                </div>
-                <button
-                  onClick={handleCloseProfile}
-                  className="text-white hover:text-gray-200 text-xl sm:text-2xl flex-shrink-0"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0">
+        <MobileModal
+          isOpen={showProfileModal}
+          onClose={handleCloseProfile}
+          title={selectedProfile.name}
+          subtitle="Bean Profile Details"
+          headerClassName="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 text-white"
+        >
               {/* Basic Info */}
               <div className="mb-6">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Basic Information</h3>
@@ -574,27 +563,25 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
                   <p className="text-gray-600 dark:text-dark-text-secondary break-words">{selectedProfile.notes}</p>
                 </div>
               )}
-            </div>
 
-            {/* Footer */}
-            <div className="bg-gray-50 dark:bg-gray-800 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
-              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
-                <button
-                  onClick={handleCloseProfile}
-                  className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium order-2 sm:order-1"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={handleEditProfile}
-                  className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-medium order-1 sm:order-2"
-                >
-                  Edit Profile
-                </button>
+              {/* Footer Actions */}
+              <div className="mt-6 pt-4 pb-20 sm:pb-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
+                  <button
+                    onClick={handleCloseProfile}
+                    className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium order-2 sm:order-1"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={handleEditProfile}
+                    className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-medium order-1 sm:order-2"
+                  >
+                    Edit Profile
+                  </button>
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
+        </MobileModal>
       )}
 
       {/* Bean Profile Edit Form */}

@@ -80,9 +80,7 @@ class LogEventRequest(BaseModel):
 
 
 class UpdateRoastRequest(BaseModel):
-    coffee_type: Optional[str] = None
-    coffee_region: Optional[str] = None
-    coffee_process: Optional[str] = None
+    # Only fields that exist in roast_entries table
     desired_roast_level: Optional[str] = None
     weight_before_g: Optional[float] = None
     weight_after_g: Optional[float] = None

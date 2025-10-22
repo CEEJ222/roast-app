@@ -10,7 +10,7 @@ const RoastWeightsCard = ({
     <div className="bg-gray-50 dark:bg-dark-bg-tertiary rounded-lg p-4">
       <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary mb-4">Weights</h3>
       {isEditing ? (
-        <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-600 dark:text-dark-text-secondary mb-1">Weight Before (g):</label>
             <input
@@ -35,7 +35,7 @@ const RoastWeightsCard = ({
           </div>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <span className="text-sm font-medium text-gray-600 dark:text-dark-text-secondary">Weight Before:</span>
             <p className="text-gray-900 dark:text-dark-text-primary">{roast.weight_before_g ? `${roast.weight_before_g}g` : 'N/A'}</p>
@@ -44,7 +44,7 @@ const RoastWeightsCard = ({
             <span className="text-sm font-medium text-gray-600 dark:text-dark-text-secondary">Weight After:</span>
             <p className="text-gray-900 dark:text-dark-text-primary">{roast.weight_after_g ? `${roast.weight_after_g}g` : 'N/A'}</p>
           </div>
-          <div>
+          <div className="col-span-2">
             <span className="text-sm font-medium text-gray-600 dark:text-dark-text-secondary">Weight Loss:</span>
             <p className="text-gray-900 dark:text-dark-text-primary">
               {roast.weight_loss_pct ? `${roast.weight_loss_pct.toFixed(1)}%` : 'N/A'}

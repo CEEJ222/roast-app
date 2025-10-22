@@ -6,11 +6,13 @@ import useRoastEditing from '../../hooks/useRoastEditing';
 import useRoastActions from '../../hooks/useRoastActions';
 import useTastingNotes from '../../hooks/useTastingNotes';
 import useEventEditing from '../../hooks/useEventEditing';
+import MobileModal from '../shared/MobileModal';
 import RoastOverviewCard from './components/RoastOverviewCard';
 import RoastWeightsCard from './components/RoastWeightsCard';
 import RoastNotesCard from './components/RoastNotesCard';
 import TastingNotesCard from './components/TastingNotesCard';
 import RoastDetailHeader from './components/RoastDetailHeader';
+import RoastActionButtons from './components/RoastActionButtons';
 import RoastCurveSection from './components/RoastCurveSection';
 import RoastEventsSection from './components/RoastEventsSection';
 import EnvironmentalConditionsCard from './components/EnvironmentalConditionsCard';
@@ -32,6 +34,7 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   
   // Custom hooks for business logic
   const { events, loading, error, loadRoastEvents } = useRoastData(roast, getAuthToken);
@@ -92,97 +95,134 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div 
-        ref={swipeRef}
-        className="bg-white dark:bg-dark-card rounded-lg w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden shadow-2xl dark:shadow-dark-glow"
-        id="roast-detail"
+    <>
+      <MobileModal
+        isOpen={true}
+        onClose={onClose}
+        title="☕ Roast Details"
+        subtitle={`${roast.bean_profile_name || roast.coffee_type || 'Unknown Coffee'} • ${formatDate(roast.created_at)}`}
+        className="max-w-6xl"
+        headerClassName="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant text-white"
       >
-        {/* Header */}
-        <RoastDetailHeader 
-          roast={roast}
-          isEditing={isEditing}
-          onEdit={handleEdit}
-          onSaveEdit={handleSaveEdit}
-          onCancelEdit={handleCancelEdit}
-          onCopyRoastData={handleCopyRoastData}
-          onShare={() => setShowShareModal(true)}
-          onExport={handleExport}
-          onDelete={() => setShowDeleteConfirm(true)}
-          onClose={onClose}
-        />
-
-        <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-120px)]">
+        <div 
+          ref={swipeRef}
+          id="roast-detail"
+          className="relative"
+        >
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-            {/* Left Column - Roast Info */}
-            <div className="lg:col-span-1 space-y-6">
-              {/* Roast Overview */}
-              <RoastOverviewCard 
-                roast={roast}
-                isEditing={isEditing}
-                editFormData={editFormData}
-                onEditFormChange={setEditFormData}
-              />
+          {/* Left Column - Roast Info */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Roast Overview */}
+            <RoastOverviewCard 
+              roast={roast}
+              isEditing={isEditing}
+              editFormData={editFormData}
+              onEditFormChange={setEditFormData}
+            />
 
-              {/* Weights */}
-              <RoastWeightsCard 
-                roast={roast}
-                isEditing={isEditing}
-                editFormData={editFormData}
-                onEditFormChange={setEditFormData}
-              />
+            {/* Weights */}
+            <RoastWeightsCard 
+              roast={roast}
+              isEditing={isEditing}
+              editFormData={editFormData}
+              onEditFormChange={setEditFormData}
+            />
 
-              {/* Environmental Conditions */}
-              <EnvironmentalConditionsCard 
-                roast={roast}
-                userProfile={userProfile}
-              />
+            {/* Environmental Conditions */}
+            <EnvironmentalConditionsCard 
+              roast={roast}
+              userProfile={userProfile}
+            />
 
-              {/* Notes */}
-              <RoastNotesCard 
-                roast={roast}
-                isEditing={isEditing}
-                editFormData={editFormData}
-                onEditFormChange={setEditFormData}
-              />
+            {/* Notes */}
+            <RoastNotesCard 
+              roast={roast}
+              isEditing={isEditing}
+              editFormData={editFormData}
+              onEditFormChange={setEditFormData}
+            />
 
-              {/* Tasting Notes */}
-              <TastingNotesCard 
-                roast={roast}
-                tastingNotes={tastingNotes}
-                onTastingNotesChange={setTastingNotes}
-                onSaveTastingNotes={handleSaveTastingNotes}
-                savingTastingNotes={savingTastingNotes}
-                tastingNotesSaved={tastingNotesSaved}
-              />
-            </div>
+            {/* Tasting Notes */}
+            <TastingNotesCard 
+              roast={roast}
+              tastingNotes={tastingNotes}
+              onTastingNotesChange={setTastingNotes}
+              onSaveTastingNotes={handleSaveTastingNotes}
+              savingTastingNotes={savingTastingNotes}
+              tastingNotesSaved={tastingNotesSaved}
+            />
+          </div>
 
-            {/* Right Column - Roast Curve and Events */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Roast Curve */}
-              <RoastCurveSection 
-                roast={roast}
-                events={events}
-                userProfile={userProfile}
-              />
+          {/* Right Column - Roast Curve and Events */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Roast Curve */}
+            <RoastCurveSection 
+              roast={roast}
+              events={events}
+              userProfile={userProfile}
+            />
 
-              {/* Events Log */}
-              <RoastEventsSection 
-                events={events}
-                isEditing={isEditing}
-                editingEventId={editingEventId}
-                editingEventFormData={editingEventFormData}
-                setEditingEventFormData={setEditingEventFormData}
-                startEditEvent={startEditEvent}
-                saveEditedEvent={saveEditedEvent}
-                cancelEditEvent={cancelEditEvent}
-                deleteEvent={deleteEvent}
-                formatTime={formatTime}
-              />
-            </div>
+            {/* Events Log */}
+            <RoastEventsSection 
+              events={events}
+              isEditing={isEditing}
+              editingEventId={editingEventId}
+              editingEventFormData={editingEventFormData}
+              setEditingEventFormData={setEditingEventFormData}
+              startEditEvent={startEditEvent}
+              saveEditedEvent={saveEditedEvent}
+              cancelEditEvent={cancelEditEvent}
+              deleteEvent={deleteEvent}
+              formatTime={formatTime}
+            />
           </div>
         </div>
+
+        {/* Floating Action Buttons - positioned at bottom */}
+        {isEditing ? (
+          <div className="fixed bottom-6 right-6 flex gap-2 z-50">
+            <button 
+              onClick={async () => {
+                if (isSaving) return;
+                setIsSaving(true);
+                try {
+                  await handleSaveEdit();
+                } catch (error) {
+                  console.error('Save failed:', error);
+                  alert('Failed to save changes. Please try again.');
+                } finally {
+                  setIsSaving(false);
+                }
+              }} 
+              disabled={isSaving}
+              className={`${isSaving ? 'bg-green-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'} text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 shadow-lg`}
+            >
+              {isSaving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  💾 Save
+                </>
+              )}
+            </button>
+            <button 
+              onClick={handleCancelEdit} 
+              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 shadow-lg"
+            >
+              ❌ Cancel
+            </button>
+          </div>
+        ) : (
+          <RoastFloatingActionButton 
+            isEditing={isEditing}
+            onActionMenuOpen={() => setShowActionMenu(true)}
+          />
+        )}
       </div>
+      </MobileModal>
 
       {/* Delete Confirmation Modal */}
       <RoastDeleteModal 
@@ -199,12 +239,6 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
         onCopyEvents={() => handleCopyEvents(events, formatTime)}
       />
 
-      {/* Floating Action Button */}
-      <RoastFloatingActionButton 
-        isEditing={isEditing}
-        onActionMenuOpen={() => setShowActionMenu(true)}
-      />
-
       {/* Action Menu Modal */}
       <RoastActionMenu 
         isOpen={showActionMenu}
@@ -215,7 +249,7 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
         onEdit={handleEdit}
         onDelete={() => setShowDeleteConfirm(true)}
       />
-    </div>
+    </>
   );
 };
 
