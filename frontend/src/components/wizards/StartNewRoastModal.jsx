@@ -447,24 +447,24 @@ const StartNewRoastModal = ({
             {beanProfileScreen === 'select' && (
               <BeanProfileSearch
                 beanProfiles={beanProfiles}
-                selectedBeanProfile={formData.selectedBeanProfile}
-                onSelectBeanProfile={(profile) => {
+                selectedProfileId={formData.selectedBeanProfile?.id}
+                onSelect={(profile) => {
                   handleInputChange('selectedBeanProfile', profile);
-                  setBeanProfileScreen('choice');
+                  setRoastSetupStep('roast-parameters');
                 }}
-                onBack={() => setBeanProfileScreen('choice')}
               />
             )}
 
             {beanProfileScreen === 'create' && (
               <BeanProfileForm
+                isOpen={true}
+                onClose={() => setBeanProfileScreen('choice')}
                 onSave={(profile) => {
                   handleInputChange('selectedBeanProfile', profile);
-                  setBeanProfileScreen('choice');
+                  setRoastSetupStep('roast-parameters');
                 }}
-                onCancel={() => setBeanProfileScreen('choice')}
                 getAuthToken={getAuthToken}
-                onDataChange={loadBeanProfiles}
+                onDataUpdate={loadBeanProfiles}
               />
             )}
           </div>

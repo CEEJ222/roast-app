@@ -13,27 +13,7 @@ const BeanProfileSearch = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const [inputRef, setInputRef] = useState(null);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
-
-  // Calculate dropdown position
-  const updateDropdownPosition = () => {
-    if (inputRef) {
-      const rect = inputRef.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
-        width: rect.width
-      });
-    }
-  };
-
-  // Update position when dropdown opens
-  useEffect(() => {
-    if (isOpen) {
-      updateDropdownPosition();
-    }
-  }, [isOpen, inputRef]);
+  const [inputRect, setInputRect] = useState(null);
 
   // Filter profiles based on search term
   const filteredProfiles = useMemo(() => {
@@ -102,6 +82,12 @@ const BeanProfileSearch = ({
 
   const handleInputFocus = () => {
     setIsOpen(true);
+    // Get input position for portal
+    const input = document.querySelector(`input[placeholder="${placeholder}"]`);
+    if (input) {
+      const rect = input.getBoundingClientRect();
+      setInputRect(rect);
+    }
   };
 
   const handleInputBlur = (e) => {
@@ -121,7 +107,6 @@ const BeanProfileSearch = ({
       {/* Search Input */}
       <div className="relative">
         <input
-          ref={setInputRef}
           type="text"
           value={searchTerm}
           onChange={handleInputChange}
@@ -147,13 +132,15 @@ const BeanProfileSearch = ({
       </div>
 
       {/* Dropdown Results */}
-      {isOpen && createPortal(
+      {isOpen && inputRect && createPortal(
         <div 
-          className="fixed z-[100] bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border-primary rounded-lg shadow-lg max-h-60 overflow-y-auto"
-          style={{
-            top: dropdownPosition.top,
-            left: dropdownPosition.left,
-            width: dropdownPosition.width
+          className="fixed z-[9999] bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border-primary rounded-lg shadow-lg overflow-y-auto" 
+          style={{ 
+            left: inputRect.left,
+            top: inputRect.bottom + 4,
+            width: inputRect.width,
+            maxHeight: '60vh',
+            minHeight: '200px'
           }}
         >
           {filteredProfiles.length === 0 ? (
