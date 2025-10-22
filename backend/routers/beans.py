@@ -55,6 +55,7 @@ async def create_bean_profile(request: CreateBeanProfileRequest, user_id: str = 
             "name": request.name,
             "origin": request.origin,
             "bean_type": request.bean_type,  # NEW: Include bean type
+            "espresso_suitable": request.espresso_suitable,  # Good for espresso checkbox
             "notes": request.notes,
             "supplier_url": request.supplier_url,
             "supplier_name": request.supplier_name,

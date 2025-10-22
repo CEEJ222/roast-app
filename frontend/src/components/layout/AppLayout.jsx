@@ -29,7 +29,8 @@ const AppLayout = ({
   // Modal state props
   showStartRoastWizard = false,
   showHistoricalRoasts = false,
-  showProfilePage = false
+  showProfilePage = false,
+  showRoastDetail = false
 }) => {
   const [activeTab, setActiveTab] = useState('roasts');
   const [isMobile, setIsMobile] = useState(false);
@@ -86,6 +87,7 @@ const AppLayout = ({
           getAuthToken={getAuthToken}
           onDataChange={onDataChange}
           showStartRoastWizard={showStartRoastWizard}
+          showRoastDetail={showRoastDetail}
         />
       );
     }
@@ -110,6 +112,7 @@ const AppLayout = ({
             onDataChange={onDataChange}
             setActiveTab={setActiveTab}
             showStartRoastWizard={showStartRoastWizard}
+            showRoastDetail={showRoastDetail}
           />
         );
       case 'beans':
@@ -117,6 +120,7 @@ const AppLayout = ({
           <BeansPage
             getAuthToken={getAuthToken}
             onDataChange={onDataChange}
+            showRoastDetail={showRoastDetail}
           />
         );
       case 'profile':

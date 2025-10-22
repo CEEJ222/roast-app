@@ -239,14 +239,7 @@ const RoastCurveGraph = ({
             )}
             {showLegend && !isMobile && (
               <Legend 
-                wrapperStyle={{
-                  paddingTop: isMobile ? '10px' : '20px',
-                  fontSize: isMobile ? '10px' : '12px'
-                }}
-                iconType="line"
-                layout="horizontal"
-                align="center"
-                verticalAlign="bottom"
+                content={<CustomLegend roasts={filteredRoasts} roastLabels={roastLabels} getRoastColor={getRoastColor} />}
               />
             )}
 
@@ -306,6 +299,7 @@ const RoastCurveGraph = ({
                       strokeWidth={1.5}
                       strokeDasharray="3 3"
                       dot={false}
+                      name=" "
                       connectNulls={false}
                       isAnimationActive={false}
                     />
@@ -429,14 +423,7 @@ const RoastCurveGraph = ({
             )}
             {showLegend && !isMobile && (
               <Legend 
-                wrapperStyle={{
-                  paddingTop: isMobile ? '10px' : '20px',
-                  fontSize: isMobile ? '10px' : '12px'
-                }}
-                iconType="line"
-                layout="horizontal"
-                align="center"
-                verticalAlign="bottom"
+                content={<CustomLegend roasts={filteredRoasts} roastLabels={roastLabels} getRoastColor={getRoastColor} />}
               />
             )}
 
@@ -496,6 +483,7 @@ const RoastCurveGraph = ({
                       strokeWidth={1.5}
                       strokeDasharray="3 3"
                       dot={false}
+                      name=" "
                       connectNulls={false}
                       isAnimationActive={false}
                     />
@@ -796,5 +784,75 @@ function getRoastColor(index) {
   return colors[index % colors.length];
 }
 
+// Custom Legend Component
+const CustomLegend = ({ roasts, roastLabels, getRoastColor }) => {
+  return (
+    <div className="flex flex-wrap justify-center items-center gap-4 p-4">
+      {roasts.map((roast, index) => {
+        const label = roastLabels[roast.id || index];
+        const color = getRoastColor(index);
+        
+        // Format the date and origin
+        const formatRoastLabel = (roast) => {
+          if (!roast) return `Roast ${index + 1}`;
+          
+          // Get the roast date from created_at
+          const roastDate = roast.created_at ? new Date(roast.created_at) : null;
+          const dateStr = roastDate ? 
+            `${(roastDate.getMonth() + 1).toString().padStart(2, '0')}/${roastDate.getDate().toString().padStart(2, '0')}/${roastDate.getFullYear().toString().slice(-2)}` : 
+            'Unknown Date';
+          
+          // Get the origin from coffee_region or first word of name
+          const origin = roast.coffee_region || 
+                       (roast.name ? roast.name.split(' ')[0] : 'Unknown');
+          
+          return `${dateStr} ${origin}`;
+        };
+        
+        return (
+          <div key={roast.id || index} className="flex items-center gap-2">
+            {/* Roast line symbol */}
+            <div className="flex items-center gap-1">
+              <div 
+                className="w-4 h-1"
+                style={{ 
+                  backgroundColor: color
+                }}
+              />
+              <span className="text-xs text-gray-700 dark:text-gray-300">
+                {formatRoastLabel(roast)}
+              </span>
+            </div>
+            
+            {/* RoR symbol - positioned directly to the right */}
+            <div className="flex items-center gap-0.5">
+              <div 
+                className="w-1 h-0.5 border-t border-dashed"
+                style={{ 
+                  borderColor: color,
+                  opacity: 0.6
+                }}
+              />
+              <div 
+                className="w-1 h-0.5 border-t border-dashed"
+                style={{ 
+                  borderColor: color,
+                  opacity: 0.6
+                }}
+              />
+              <div 
+                className="w-1 h-0.5 border-t border-dashed"
+                style={{ 
+                  borderColor: color,
+                  opacity: 0.6
+                }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 export default RoastCurveGraph;

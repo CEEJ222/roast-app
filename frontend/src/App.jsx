@@ -1153,6 +1153,7 @@ function RoastAssistant() {
               showStartRoastWizard={showStartRoastWizard}
               showHistoricalRoasts={showHistoricalRoasts}
               showProfilePage={showProfilePage}
+              showRoastDetail={showRoastDetail}
             />
           )}
 

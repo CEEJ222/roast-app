@@ -34,4 +34,19 @@ Creates the `feedback` table for persistent storage of user feedback.
 
 **Safe to run multiple times:** Yes (uses `IF NOT EXISTS`)
 
+### `add_espresso_suitable_column.sql`
+Adds the `espresso_suitable` boolean column to the `bean_profiles` table.
+
+**What it does:**
+- Adds `espresso_suitable` column to `bean_profiles` table
+- Sets default value to `FALSE`
+- Adds column comment for documentation
+- Uses conditional logic to avoid errors if column already exists
+
+**Run this when:**
+- The "Good for Espresso" field is not saving in bean profiles
+- After updating the backend schema to include `espresso_suitable` field
+
+**Safe to run multiple times:** Yes (checks if column exists first)
+
 

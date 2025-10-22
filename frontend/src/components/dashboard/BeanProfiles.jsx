@@ -9,7 +9,7 @@ const API_BASE = import.meta.env.DEV
   ? 'http://localhost:8000'
   : 'https://roast-backend-production-8883.up.railway.app';
 
-const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = false, onTriggerReset = null, onProfileStateChange = null }) => {
+const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = false, onTriggerReset = null, onProfileStateChange = null, showRoastDetail = false }) => {
   const [beanProfiles, setBeanProfiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -684,6 +684,15 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
               <div className="mt-8 pt-6 pb-20 sm:pb-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
                   <button
+                    onClick={handleEditProfile}
+                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-colors flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit Profile
+                  </button>
+                  <button
                     onClick={handleCloseProfile}
                     className="px-6 py-3 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium border border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 rounded-lg transition-colors"
                   >
@@ -815,8 +824,8 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
         </div>
       )}
 
-      {/* Floating Action Button - only show on mobile */}
-      {isMobile && (
+      {/* Floating Action Button - only show on mobile and when roast details modal is not open */}
+      {isMobile && !showRoastDetail && (
         <FloatingActionButton
           onClick={() => {
             setShowFABMenu(true);

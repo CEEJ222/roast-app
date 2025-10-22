@@ -1,11 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import FloatingActionButton from '../../shared/FloatingActionButton';
 
 const RoastFloatingActionButton = ({ 
   isEditing, 
   onActionMenuOpen 
 }) => {
-  if (isEditing) return null;
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  if (isEditing || !isMobile) return null;
 
   return (
     <FloatingActionButton
@@ -16,6 +29,8 @@ const RoastFloatingActionButton = ({
         </svg>
       }
       label="Roast Actions"
+      position="bottom-right"
+      className="mb-20"
     />
   );
 };

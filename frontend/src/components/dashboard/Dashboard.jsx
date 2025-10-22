@@ -21,6 +21,7 @@ const Dashboard = ({
   getAuthToken,
   onDataChange = null,
   showStartRoastWizard = false,
+  showRoastDetail = false,
 }) => {
   const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const [triggerBeanProfileCreate, setTriggerBeanProfileCreate] = useState(false);
@@ -136,13 +137,12 @@ const Dashboard = ({
 
       {/* Roast Curve Visualization */}
       {historicalRoasts?.length > 0 && (
-        <div className="bg-transparent rounded-lg border dark:border-dark-border-primary">
+        <div className="bg-transparent">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-border-primary">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">All Roast Curves</h3>
               <button
                 onClick={() => setShowHistoricalRoasts(true)}
-                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
+                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium "
               >
                 Compare Roasts →
               </button>
@@ -158,7 +158,9 @@ const Dashboard = ({
                 id: roast.id,
                 name: coffeeName,
                 fullName: `${coffeeName} - ${new Date(roast.created_at).toLocaleDateString()}`,
-                events: recentRoastDetails[roast.id] || []
+                events: recentRoastDetails[roast.id] || [],
+                created_at: roast.created_at,
+                coffee_region: roast.coffee_region
               };
             })}
             mode="historical"
@@ -201,11 +203,12 @@ const Dashboard = ({
           triggerCreateModal={triggerBeanProfileCreate}
           onTriggerReset={() => setTriggerBeanProfileCreate(false)}
           onProfileStateChange={handleBeanProfileStateChange}
+          showRoastDetail={showRoastDetail}
         />
       </div>
 
-      {/* Floating Action Button - hide when Start New Roast modal is open, only show on mobile */}
-      {!showStartRoastWizard && isMobile && (
+      {/* Floating Action Button - hide when Start New Roast modal or roast details modal is open, only show on mobile */}
+      {!showStartRoastWizard && !showRoastDetail && isMobile && (
         <FloatingActionButton
           onClick={() => {
             console.log('Dashboard FAB clicked, opening menu');

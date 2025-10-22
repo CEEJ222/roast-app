@@ -21,6 +21,7 @@ class CreateBeanProfileRequest(BaseModel):
     name: str
     origin: Optional[str] = None
     bean_type: Optional[str] = None  # NEW: Bean type (Regular, Peaberry, Maragogype, etc.)
+    espresso_suitable: Optional[bool] = None  # Good for espresso checkbox
     notes: Optional[str] = None
     supplier_url: Optional[str] = None
     supplier_name: Optional[str] = None

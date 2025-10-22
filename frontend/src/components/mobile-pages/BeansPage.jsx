@@ -5,7 +5,8 @@ const BeansPage = ({
   getAuthToken,
   onDataChange = null,
   triggerBeanProfileCreate = false,
-  onTriggerReset = null
+  onTriggerReset = null,
+  showRoastDetail = false
 }) => {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -42,6 +43,7 @@ const BeansPage = ({
             onDataChange={onDataChange} 
             triggerCreateModal={triggerBeanProfileCreate}
             onTriggerReset={onTriggerReset}
+            showRoastDetail={showRoastDetail}
           />
         </div>
       </div>

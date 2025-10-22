@@ -6,7 +6,6 @@ import useRoastEditing from '../../hooks/useRoastEditing';
 import useRoastActions from '../../hooks/useRoastActions';
 import useTastingNotes from '../../hooks/useTastingNotes';
 import useEventEditing from '../../hooks/useEventEditing';
-import MobileModal from '../shared/MobileModal';
 import RoastOverviewCard from './components/RoastOverviewCard';
 import RoastWeightsCard from './components/RoastWeightsCard';
 import RoastNotesCard from './components/RoastNotesCard';
@@ -17,6 +16,7 @@ import RoastCurveSection from './components/RoastCurveSection';
 import RoastEventsSection from './components/RoastEventsSection';
 import EnvironmentalConditionsCard from './components/EnvironmentalConditionsCard';
 import RoastActionMenu from './components/RoastActionMenu';
+import RoastFloatingActionButton from './components/RoastFloatingActionButton';
 import RoastDeleteModal from './components/RoastDeleteModal';
 import RoastShareModal from './components/RoastShareModal';
 import LoadingState from './components/LoadingState';
@@ -94,20 +94,26 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
   }
 
   return (
-    <>
-      <MobileModal
-        isOpen={true}
-        onClose={onClose}
-        title="☕ Roast Details"
-        subtitle={`${roast.bean_profile_name || roast.coffee_type || 'Unknown Coffee'} • ${formatDate(roast.created_at)}`}
-        className="max-w-6xl"
-        headerClassName="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant text-white"
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div 
+        ref={swipeRef}
+        className="bg-white dark:bg-dark-card rounded-lg w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden shadow-2xl dark:shadow-dark-glow"
+        id="roast-detail"
       >
-        <div 
-          ref={swipeRef}
-          id="roast-detail"
-          className="relative"
-        >
+        {/* Header */}
+        <RoastDetailHeader 
+          roast={roast}
+          isEditing={isEditing}
+          onEdit={handleEdit}
+          onSaveEdit={handleSaveEdit}
+          onCancelEdit={handleCancelEdit}
+          onCopyRoastData={handleCopyRoastData}
+          onShare={() => setShowShareModal(true)}
+          onDelete={() => setShowDeleteConfirm(true)}
+          onClose={onClose}
+        />
+
+        <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-120px)]">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left Column - Roast Info */}
           <div className="lg:col-span-1 space-y-6">
@@ -176,47 +182,8 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
             />
           </div>
         </div>
-
-        {/* Floating Action Buttons - positioned at bottom */}
-        {isEditing && (
-          <div className="fixed bottom-6 right-6 flex gap-2 z-50">
-            <button 
-              onClick={async () => {
-                if (isSaving) return;
-                setIsSaving(true);
-                try {
-                  await handleSaveEdit();
-                } catch (error) {
-                  console.error('Save failed:', error);
-                  alert('Failed to save changes. Please try again.');
-                } finally {
-                  setIsSaving(false);
-                }
-              }} 
-              disabled={isSaving}
-              className={`${isSaving ? 'bg-green-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'} text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 shadow-lg`}
-            >
-              {isSaving ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  💾 Save
-                </>
-              )}
-            </button>
-            <button 
-              onClick={handleCancelEdit} 
-              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 shadow-lg"
-            >
-              ❌ Cancel
-            </button>
-          </div>
-        )}
+        </div>
       </div>
-      </MobileModal>
 
       {/* Delete Confirmation Modal */}
       <RoastDeleteModal 
@@ -231,6 +198,12 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
         onClose={() => setShowShareModal(false)}
         onCopyRoastData={handleCopyRoastData}
         onCopyEvents={() => handleCopyEvents(events, formatTime)}
+      />
+
+      {/* Floating Action Button */}
+      <RoastFloatingActionButton 
+        isEditing={isEditing}
+        onActionMenuOpen={() => setShowActionMenu(true)}
       />
 
       {/* Action Menu Modal */}
@@ -249,7 +222,7 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
         }}
         roast={roast}
       />
-    </>
+    </div>
   );
 };
 
