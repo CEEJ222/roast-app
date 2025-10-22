@@ -49,7 +49,7 @@ const FloatingActionButton = ({ onClick, icon, label, className = '', position =
   return (
     <button
       onClick={handlePress}
-      className={`fixed w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:shadow-xl z-40 ${getPositionClasses()} ${
+      className={`fixed w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:shadow-xl z-[70] ${getPositionClasses()} ${
         isPressed ? 'scale-95' : 'scale-100'
       } ${className}`}
       style={{ 

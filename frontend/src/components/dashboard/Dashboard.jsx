@@ -25,6 +25,7 @@ const Dashboard = ({
   const [triggerBeanProfileCreate, setTriggerBeanProfileCreate] = useState(false);
   const [showFABMenu, setShowFABMenu] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [beanProfileState, setBeanProfileState] = useState(null);
   const dropdownRef = useRef(null);
 
   // Pull-to-refresh functionality
@@ -35,6 +36,11 @@ const Dashboard = ({
   };
 
   const { elementRef: pullToRefreshRef, isRefreshing, pullDistance, pullProgress } = usePullToRefresh(handleRefresh);
+
+  // Handle bean profile state changes
+  const handleBeanProfileStateChange = (state) => {
+    setBeanProfileState(state);
+  };
 
   // Mobile detection
   useEffect(() => {
@@ -193,12 +199,16 @@ const Dashboard = ({
           onDataChange={onDataChange} 
           triggerCreateModal={triggerBeanProfileCreate}
           onTriggerReset={() => setTriggerBeanProfileCreate(false)}
+          onProfileStateChange={handleBeanProfileStateChange}
         />
       </div>
 
       {/* Floating Action Button */}
       <FloatingActionButton
-        onClick={isMobile ? () => setShowFABMenu(true) : () => setShowStartRoastWizard(true)}
+        onClick={isMobile ? () => {
+          console.log('Dashboard FAB clicked, opening menu');
+          setShowFABMenu(true);
+        } : () => setShowStartRoastWizard(true)}
         icon={
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -211,36 +221,75 @@ const Dashboard = ({
       <BottomSheetModal
         isOpen={showFABMenu}
         onClose={() => setShowFABMenu(false)}
-        title="Quick Actions"
+        title={beanProfileState?.selectedProfile ? "Bean Profile Actions" : "Quick Actions"}
       >
         <div className="space-y-4">
-          <button
-            onClick={() => {
-              setShowStartRoastWizard(true);
-              setShowFABMenu(false);
-            }}
-            className="w-full bg-gradient-to-r from-emerald-700 to-green-900 text-white px-4 py-4 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors flex items-center gap-3 text-left"
-          >
-            <span className="text-2xl">🔥</span>
-            <div>
-              <div className="font-semibold text-lg">Start New Roast</div>
-              <div className="text-sm opacity-90">Begin a new roasting session</div>
-            </div>
-          </button>
-          
-          <button
-            onClick={() => {
-              setTriggerBeanProfileCreate(true);
-              setShowFABMenu(false);
-            }}
-            className="w-full bg-gradient-to-r from-purple-900 to-indigo-900 text-white px-4 py-4 rounded-lg hover:from-blue-950 hover:to-indigo-950 transition-colors flex items-center gap-3 text-left"
-          >
-            <span className="text-2xl">☕</span>
-            <div>
-              <div className="font-semibold text-lg">Add Bean Profile</div>
-              <div className="text-sm opacity-90">Create a new coffee bean profile</div>
-            </div>
-          </button>
+          {/* Show different options based on bean profile state */}
+          {beanProfileState?.selectedProfile ? (
+            // Bean Profile Actions
+            <>
+              <button
+                onClick={() => {
+                  if (beanProfileState.handleEditProfile) {
+                    beanProfileState.handleEditProfile();
+                  }
+                  setShowFABMenu(false);
+                }}
+                className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-4 py-4 rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-colors flex items-center gap-3 text-left"
+              >
+                <span className="text-2xl">✏️</span>
+                <div>
+                  <div className="font-semibold text-lg">Edit Bean Profile</div>
+                  <div className="text-sm opacity-90">Edit "{beanProfileState.selectedProfile.name}"</div>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowStartRoastWizard(true);
+                  setShowFABMenu(false);
+                }}
+                className="w-full bg-gradient-to-r from-emerald-700 to-green-900 text-white px-4 py-4 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors flex items-center gap-3 text-left"
+              >
+                <span className="text-2xl">🔥</span>
+                <div>
+                  <div className="font-semibold text-lg">Start New Roast</div>
+                  <div className="text-sm opacity-90">Begin a new roasting session</div>
+                </div>
+              </button>
+            </>
+          ) : (
+            // Default Actions
+            <>
+              <button
+                onClick={() => {
+                  setShowStartRoastWizard(true);
+                  setShowFABMenu(false);
+                }}
+                className="w-full bg-gradient-to-r from-emerald-700 to-green-900 text-white px-4 py-4 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors flex items-center gap-3 text-left"
+              >
+                <span className="text-2xl">🔥</span>
+                <div>
+                  <div className="font-semibold text-lg">Start New Roast</div>
+                  <div className="text-sm opacity-90">Begin a new roasting session</div>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => {
+                  setTriggerBeanProfileCreate(true);
+                  setShowFABMenu(false);
+                }}
+                className="w-full bg-gradient-to-r from-purple-900 to-indigo-900 text-white px-4 py-4 rounded-lg hover:from-blue-950 hover:to-indigo-950 transition-colors flex items-center gap-3 text-left"
+              >
+                <span className="text-2xl">☕</span>
+                <div>
+                  <div className="font-semibold text-lg">Add Bean Profile</div>
+                  <div className="text-sm opacity-90">Create a new coffee bean profile</div>
+                </div>
+              </button>
+            </>
+          )}
         </div>
       </BottomSheetModal>
     </div>

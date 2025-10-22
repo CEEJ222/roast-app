@@ -19,7 +19,6 @@ import EnvironmentalConditionsCard from './components/EnvironmentalConditionsCar
 import RoastActionMenu from './components/RoastActionMenu';
 import RoastDeleteModal from './components/RoastDeleteModal';
 import RoastShareModal from './components/RoastShareModal';
-import RoastFloatingActionButton from './components/RoastFloatingActionButton';
 import LoadingState from './components/LoadingState';
 import ErrorState from './components/ErrorState';
 import { formatDate } from '../../utils/dateUtils';
@@ -179,7 +178,7 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
         </div>
 
         {/* Floating Action Buttons - positioned at bottom */}
-        {isEditing ? (
+        {isEditing && (
           <div className="fixed bottom-6 right-6 flex gap-2 z-50">
             <button 
               onClick={async () => {
@@ -215,11 +214,6 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
               ❌ Cancel
             </button>
           </div>
-        ) : (
-          <RoastFloatingActionButton 
-            isEditing={isEditing}
-            onActionMenuOpen={() => setShowActionMenu(true)}
-          />
         )}
       </div>
       </MobileModal>
@@ -248,6 +242,12 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
         onExport={handleExport}
         onEdit={handleEdit}
         onDelete={() => setShowDeleteConfirm(true)}
+        onEditBeanProfile={() => {
+          // Navigate to bean profile edit
+          console.log('Edit bean profile clicked for roast:', roast);
+          // TODO: Implement bean profile editing
+        }}
+        roast={roast}
       />
     </>
   );

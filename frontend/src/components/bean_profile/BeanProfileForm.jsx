@@ -50,6 +50,7 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
   const [showURLModal, setShowURLModal] = useState(false);
   const [showLLMModal, setShowLLMModal] = useState(false);
   const [llmAnalysisResult, setLlmAnalysisResult] = useState(null);
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
 
   // Reset dataLoaded when beanProfileId or initialData changes
   useEffect(() => {
@@ -134,6 +135,19 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
   const handleInputChange = (field, value) => {
     console.log('DEBUG: Input change:', field, value);
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Touch handlers for mobile modal
+  const handleTouchStart = (e) => {
+    // Touch start handler for mobile modal
+  };
+
+  const handleTouchMove = (e) => {
+    // Touch move handler for mobile modal
+  };
+
+  const handleTouchEnd = (e) => {
+    // Touch end handler for mobile modal
   };
 
   const handleManualURLInput = () => {
@@ -592,8 +606,12 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
         <div className="bg-white dark:bg-dark-card px-4 sm:px-6 py-3 sm:py-4 text-gray-900 dark:text-dark-text-primary flex-shrink-0">
           <div className="flex justify-between items-center">
             <div className="flex-1">
-              <h2 className="text-xl sm:text-2xl font-bold">Add Bean Profile</h2>
-              <p className="opacity-90 text-sm sm:text-base">Add detailed information about the green coffee</p>
+              <h2 className="text-xl sm:text-2xl font-bold">
+                {beanProfileId ? 'Edit Bean Profile' : 'Add Bean Profile'}
+              </h2>
+              <p className="opacity-90 text-sm sm:text-base">
+                {beanProfileId ? 'Update detailed information about the green coffee' : 'Add detailed information about the green coffee'}
+              </p>
             </div>
             {/* Desktop only close button */}
             <button
@@ -989,7 +1007,7 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
                 Saving...
               </>
             ) : (
-              'Save Bean Profile'
+              beanProfileId ? 'Update Bean Profile' : 'Save Bean Profile'
             )}
           </button>
         </div>

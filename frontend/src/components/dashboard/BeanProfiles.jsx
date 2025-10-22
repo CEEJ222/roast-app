@@ -9,7 +9,7 @@ const API_BASE = import.meta.env.DEV
   ? 'http://localhost:8000'
   : 'https://roast-backend-production-8883.up.railway.app';
 
-const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = false, onTriggerReset = null }) => {
+const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = false, onTriggerReset = null, onProfileStateChange = null }) => {
   const [beanProfiles, setBeanProfiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -56,7 +56,9 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
   // Mobile detection
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      const isMobileWidth = window.innerWidth < 768;
+      console.log('BeanProfiles mobile detection:', { width: window.innerWidth, isMobile: isMobileWidth });
+      setIsMobile(isMobileWidth);
     };
     
     checkMobile();
@@ -74,6 +76,20 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
       }
     }
   }, [triggerCreateModal, onTriggerReset]);
+
+  // Notify parent of profile state changes
+  useEffect(() => {
+    if (onProfileStateChange) {
+      onProfileStateChange({
+        selectedProfile,
+        showProfileModal,
+        showEditForm,
+        showCreateForm,
+        handleEditProfile,
+        handleCreateProfile
+      });
+    }
+  }, [selectedProfile, showProfileModal, showEditForm, showCreateForm]);
 
   const handleViewProfile = (profile) => {
     setSelectedProfile(profile);
@@ -669,18 +685,9 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
                 <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
                   <button
                     onClick={handleCloseProfile}
-                    className="px-6 py-3 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium border border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 rounded-lg transition-colors order-2 sm:order-1"
+                    className="px-6 py-3 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium border border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 rounded-lg transition-colors"
                   >
                     Close
-                  </button>
-                  <button
-                    onClick={handleEditProfile}
-                    className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-medium shadow-lg hover:shadow-xl transition-all order-1 sm:order-2"
-                  >
-                    <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Edit Profile
                   </button>
                 </div>
               </div>
@@ -812,7 +819,6 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
       {isMobile && (
         <FloatingActionButton
           onClick={() => {
-            console.log('FAB clicked, setting showFABMenu to true');
             setShowFABMenu(true);
           }}
           icon={
@@ -820,7 +826,7 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
           }
-          label="Quick Actions"
+          label="Bean Profile Actions"
           position="bottom-right"
           className="mb-24 mr-4"
         />
@@ -830,39 +836,58 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
       <BottomSheetModal
         isOpen={showFABMenu}
         onClose={() => {
-          console.log('BottomSheetModal onClose called');
           setShowFABMenu(false);
         }}
-        title="Quick Actions"
+        title={selectedProfile ? "Bean Profile Actions" : "Quick Actions"}
       >
         <div className="space-y-4">
-          <button
-            onClick={() => {
-              handleCreateProfile();
-              setShowFABMenu(false);
-            }}
-            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-colors flex items-center gap-3 text-left"
-          >
-            <span className="text-2xl">☕</span>
-            <div>
-              <div className="font-semibold text-lg">Create Bean Profile</div>
-              <div className="text-sm opacity-90">Add a new coffee bean profile</div>
-            </div>
-          </button>
-          
-          <button
-            onClick={() => {
-              setShowAll(true);
-              setShowFABMenu(false);
-            }}
-            className="w-full bg-gradient-to-r from-red-600 to-pink-600 text-white px-4 py-4 rounded-lg hover:from-red-700 hover:to-pink-700 transition-colors flex items-center gap-3 text-left"
-          >
-            <span className="text-2xl">🗑️</span>
-            <div>
-              <div className="font-semibold text-lg">Delete Bean Profiles</div>
-              <div className="text-sm opacity-90">Manage and delete existing profiles</div>
-            </div>
-          </button>
+          {selectedProfile ? (
+            // When viewing a bean profile, only show edit option
+            <button
+              onClick={() => {
+                handleEditProfile();
+                setShowFABMenu(false);
+              }}
+              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-4 py-4 rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-colors flex items-center gap-3 text-left"
+            >
+              <span className="text-2xl">✏️</span>
+              <div>
+                <div className="font-semibold text-lg">Edit Bean Profile</div>
+                <div className="text-sm opacity-90">Edit "{selectedProfile.name}"</div>
+              </div>
+            </button>
+          ) : (
+            // When not viewing a profile, show all options
+            <>
+              <button
+                onClick={() => {
+                  handleCreateProfile();
+                  setShowFABMenu(false);
+                }}
+                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-colors flex items-center gap-3 text-left"
+              >
+                <span className="text-2xl">☕</span>
+                <div>
+                  <div className="font-semibold text-lg">Create Bean Profile</div>
+                  <div className="text-sm opacity-90">Add a new coffee bean profile</div>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowAll(true);
+                  setShowFABMenu(false);
+                }}
+                className="w-full bg-gradient-to-r from-red-600 to-pink-600 text-white px-4 py-4 rounded-lg hover:from-red-700 hover:to-pink-700 transition-colors flex items-center gap-3 text-left"
+              >
+                <span className="text-2xl">🗑️</span>
+                <div>
+                  <div className="font-semibold text-lg">Delete Bean Profiles</div>
+                  <div className="text-sm opacity-90">Manage and delete existing profiles</div>
+                </div>
+              </button>
+            </>
+          )}
         </div>
       </BottomSheetModal>
     </div>
