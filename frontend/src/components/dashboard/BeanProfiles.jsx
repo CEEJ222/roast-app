@@ -271,6 +271,49 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
     return '☕';
   };
 
+  const processMethodMappings = {
+    'Dry Process (Natural)': 'Natural',
+    'Wet Process (Washed)': 'Washed',
+    'Wet Process': 'Washed', // Handle cases where it's just "Wet Process"
+    'Honey Process': 'Honey',
+    'Semi-Washed': 'Semi-Washed',
+    'Anaerobic': 'Anaerobic',
+    'Carbonic Maceration': 'Carbonic',
+    'Pulp Natural': 'Pulp Natural',
+    'Yellow Honey': 'Yellow Honey',
+    'Red Honey': 'Red Honey',
+    'Black Honey': 'Black Honey',
+    'White Honey': 'White Honey',
+    'Monsooned': 'Monsooned',
+    'Giling Basah': 'Giling Basah',
+    'Wet Hulled': 'Wet Hulled'
+  };
+
+  const getProcessMethodChip = (processMethod) => {
+    if (!processMethod) return null;
+    
+    const chipName = processMethodMappings[processMethod] || processMethod;
+    
+    // Determine chip color based on process type
+    let chipColor = 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    
+    if (chipName.toLowerCase().includes('natural')) {
+      chipColor = 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
+    } else if (chipName.toLowerCase().includes('washed')) {
+      chipColor = 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300';
+    } else if (chipName.toLowerCase().includes('honey')) {
+      chipColor = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300';
+    } else if (chipName.toLowerCase().includes('anaerobic') || chipName.toLowerCase().includes('carbonic')) {
+      chipColor = 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300';
+    }
+    
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium border dark:border-dark-border-primary ${chipColor} flex-shrink-0`}>
+        {chipName}
+      </span>
+    );
+  };
+
   const columns = [
     {
       header: 'Profile',
@@ -387,7 +430,7 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
         </div>
       ) : (
         // Dashboard card view
-        <div className={isMobile ? "p-4" : "p-4 sm:p-6"}>
+        <div className={isMobile ? "p-4 pb-24" : "p-4 sm:p-6"}>
           {beanProfiles.length === 0 ? (
             <div className="text-center py-8 sm:py-12 text-gray-500 dark:text-dark-text-tertiary px-4">
               <div className="text-4xl sm:text-6xl mb-4">☕</div>
@@ -415,9 +458,9 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
                   <div 
                     key={profile.id}
                     onClick={() => handleViewProfile(profile)}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary cursor-pointer"
+                    className="flex flex-col p-4 sm:p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary cursor-pointer"
                   >
-                    <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+                    <div className="flex items-start space-x-3 sm:space-x-4">
                       <div className="w-10 h-10 bg-indigo-100 dark:bg-dark-bg-tertiary rounded-full flex items-center justify-center border dark:border-dark-border-primary flex-shrink-0">
                         <span className="text-indigo-600 dark:text-dark-accent-primary font-bold">
                           {getProfileIcon()}
@@ -427,27 +470,30 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
                         <p className="font-medium text-gray-900 dark:text-dark-text-primary text-sm sm:text-base break-words">
                           {profile.name}
                         </p>
-                        <div className="flex flex-row items-center space-x-2 text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary mt-1">
+                        <div className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary mt-1">
                           {profile.origin && (
-                            <span className="truncate">{profile.origin}</span>
+                            <div className="break-words flex items-center">
+                              <svg className="w-3 h-3 text-red-500 dark:text-red-400 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                              </svg>
+                              <span>{profile.origin}</span>
+                            </div>
                           )}
                           {profile.variety && (
-                            <span>• {profile.variety}</span>
-                          )}
-                          {profile.process_method && (
-                            <span>• {profile.process_method}</span>
+                            <div className="break-words mt-1 flex items-center">
+                              <span className="text-green-500 dark:text-green-400 mr-1">🌱</span>
+                              <span>{profile.variety}</span>
+                            </div>
                           )}
                         </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-end space-x-3 sm:space-x-4 text-sm mt-2 sm:mt-0">
-                      {isGoodForEspresso && (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium border dark:border-dark-border-primary bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300 flex-shrink-0">
-                          Good for Espresso
-                        </span>
-                      )}
-                      <div className="text-indigo-600 dark:text-indigo-400 flex-shrink-0">
-                        👁️
+                        <div className="flex flex-wrap gap-2 items-center text-sm mt-3">
+                          {getProcessMethodChip(profile.process_method)}
+                          {isGoodForEspresso && (
+                            <span className="px-2 py-1 rounded-full text-xs font-medium border dark:border-dark-border-primary bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300 flex-shrink-0">
+                              Good for Espresso
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -468,115 +514,172 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
           headerClassName="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 text-white"
         >
               {/* Basic Info */}
-              <div className="mb-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Basic Information</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div>
-                    <span className="font-medium text-gray-700 dark:text-dark-text-primary">Origin:</span>
-                    <span className="ml-2 text-gray-600 dark:text-dark-text-secondary">{selectedProfile.origin || 'Not specified'}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700 dark:text-dark-text-primary">Variety:</span>
-                    <span className="ml-2 text-gray-600 dark:text-dark-text-secondary">{selectedProfile.variety || 'Not specified'}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700 dark:text-dark-text-primary">Process:</span>
-                    <span className="ml-2 text-gray-600 dark:text-dark-text-secondary">{selectedProfile.process_method || 'Not specified'}</span>
-                  </div>
-                  {(selectedProfile.espresso_suitable || 
-                    selectedProfile.notes?.toLowerCase().includes('espresso') ||
-                    selectedProfile.roasting_notes?.toLowerCase().includes('espresso')) && (
-                    <div>
-                      <span className="font-medium text-gray-700 dark:text-dark-text-primary">Espresso:</span>
-                      <span className="ml-2 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
-                        Good for Espresso
-                      </span>
+              <div className="mb-8">
+                <div className="bg-white dark:bg-dark-card rounded-xl border border-gray-200 dark:border-dark-border-primary p-6 shadow-sm">
+                  <div className="flex items-center mb-6">
+                    <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg mr-3">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
                     </div>
-                  )}
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-dark-text-primary">Basic Information</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold text-gray-500 dark:text-dark-text-tertiary uppercase tracking-wide mb-1">Origin</span>
+                      <span className="text-gray-900 dark:text-dark-text-primary font-medium">{selectedProfile.origin || 'Not specified'}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold text-gray-500 dark:text-dark-text-tertiary uppercase tracking-wide mb-1">Variety</span>
+                      <span className="text-gray-900 dark:text-dark-text-primary font-medium">{selectedProfile.variety || 'Not specified'}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold text-gray-500 dark:text-dark-text-tertiary uppercase tracking-wide mb-1">Process</span>
+                      <span className="text-gray-900 dark:text-dark-text-primary font-medium">{selectedProfile.process_method || 'Not specified'}</span>
+                    </div>
+                    {(selectedProfile.espresso_suitable || 
+                      selectedProfile.notes?.toLowerCase().includes('espresso') ||
+                      selectedProfile.roasting_notes?.toLowerCase().includes('espresso')) && (
+                      <div className="flex flex-col">
+                        <span className="text-sm font-semibold text-gray-500 dark:text-dark-text-tertiary uppercase tracking-wide mb-1">Espresso</span>
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300 w-fit">
+                          <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          Good for Espresso
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* Enhanced Data */}
               {(selectedProfile.moisture_content_pct || selectedProfile.density_g_ml || selectedProfile.altitude_m || selectedProfile.screen_size) && (
-                <div className="mb-6">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Enhanced Data</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    {selectedProfile.moisture_content_pct && (
-                      <div>
-                        <span className="font-medium text-gray-700 dark:text-dark-text-primary">Moisture Content:</span>
-                        <span className="ml-2 text-gray-600 dark:text-dark-text-secondary">{selectedProfile.moisture_content_pct}%</span>
+                <div className="mb-8">
+                  <div className="bg-white dark:bg-dark-card rounded-xl border border-gray-200 dark:border-dark-border-primary p-6 shadow-sm">
+                    <div className="flex items-center mb-6">
+                      <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg mr-3">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
                       </div>
-                    )}
-                    {selectedProfile.density_g_ml && (
-                      <div>
-                        <span className="font-medium text-gray-700 dark:text-dark-text-primary">Density:</span>
-                        <span className="ml-2 text-gray-600 dark:text-dark-text-secondary">{selectedProfile.density_g_ml} g/ml</span>
-                      </div>
-                    )}
-                    {selectedProfile.altitude_m && (
-                      <div>
-                        <span className="font-medium text-gray-700 dark:text-dark-text-primary">Altitude:</span>
-                        <span className="ml-2 text-gray-600 dark:text-dark-text-secondary">{selectedProfile.altitude_m}m</span>
-                      </div>
-                    )}
-                    {selectedProfile.screen_size && (
-                      <div>
-                        <span className="font-medium text-gray-700 dark:text-dark-text-primary">Screen Size:</span>
-                        <span className="ml-2 text-gray-600 dark:text-dark-text-secondary">{selectedProfile.screen_size}</span>
-                      </div>
-                    )}
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-dark-text-primary">Enhanced Data</h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {selectedProfile.moisture_content_pct && (
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-gray-500 dark:text-dark-text-tertiary uppercase tracking-wide mb-1">Moisture Content</span>
+                          <span className="text-gray-900 dark:text-dark-text-primary font-medium">{selectedProfile.moisture_content_pct}%</span>
+                        </div>
+                      )}
+                      {selectedProfile.density_g_ml && (
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-gray-500 dark:text-dark-text-tertiary uppercase tracking-wide mb-1">Density</span>
+                          <span className="text-gray-900 dark:text-dark-text-primary font-medium">{selectedProfile.density_g_ml} g/ml</span>
+                        </div>
+                      )}
+                      {selectedProfile.altitude_m && (
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-gray-500 dark:text-dark-text-tertiary uppercase tracking-wide mb-1">Altitude</span>
+                          <span className="text-gray-900 dark:text-dark-text-primary font-medium">{selectedProfile.altitude_m}m</span>
+                        </div>
+                      )}
+                      {selectedProfile.screen_size && (
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-gray-500 dark:text-dark-text-tertiary uppercase tracking-wide mb-1">Screen Size</span>
+                          <span className="text-gray-900 dark:text-dark-text-primary font-medium">{selectedProfile.screen_size}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* Flavor Profile */}
               {(selectedProfile.cupping_score || selectedProfile.fragrance_score || selectedProfile.flavor_notes?.length > 0) && (
-                <div className="mb-6">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Flavor Profile</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    {selectedProfile.cupping_score && (
-                      <div>
-                        <span className="font-medium text-gray-700 dark:text-dark-text-primary">Cupping Score:</span>
-                        <span className="ml-2 text-gray-600 dark:text-dark-text-secondary">{selectedProfile.cupping_score}/100</span>
+                <div className="mb-8">
+                  <div className="bg-white dark:bg-dark-card rounded-xl border border-gray-200 dark:border-dark-border-primary p-6 shadow-sm">
+                    <div className="flex items-center mb-6">
+                      <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg mr-3">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                        </svg>
                       </div>
-                    )}
-                    {selectedProfile.fragrance_score && (
-                      <div>
-                        <span className="font-medium text-gray-700 dark:text-dark-text-primary">Fragrance Score:</span>
-                        <span className="ml-2 text-gray-600 dark:text-dark-text-secondary">{selectedProfile.fragrance_score}/10</span>
-                      </div>
-                    )}
-                    {selectedProfile.flavor_notes?.length > 0 && (
-                      <div className="col-span-2">
-                        <span className="font-medium text-gray-700 dark:text-dark-text-primary">Flavor Notes:</span>
-                        <span className="ml-2 text-gray-600 dark:text-dark-text-secondary">{selectedProfile.flavor_notes.join(', ')}</span>
-                      </div>
-                    )}
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-dark-text-primary">Flavor Profile</h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {selectedProfile.cupping_score && (
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-gray-500 dark:text-dark-text-tertiary uppercase tracking-wide mb-1">Cupping Score</span>
+                          <div className="flex items-center">
+                            <span className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mr-2">{selectedProfile.cupping_score}</span>
+                            <span className="text-sm text-gray-500 dark:text-dark-text-secondary">/100</span>
+                          </div>
+                        </div>
+                      )}
+                      {selectedProfile.fragrance_score && (
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-gray-500 dark:text-dark-text-tertiary uppercase tracking-wide mb-1">Fragrance Score</span>
+                          <div className="flex items-center">
+                            <span className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mr-2">{selectedProfile.fragrance_score}</span>
+                            <span className="text-sm text-gray-500 dark:text-dark-text-secondary">/10</span>
+                          </div>
+                        </div>
+                      )}
+                      {selectedProfile.flavor_notes?.length > 0 && (
+                        <div className="col-span-2">
+                          <span className="text-sm font-semibold text-gray-500 dark:text-dark-text-tertiary uppercase tracking-wide mb-2 block">Flavor Notes</span>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedProfile.flavor_notes.map((note, index) => (
+                              <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">
+                                {note}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* Notes */}
               {selectedProfile.notes && (
-                <div className="mb-6">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Notes</h3>
-                  <p className="text-gray-600 dark:text-dark-text-secondary break-words">{selectedProfile.notes}</p>
+                <div className="mb-8">
+                  <div className="bg-white dark:bg-dark-card rounded-xl border border-gray-200 dark:border-dark-border-primary p-6 shadow-sm">
+                    <div className="flex items-center mb-6">
+                      <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg mr-3">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-dark-text-primary">Notes</h3>
+                    </div>
+                    <div className="prose prose-sm max-w-none">
+                      <p className="text-gray-700 dark:text-dark-text-secondary leading-relaxed break-words">{selectedProfile.notes}</p>
+                    </div>
+                  </div>
                 </div>
               )}
 
               {/* Footer Actions */}
-              <div className="mt-6 pt-4 pb-20 sm:pb-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
+              <div className="mt-8 pt-6 pb-20 sm:pb-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
                   <button
                     onClick={handleCloseProfile}
-                    className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium order-2 sm:order-1"
+                    className="px-6 py-3 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium border border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 rounded-lg transition-colors order-2 sm:order-1"
                   >
                     Close
                   </button>
                   <button
                     onClick={handleEditProfile}
-                    className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-medium order-1 sm:order-2"
+                    className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-medium shadow-lg hover:shadow-xl transition-all order-1 sm:order-2"
                   >
+                    <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
                     Edit Profile
                   </button>
                 </div>
@@ -719,7 +822,7 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
           }
           label="Quick Actions"
           position="bottom-right"
-          className="mb-20 mr-4"
+          className="mb-24 mr-4"
         />
       )}
 
