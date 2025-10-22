@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import RoastCurveGraph from '../shared/RoastCurveGraph';
+import React, { useState, useRef, useEffect, lazy, Suspense } from 'react';
+const RoastCurveGraph = lazy(() => import('../shared/RoastCurveGraph'));
 import RecentRoasts from './RecentRoasts';
 import BeanProfiles from './BeanProfiles';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
@@ -54,6 +54,7 @@ const Dashboard = ({
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -136,7 +137,7 @@ const Dashboard = ({
       </div>
 
       {/* Roast Curve Visualization */}
-      {historicalRoasts?.length > 0 && (
+      {historicalRoasts?.length > 0 ? (
         <div className="bg-transparent">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-border-primary">
             <div className="flex justify-between items-center">
@@ -148,37 +149,65 @@ const Dashboard = ({
               </button>
             </div>
           </div>
-          <RoastCurveGraph
-            data={historicalRoasts.map(roast => {
-              const coffeeName = roast.bean_profile_name || 
-                                (roast.coffee_region && roast.coffee_type 
-                                 ? `${roast.coffee_region} ${roast.coffee_type}` 
-                                 : roast.coffee_type || roast.coffee_region || 'Unknown Coffee');
-              return {
-                id: roast.id,
-                name: coffeeName,
-                fullName: `${coffeeName} - ${new Date(roast.created_at).toLocaleDateString()}`,
-                events: recentRoastDetails[roast.id] || [],
-                created_at: roast.created_at,
-                coffee_region: roast.coffee_region
-              };
-            })}
-            mode="historical"
-            showROR={true}
-            showMilestones={true}
-            height={600}
-            title=""
-            units={{ temperature: userProfile?.units?.temperature === 'celsius' ? 'C' : 'F', time: 'min' }}
-            className=""
-            showLegend={true}
-            showGrid={true}
-            showTooltip={true}
-            enableZoom={true}
-            enablePan={true}
-            compact={false}
-            interactive={true}
-            showRoastLabels={true}
-          />
+          <Suspense fallback={
+            <div className="bg-transparent rounded-lg shadow-lg dark:shadow-dark-glow border-metallic border-gray-200 dark:border-gray-600 p-6">
+              <div className="h-96 bg-gray-100 dark:bg-gray-800 rounded animate-pulse flex items-center justify-center">
+                <div className="text-gray-400 dark:text-gray-600">Loading roast data...</div>
+              </div>
+            </div>
+          }>
+            <RoastCurveGraph
+              data={historicalRoasts.map(roast => {
+                const coffeeName = roast.bean_profile_name || 
+                                  (roast.coffee_region && roast.coffee_type 
+                                   ? `${roast.coffee_region} ${roast.coffee_type}` 
+                                   : roast.coffee_type || roast.coffee_region || 'Unknown Coffee');
+                return {
+                  id: roast.id,
+                  name: coffeeName,
+                  fullName: `${coffeeName} - ${new Date(roast.created_at).toLocaleDateString()}`,
+                  events: recentRoastDetails[roast.id] || [],
+                  created_at: roast.created_at,
+                  coffee_region: roast.coffee_region
+                };
+              })}
+              mode="historical"
+              showROR={true}
+              showMilestones={true}
+              height={isMobile ? 400 : 600}
+              title=""
+              units={{ temperature: userProfile?.units?.temperature === 'celsius' ? 'C' : 'F', time: 'min' }}
+              className=""
+              showLegend={!isMobile}
+              showGrid={true}
+              showTooltip={!isMobile}
+              enableZoom={false}
+              enablePan={false}
+              compact={isMobile}
+              interactive={!isMobile}
+              showRoastLabels={!isMobile}
+            />
+          </Suspense>
+        </div>
+      ) : (
+        /* Empty State */
+        <div className="bg-transparent rounded-lg shadow-lg dark:shadow-dark-glow border border-gray-200 dark:border-gray-600 p-8">
+          <div className="text-center">
+            <div className="text-6xl mb-4">🔥</div>
+            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
+              No Roasts Yet
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Start your first roast to see your roasting curves here
+            </p>
+            <button
+              onClick={() => setShowStartRoastWizard(true)}
+              className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg transform transition hover:scale-105 flex items-center gap-2 mx-auto"
+            >
+              <span className="text-lg">🔥</span>
+              Start Your First Roast
+            </button>
+          </div>
         </div>
       )}
 

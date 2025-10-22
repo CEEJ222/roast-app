@@ -100,7 +100,9 @@ const RoastsPage = ({
                     id: roast.id,
                     name: coffeeName,
                     fullName: `${coffeeName} - ${new Date(roast.created_at).toLocaleDateString()}`,
-                    events: recentRoastDetails[roast.id] || []
+                    events: recentRoastDetails[roast.id] || [],
+                    created_at: roast.created_at,
+                    coffee_region: roast.coffee_region
                   };
                 })}
                 mode="historical"
@@ -131,7 +133,9 @@ const RoastsPage = ({
                   id: roast.id,
                   name: coffeeName,
                   fullName: `${coffeeName} - ${new Date(roast.created_at).toLocaleDateString()}`,
-                  events: recentRoastDetails[roast.id] || []
+                  events: recentRoastDetails[roast.id] || [],
+                  created_at: roast.created_at,
+                  coffee_region: roast.coffee_region
                 };
               })}
               mode="historical"

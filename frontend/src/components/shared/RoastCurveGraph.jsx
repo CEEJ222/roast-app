@@ -50,6 +50,7 @@ const RoastCurveGraph = ({
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
   // Filter roasts for historical mode (must be defined first)
   const filteredRoasts = useMemo(() => {
     if (mode !== 'historical') return data;
@@ -61,7 +62,7 @@ const RoastCurveGraph = ({
 
   // Milestone functionality removed - was causing display issues with purple dots
 
-  // Process data for the chart
+  // Process data for the chart with performance optimization
   const chartData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
@@ -71,7 +72,10 @@ const RoastCurveGraph = ({
     if (mode === 'live') {
       baseData = processLiveData(data);
     } else {
-      baseData = processHistoricalData(filteredRoasts);
+      // OPTIMIZATION: Limit number of roasts for better performance
+      const maxRoasts = 8; // Limit to 8 roasts max for performance
+      const limitedRoasts = filteredRoasts.slice(0, maxRoasts);
+      baseData = processHistoricalData(limitedRoasts);
     }
     
     return baseData;
@@ -81,7 +85,6 @@ const RoastCurveGraph = ({
   const rorData = useMemo(() => {
     if (!showROR || mode !== 'live' || chartData.length < 2) return [];
     
-
     // First pass: calculate raw RoR values using time-weighted approach
     const rawRorData = chartData.map((point, index) => {
       if (index === 0) return { ...point, ror: 0 };
@@ -121,20 +124,19 @@ const RoastCurveGraph = ({
       };
     });
 
-     // Second pass: apply aggressive smoothing and outlier detection
+     // Second pass: apply proper smoothing and outlier detection
      return rawRorData.map((point, index) => {
        if (index === 0) return { ...point, ror: 0 };
        
        let smoothedRor = point.ror;
        
-       // Apply same smoothing as historical mode for consistency
+       // Apply exponential smoothing for stability
        if (index > 0) {
-         // Apply exponential smoothing (same as historical mode)
          const prevRor = index > 1 ? rawRorData[index - 1].ror : 0;
-         const alpha = 0.4; // Same smoothing factor as historical mode
+         const alpha = 0.4; // Smoothing factor
          smoothedRor = alpha * smoothedRor + (1 - alpha) * prevRor;
          
-         // Apply moving average smoothing (same as historical mode)
+         // Apply moving average smoothing for additional stability
          const smoothingWindow = Math.min(3, index);
          if (smoothingWindow > 0) {
            const windowStart = Math.max(0, index - smoothingWindow);
@@ -145,11 +147,11 @@ const RoastCurveGraph = ({
            
            if (windowRorValues.length > 0) {
              const avgRor = windowRorValues.reduce((sum, ror) => sum + ror, 0) / windowRorValues.length;
-             smoothedRor = smoothedRor * 0.6 + avgRor * 0.4; // Same blending as historical mode
+             smoothedRor = smoothedRor * 0.6 + avgRor * 0.4; // Blend with average
            }
          }
          
-         // Final bounds check (same as historical mode)
+         // Final bounds check
          smoothedRor = Math.max(-20, Math.min(80, smoothedRor));
        }
        
@@ -171,6 +173,7 @@ const RoastCurveGraph = ({
       return labels;
     }, {});
   }, [filteredRoasts, mode, showRoastLabels]);
+
 
   if (noContainer) {
     return (
@@ -381,6 +384,9 @@ const RoastCurveGraph = ({
               left: isMobile ? -5 : 20, 
               bottom: isMobile ? 80 : 20 
             }}
+            // OPTIMIZATION: Performance optimizations for Recharts
+            syncId="roast-chart"
+            throttle={100}
             {...(enableZoom && { zoom: { enabled: true } })}
             {...(enablePan && { pan: { enabled: true } })}
           >
@@ -579,9 +585,11 @@ function processHistoricalData(roasts) {
 
   if (maxTime === 0) return [];
 
-  // Create time points every 0.5 minutes
+  // OPTIMIZATION: Aggressive data sampling for better performance
+  const maxDataPoints = 100; // Reduced to 100 points for faster rendering
+  const samplingInterval = Math.max(0.5, maxTime / maxDataPoints);
   const timePoints = [];
-  for (let i = 0; i <= maxTime; i += 0.5) {
+  for (let i = 0; i <= maxTime; i += samplingInterval) {
     timePoints.push(i);
   }
 
@@ -615,7 +623,7 @@ function processHistoricalData(roasts) {
     return dataPoint;
   });
 
-  // Apply aggressive smoothing to RoR data for each roast
+  // Apply proper smoothing to RoR data for each roast
   const smoothedData = rawData.map((point, timeIndex) => {
     const smoothedPoint = { ...point };
     

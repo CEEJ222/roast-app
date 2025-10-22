@@ -181,7 +181,9 @@ const DashboardHistoricalRoasts = ({
         id: roastId,
         name: coffeeName,
         fullName: `${coffeeName} - ${formatDate(roast?.created_at)}`,
-        events: events
+        events: events,
+        created_at: roast?.created_at,
+        coffee_region: roast?.coffee_region
       };
     });
     return result;
