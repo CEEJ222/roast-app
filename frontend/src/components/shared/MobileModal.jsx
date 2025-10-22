@@ -10,7 +10,8 @@ const MobileModal = ({
   onSave = null,
   hasUnsavedChanges = null,
   className = "",
-  headerClassName = ""
+  headerClassName = "",
+  disableSwipeToClose = false
 }) => {
   const [showConfirmClose, setShowConfirmClose] = useState(false);
   const [touchStartY, setTouchStartY] = useState(null);
@@ -50,24 +51,47 @@ const MobileModal = ({
 
   // Handle touch events for swipe-to-close
   const handleTouchStart = (e) => {
+    // Don't handle swipe if disabled
+    if (disableSwipeToClose) return;
+    
+    // Check if we're at the top of the modal content
+    const modalContent = e.currentTarget.querySelector('.modal-content');
+    const isAtTop = !modalContent || modalContent.scrollTop <= 10;
+    
+    // Only allow swipe-to-close if we're at the top
+    if (!isAtTop) {
+      return; // Don't start swipe detection if not at top
+    }
+    
     setTouchStartY(e.touches[0].clientY);
     setTouchCurrentY(e.touches[0].clientY);
     setIsDragging(true);
   };
 
   const handleTouchMove = (e) => {
-    if (!isDragging) return;
+    if (!isDragging || disableSwipeToClose) return;
     setTouchCurrentY(e.touches[0].clientY);
   };
 
-  const handleTouchEnd = () => {
-    if (!isDragging || !touchStartY || !touchCurrentY) {
+  const handleTouchEnd = (e) => {
+    if (!isDragging || !touchStartY || !touchCurrentY || disableSwipeToClose) {
       setIsDragging(false);
       return;
     }
 
     const deltaY = touchCurrentY - touchStartY;
     const threshold = 100; // Minimum swipe distance
+
+    // Double-check we're still at the top before allowing close
+    const modalContent = e.currentTarget.querySelector('.modal-content');
+    const isAtTop = !modalContent || modalContent.scrollTop <= 10;
+    
+    if (!isAtTop) {
+      setIsDragging(false);
+      setTouchStartY(null);
+      setTouchCurrentY(null);
+      return;
+    }
 
     if (deltaY > threshold) {
       // Swipe down detected
@@ -136,7 +160,7 @@ const MobileModal = ({
 
         {/* Content */}
         <div 
-          className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0"
+          className="modal-content p-4 sm:p-6 overflow-y-auto flex-1 min-h-0"
           style={{ overscrollBehavior: 'none', touchAction: 'pan-y' }}
         >
           {children}

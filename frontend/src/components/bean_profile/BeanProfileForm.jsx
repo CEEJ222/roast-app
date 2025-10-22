@@ -50,10 +50,6 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
   const [showURLModal, setShowURLModal] = useState(false);
   const [showLLMModal, setShowLLMModal] = useState(false);
   const [llmAnalysisResult, setLlmAnalysisResult] = useState(null);
-  const [showConfirmClose, setShowConfirmClose] = useState(false);
-  const [touchStartY, setTouchStartY] = useState(null);
-  const [touchCurrentY, setTouchCurrentY] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
 
   // Reset dataLoaded when beanProfileId or initialData changes
   useEffect(() => {
@@ -90,37 +86,6 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
     } else {
       onClose();
     }
-  };
-
-  // Handle touch events for swipe-to-close
-  const handleTouchStart = (e) => {
-    setTouchStartY(e.touches[0].clientY);
-    setTouchCurrentY(e.touches[0].clientY);
-    setIsDragging(true);
-  };
-
-  const handleTouchMove = (e) => {
-    if (!isDragging) return;
-    setTouchCurrentY(e.touches[0].clientY);
-  };
-
-  const handleTouchEnd = () => {
-    if (!isDragging || !touchStartY || !touchCurrentY) {
-      setIsDragging(false);
-      return;
-    }
-
-    const deltaY = touchCurrentY - touchStartY;
-    const threshold = 100; // Minimum swipe distance
-
-    if (deltaY > threshold) {
-      // Swipe down detected
-      handleClose();
-    }
-
-    setIsDragging(false);
-    setTouchStartY(null);
-    setTouchCurrentY(null);
   };
 
   // Initialize form with existing data if editing

@@ -1150,6 +1150,9 @@ function RoastAssistant() {
               refreshUserProfile={refreshUserProfile}
               triggerBeanProfileCreate={false}
               onTriggerReset={() => {}}
+              showStartRoastWizard={showStartRoastWizard}
+              showHistoricalRoasts={showHistoricalRoasts}
+              showProfilePage={showProfilePage}
             />
           )}
 

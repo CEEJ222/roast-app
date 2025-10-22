@@ -25,7 +25,11 @@ const AppLayout = ({
   setUserProfile,
   setLoading,
   setShowProfilePage,
-  refreshUserProfile
+  refreshUserProfile,
+  // Modal state props
+  showStartRoastWizard = false,
+  showHistoricalRoasts = false,
+  showProfilePage = false
 }) => {
   const [activeTab, setActiveTab] = useState('roasts');
   const [isMobile, setIsMobile] = useState(false);
@@ -57,8 +61,11 @@ const AppLayout = ({
     }
   };
 
-  // Mobile gestures
-  useMobileGestures(handleSwipeLeft, handleSwipeRight);
+  // Check if any modals are open
+  const hasModalOpen = showStartRoastWizard || showHistoricalRoasts || showProfilePage;
+
+  // Mobile gestures - disable when modals are open
+  useMobileGestures(handleSwipeLeft, handleSwipeRight, null, null, hasModalOpen);
 
   const renderActivePage = () => {
     // On desktop, always show the traditional Dashboard
