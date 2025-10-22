@@ -241,7 +241,8 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
       cupping_score: null, // Not mentioned in text
       screen_size: "16-19", // From "16-19 Screen" in text
       moisture_content: null, // Not mentioned in text
-      harvest_year: null // Not mentioned in text
+      harvest_year: null, // Not mentioned in text
+      espresso_suitable: false // Will be set based on text analysis
     };
     
     // Try to extract origin from text
@@ -327,6 +328,21 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
     } else if (inputLower.includes('city to city+')) {
       recommendedRoastLevels = ["City", "City+"];
     }
+
+    // Extract espresso suitability from text (same logic as frontend display)
+    const isGoodForEspresso = inputLower.includes('espresso') || 
+                              inputLower.includes('good for espresso') ||
+                              inputLower.includes('espresso suitable') ||
+                              inputLower.includes('espresso blend') ||
+                              inputLower.includes('espresso roast') ||
+                              inputLower.includes('espresso machine') ||
+                              inputLower.includes('espresso extraction') ||
+                              inputLower.includes('espresso shot') ||
+                              inputLower.includes('espresso drink') ||
+                              inputLower.includes('espresso preparation');
+    
+    // Update mock characteristics with espresso suitability
+    mockCharacteristics.espresso_suitable = isGoodForEspresso;
     
     // Mock guidance
     const mockGuidance = {
@@ -381,6 +397,7 @@ const BeanProfileForm = ({ isOpen, onClose, onSave, initialData = null, getAuthT
         acidity_intensity: mockCharacteristics.acidity_intensity || prev.acidity_intensity,
         body_intensity: mockCharacteristics.body_intensity || prev.body_intensity,
         recommended_roast_levels: recommendedRoastLevels,
+        espresso_suitable: isGoodForEspresso, // Auto-set based on text analysis
       }));
     
     // Show custom modal with results
