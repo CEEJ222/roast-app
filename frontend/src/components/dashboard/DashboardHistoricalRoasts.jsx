@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import RoastCurveGraph from '../shared/RoastCurveGraph';
 import StandardTable from '../shared/StandardTable';
-import LazyRoastCard from './LazyRoastCard';
-import useLazyRoastDetails from '../../hooks/useLazyRoastDetails';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'  // Local development
@@ -28,15 +26,10 @@ const DashboardHistoricalRoasts = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   
-  // Use lazy loading hook for roast details
-  const { loadRoastDetails, roastDetails: lazyRoastDetails, loading: lazyLoading, error: lazyError } = useLazyRoastDetails(getAuthToken);
 
   useEffect(() => {
     loadHistoricalRoasts();
   }, []);
-
-  // Roast details will be loaded lazily when cards come into view
-  // This significantly improves initial load performance
 
   const loadHistoricalRoasts = async () => {
     try {
@@ -52,25 +45,11 @@ const DashboardHistoricalRoasts = ({
         // Sort by created_at descending (newest first)
         const sortedRoasts = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         setRoasts(sortedRoasts);
-        
-        // Don't load details automatically - only load when needed for comparison
       }
     } catch (error) {
       console.error('Error loading historical roasts:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadRoastDetailsData = async (roastId) => {
-    // Use the lazy loading hook instead of direct API calls
-    const events = await loadRoastDetails(roastId);
-    if (events) {
-      // Update the parent component's roast details state
-      setRoastDetails(prev => ({
-        ...prev,
-        [roastId]: events
-      }));
     }
   };
 
@@ -91,16 +70,21 @@ const DashboardHistoricalRoasts = ({
   useEffect(() => {
     if (showGraph && selectedRoasts.length > 0) {
       setLoadingDetails(true);
-      // Load details for all selected roasts that don't have them yet
-      const promises = selectedRoasts
-        .filter(roastId => !lazyRoastDetails[roastId] && !roastDetails[roastId])
-        .map(roastId => loadRoastDetailsData(roastId));
+      // Check if we have details for all selected roasts
+      const missingDetails = selectedRoasts.filter(roastId => !roastDetails[roastId]);
       
-      Promise.all(promises).finally(() => {
+      if (missingDetails.length === 0) {
+        // All details are already loaded
         setLoadingDetails(false);
-      });
+      } else {
+        // Some details are missing, but they should be loaded by the parent component
+        // Just wait a moment for them to load
+        setTimeout(() => {
+          setLoadingDetails(false);
+        }, 1000);
+      }
     }
-  }, [showGraph, selectedRoasts, lazyRoastDetails, roastDetails, loadRoastDetails]);
+  }, [showGraph, selectedRoasts, roastDetails]);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -184,14 +168,21 @@ const DashboardHistoricalRoasts = ({
   ];
 
   const getSelectedRoastsData = () => {
+    console.log('getSelectedRoastsData: selectedRoasts', selectedRoasts);
+    console.log('getSelectedRoastsData: roastDetails', roastDetails);
+    console.log('getSelectedRoastsData: roasts', roasts.length);
+    
     const result = selectedRoasts.map(roastId => {
       const roast = roasts.find(r => r.id === roastId);
-      // Use lazy loaded data if available, otherwise fall back to parent state
-      const events = lazyRoastDetails[roastId] || roastDetails[roastId] || [];
+      // Use the roast details from the parent component
+      const events = roastDetails[roastId] || [];
       const coffeeName = roast?.bean_profile_name || 
                         (roast?.coffee_region && roast?.coffee_type 
                          ? `${roast.coffee_region} ${roast.coffee_type}` 
                          : roast?.coffee_type || roast?.coffee_region || 'Unknown Coffee');
+      
+      console.log(`getSelectedRoastsData: Roast ${roastId} has ${events.length} events`);
+      console.log(`getSelectedRoastsData: First few events:`, events.slice(0, 3));
       
       return {
         id: roastId,
@@ -200,6 +191,7 @@ const DashboardHistoricalRoasts = ({
         events: events
       };
     });
+    console.log('getSelectedRoastsData: Final result', result);
     return result;
   };
 

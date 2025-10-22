@@ -60,6 +60,9 @@ const Dashboard = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+  console.log('Dashboard: recentRoastDetails', recentRoastDetails);
+  console.log('Dashboard: historicalRoasts', historicalRoasts?.length);
+  
   return (
     <div className="space-y-6" ref={pullToRefreshRef} id="dashboard">
       {/* Pull-to-refresh indicator */}
@@ -177,7 +180,7 @@ const Dashboard = ({
         historicalRoasts={historicalRoasts}
         selectedRoasts={selectedRoasts}
         setSelectedRoasts={setSelectedRoasts}
-        roastDetails={roastDetails}
+        roastDetails={recentRoastDetails}
         setRoastDetails={setRoastDetails}
         onRoastResume={handleRoastResume}
         roastId={roastId}

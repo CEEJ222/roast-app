@@ -229,8 +229,8 @@ function RoastAssistant() {
         const sortedRoasts = roasts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         setHistoricalRoasts(sortedRoasts);
         
-        // Don't load roast details upfront - let lazy loading handle it
-        // This significantly improves initial load performance
+        // Load roast details for the graph
+        loadAllRoastDetails(sortedRoasts);
       }
     } catch (error) {
       console.error('Error loading historical roasts:', error);
@@ -241,7 +241,10 @@ function RoastAssistant() {
 
   // Load roast details for all roasts (for automatic curve display)
   const loadAllRoastDetails = async (allRoasts) => {
+    console.log('loadAllRoastDetails: Loading details for', allRoasts?.length, 'roasts');
+    
     if (!allRoasts || allRoasts.length === 0) {
+      console.log('loadAllRoastDetails: No roasts provided');
       setRecentRoastDetails({});
       return;
     }
@@ -251,6 +254,7 @@ function RoastAssistant() {
       
       // Load details for each roast
       const detailPromises = allRoasts.map(async (roast) => {
+        console.log('loadAllRoastDetails: Loading events for roast', roast.id);
         const response = await fetch(`${API_BASE}/roasts/${roast.id}/events`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -259,8 +263,10 @@ function RoastAssistant() {
         
         if (response.ok) {
           const events = await response.json();
+          console.log('loadAllRoastDetails: Loaded', events.length, 'events for roast', roast.id);
           return { roastId: roast.id, events };
         }
+        console.log('loadAllRoastDetails: Failed to load events for roast', roast.id);
         return { roastId: roast.id, events: [] };
       });
       
@@ -270,6 +276,7 @@ function RoastAssistant() {
         detailsMap[roastId] = events;
       });
       
+      console.log('loadAllRoastDetails: Final details map', detailsMap);
       setRecentRoastDetails(detailsMap);
     } catch (error) {
       console.error('Error loading all roast details:', error);
@@ -1021,7 +1028,7 @@ function RoastAssistant() {
   // Show loading spinner while checking authentication
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-light-gradient-blue flex items-center justify-center">
+      <div className="min-h-screen bg-light-gradient-blue dark:bg-dark-gradient flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>

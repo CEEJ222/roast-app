@@ -38,6 +38,13 @@ const RoastCurveGraph = ({
   // NEW: Remove all styling for mobile
   noContainer = false
 }) => {
+  console.log('RoastCurveGraph: Component props', { 
+    dataLength: data?.length, 
+    mode, 
+    selectedRoastsLength: selectedRoasts?.length,
+    showROR,
+    height 
+  });
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -63,17 +70,25 @@ const RoastCurveGraph = ({
 
   // Process data for the chart
   const chartData = useMemo(() => {
-    if (!data || data.length === 0) return [];
+    console.log('RoastCurveGraph: Processing data', { dataLength: data?.length, mode, filteredRoastsLength: filteredRoasts?.length });
+    
+    if (!data || data.length === 0) {
+      console.log('RoastCurveGraph: No data available');
+      return [];
+    }
 
     let baseData;
     // For live mode, we expect a single roast's events
     // For historical mode, we expect multiple roasts
     if (mode === 'live') {
+      console.log('RoastCurveGraph: Processing live data');
       baseData = processLiveData(data);
     } else {
+      console.log('RoastCurveGraph: Processing historical data');
       baseData = processHistoricalData(filteredRoasts);
     }
     
+    console.log('RoastCurveGraph: Processed data length', baseData?.length);
     return baseData;
   }, [data, mode, filteredRoasts]);
 
@@ -577,11 +592,17 @@ function processLiveData(events) {
 }
 
 function processHistoricalData(roasts) {
+  console.log('processHistoricalData: Input roasts', roasts?.length);
+  
   // For historical mode, we need to process multiple roasts
-  if (!roasts || roasts.length === 0) return [];
+  if (!roasts || roasts.length === 0) {
+    console.log('processHistoricalData: No roasts provided');
+    return [];
+  }
   
   // Find the maximum time across all roasts, but only consider events with temperature data
   const maxTime = Math.max(...roasts.map(roast => {
+    console.log('processHistoricalData: Processing roast', roast.id, 'events:', roast.events?.length);
     if (!roast.events || roast.events.length === 0) return 0;
     const tempEvents = roast.events.filter(event => 
       event.temp_f !== null && 
@@ -589,12 +610,19 @@ function processHistoricalData(roasts) {
       event.temp_f !== 0 && 
       event.kind === 'SET'
     );
+    console.log('processHistoricalData: Temp events for roast', roast.id, ':', tempEvents.length);
     if (tempEvents.length === 0) return 0;
-    return Math.max(...tempEvents.map(event => event.t_offset_sec / 60));
+    const maxTimeForRoast = Math.max(...tempEvents.map(event => event.t_offset_sec / 60));
+    console.log('processHistoricalData: Max time for roast', roast.id, ':', maxTimeForRoast);
+    return maxTimeForRoast;
   }));
   
+  console.log('processHistoricalData: Max time across all roasts:', maxTime);
 
-  if (maxTime === 0) return [];
+  if (maxTime === 0) {
+    console.log('processHistoricalData: No valid time data found');
+    return [];
+  }
 
   // Create time points every 0.5 minutes
   const timePoints = [];
