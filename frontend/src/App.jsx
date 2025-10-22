@@ -241,10 +241,7 @@ function RoastAssistant() {
 
   // Load roast details for all roasts (for automatic curve display)
   const loadAllRoastDetails = async (allRoasts) => {
-    console.log('loadAllRoastDetails: Loading details for', allRoasts?.length, 'roasts');
-    
     if (!allRoasts || allRoasts.length === 0) {
-      console.log('loadAllRoastDetails: No roasts provided');
       setRecentRoastDetails({});
       return;
     }
@@ -254,7 +251,6 @@ function RoastAssistant() {
       
       // Load details for each roast
       const detailPromises = allRoasts.map(async (roast) => {
-        console.log('loadAllRoastDetails: Loading events for roast', roast.id);
         const response = await fetch(`${API_BASE}/roasts/${roast.id}/events`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -263,10 +259,8 @@ function RoastAssistant() {
         
         if (response.ok) {
           const events = await response.json();
-          console.log('loadAllRoastDetails: Loaded', events.length, 'events for roast', roast.id);
           return { roastId: roast.id, events };
         }
-        console.log('loadAllRoastDetails: Failed to load events for roast', roast.id);
         return { roastId: roast.id, events: [] };
       });
       
@@ -276,7 +270,6 @@ function RoastAssistant() {
         detailsMap[roastId] = events;
       });
       
-      console.log('loadAllRoastDetails: Final details map', detailsMap);
       setRecentRoastDetails(detailsMap);
     } catch (error) {
       console.error('Error loading all roast details:', error);
