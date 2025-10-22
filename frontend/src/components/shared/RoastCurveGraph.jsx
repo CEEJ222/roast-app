@@ -195,7 +195,7 @@ const RoastCurveGraph = ({
             data={showROR && mode === 'live' ? rorData : chartData}
             margin={{ 
               top: 20, 
-              right: isMobile ? 0 : 30, 
+              right: isMobile ? -20 : -20, 
               left: isMobile ? -20 : 20, 
               bottom: isMobile ? 10 : 20 
             }}
@@ -203,7 +203,6 @@ const RoastCurveGraph = ({
             {...(enableZoom && { zoom: { enabled: true } })}
             {...(enablePan && { pan: { enabled: true } })}
           >
-            {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-dark-border-primary" />}
             <XAxis 
               dataKey="time" 
               type="number"
@@ -337,7 +336,7 @@ const RoastCurveGraph = ({
   }
 
   return (
-    <div className={`bg-transparent rounded-lg shadow-lg dark:shadow-dark-glow border-metallic border-gray-200 dark:border-gray-600 ${compact ? 'p-4' : isMobile ? 'px-1 py-3' : 'p-6'} ${className}`}>
+    <div className={`bg-transparent ${compact ? 'p-4' : isMobile ? 'px-1 py-3' : 'p-6'} ${className}`}>
       <div className={`${compact ? 'mb-3' : 'mb-4'} ${isMobile ? 'pl-3' : ''}`}>
         <h3 className={`${compact ? 'text-base' : 'text-lg'} font-semibold text-gray-800 dark:text-dark-text-primary`}>{title}</h3>
         {mode === 'historical' && (
@@ -380,9 +379,9 @@ const RoastCurveGraph = ({
             data={showROR && mode === 'live' ? rorData : chartData}
             margin={{ 
               top: 20, 
-              right: isMobile ? 5 : 30, 
-              left: isMobile ? -5 : 20, 
-              bottom: isMobile ? 80 : 20 
+              right: isMobile ? 20 : 40, 
+              left: isMobile ? 10 : 40, 
+              bottom: isMobile ? 80 : 120 
             }}
             // OPTIMIZATION: Performance optimizations for Recharts
             syncId="roast-chart"
@@ -390,7 +389,6 @@ const RoastCurveGraph = ({
             {...(enableZoom && { zoom: { enabled: true } })}
             {...(enablePan && { pan: { enabled: true } })}
           >
-            {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-dark-border-primary" />}
             <XAxis 
               dataKey="time" 
               type="number"

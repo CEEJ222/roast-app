@@ -1109,7 +1109,7 @@ function RoastAssistant() {
       </div>
 
       <div className="">
-        <div className="max-w-7xl mx-auto bg-transparent rounded-xl shadow-2xl dark:shadow-dark-xl overflow-hidden">
+        <div className="w-full bg-transparent">
           {/* Loading Overlay */}
           {loading && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

@@ -81,7 +81,7 @@ const RecentRoasts = ({
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0">
               {(isMobile ? historicalRoasts : historicalRoasts.slice(0, 5)).map((roast) => (
                 <div 
                   key={roast.id}
