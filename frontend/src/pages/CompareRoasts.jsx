@@ -22,17 +22,8 @@ const HistoricalRoasts = ({ onClose }) => {
     loadHistoricalRoasts();
   }, []);
 
-  // Load roast details for all roasts to calculate duration
-  useEffect(() => {
-    if (roasts.length > 0) {
-      // Load details for all roasts to show duration
-      roasts.forEach(roast => {
-        if (!roastDetails[roast.id]) {
-          loadRoastDetails(roast.id);
-        }
-      });
-    }
-  }, [roasts]);
+  // Note: Roast details are now loaded on-demand when needed
+  // This improves performance by not loading all details upfront
 
   const loadHistoricalRoasts = async () => {
     try {

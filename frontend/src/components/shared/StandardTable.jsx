@@ -106,85 +106,213 @@ const StandardTable = ({
         </div>
       )}
 
-      {/* Card-based layout */}
-      <div className="p-4 sm:p-6">
+      {/* Responsive Table Layout */}
+      <div className="bg-white dark:bg-dark-card rounded-lg shadow overflow-hidden">
         {data.length === 0 ? (
-          <div className="text-center py-8 sm:py-8 px-4">
-            <div className="text-4xl sm:text-6xl mb-4">📊</div>
-            <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-dark-text-primary mb-2">
-              No Bean Profiles Yet
-            </h3>
-            <p className="text-sm sm:text-base text-gray-600 dark:text-dark-text-secondary">
-              {emptyMessage}
-            </p>
+          <div className="text-center py-12 text-gray-500 dark:text-dark-text-tertiary">
+            <div className="text-6xl mb-4">☕</div>
+            <p className="text-lg dark:text-dark-text-primary">No roasts found</p>
+            <p className="text-sm dark:text-dark-text-secondary">{emptyMessage}</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {data.map((item, index) => (
-              <div 
-                key={item.id || index}
-                className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary ${
-                  selectedItems.has(item.id) ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
-                } ${
-                  (onRowClick || (hideActionButtons && showSelection)) ? 'cursor-pointer' : ''
-                }`}
-                onClick={() => {
-                  if (hideActionButtons && showSelection) {
-                    // On mobile with action buttons hidden, toggle selection
-                    handleRowSelect(item.id, !selectedItems.has(item.id));
-                  } else {
-                    // Normal row click behavior
-                    onRowClick?.(item);
-                  }
-                }}
-              >
-                <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
-                  {showSelection && (
-                    <div className="flex-shrink-0">
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.has(item.id)}
-                        onChange={(e) => handleRowSelect(item.id, e.target.checked)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                      />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    {columns.map((column, colIndex) => (
-                      <div key={colIndex} className="mb-2 last:mb-0">
-                        {column.render ? column.render(item) : item[column.key]}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {!hideActionButtons && (
-                  <div className="flex justify-end space-x-2 mt-3 sm:mt-0">
-                    {onView && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onView(item);
-                        }}
-                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-xs font-medium"
-                        title="View details"
-                      >
-                        👁️
-                      </button>
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-dark-border-primary">
+                <thead className="bg-gray-50 dark:bg-dark-bg-tertiary">
+                  <tr>
+                    {showSelection && (
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          onChange={(e) => handleSelectAll(e.target.checked)}
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-dark-border-primary rounded"
+                        />
+                      </th>
                     )}
-                    {customActions && customActions(item)}
-                    <button
-                      onClick={(e) => handleDelete(item, e)}
-                      className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-xs font-medium"
-                      title="Delete item"
+                    {columns.map((column, index) => (
+                      <th key={index} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">
+                        {column.header}
+                      </th>
+                    ))}
+                    {!hideActionButtons && (
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">
+                        Actions
+                      </th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-dark-bg-secondary divide-y divide-gray-200 dark:divide-dark-border-primary">
+                  {data.map((item, index) => (
+                    <tr 
+                      key={item.id || index}
+                      className={`hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary ${
+                        selectedItems.has(item.id) ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
+                      } ${
+                        (onRowClick || (hideActionButtons && showSelection)) ? 'cursor-pointer' : ''
+                      }`}
+                      onClick={() => {
+                        if (hideActionButtons && showSelection) {
+                          handleRowSelect(item.id, !selectedItems.has(item.id));
+                        } else {
+                          onRowClick?.(item);
+                        }
+                      }}
                     >
-                      🗑️ Delete
-                    </button>
+                      {showSelection && (
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedItems.has(item.id)}
+                            onChange={(e) => handleRowSelect(item.id, e.target.checked)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-dark-border-primary rounded"
+                          />
+                        </td>
+                      )}
+                      {columns.map((column, colIndex) => (
+                        <td key={colIndex} className="px-4 py-3 text-sm text-gray-900 dark:text-dark-text-primary">
+                          {column.render ? column.render(item) : item[column.key]}
+                        </td>
+                      ))}
+                      {!hideActionButtons && (
+                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-dark-text-primary">
+                          <div className="flex space-x-2">
+                            {onView && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onView(item);
+                                }}
+                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-xs font-medium"
+                                title="View details"
+                              >
+                                👁️
+                              </button>
+                            )}
+                            {customActions && customActions(item)}
+                            <button
+                              onClick={(e) => handleDelete(item, e)}
+                              className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-xs font-medium"
+                              title="Delete item"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View - Compact */}
+            <div className="md:hidden">
+              <div className="divide-y divide-gray-200 dark:divide-dark-border-primary">
+                {data.map((item, index) => (
+                  <div 
+                    key={item.id || index}
+                    className={`p-3 hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary ${
+                      selectedItems.has(item.id) ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
+                    } ${
+                      (onRowClick || (hideActionButtons && showSelection)) ? 'cursor-pointer' : ''
+                    }`}
+                    onClick={() => {
+                      if (hideActionButtons && showSelection) {
+                        handleRowSelect(item.id, !selectedItems.has(item.id));
+                      } else {
+                        onRowClick?.(item);
+                      }
+                    }}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        {showSelection && (
+                          <div className="flex items-center mb-2">
+                            <input
+                              type="checkbox"
+                              checked={selectedItems.has(item.id)}
+                              onChange={(e) => handleRowSelect(item.id, e.target.checked)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-dark-border-primary rounded mr-2"
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Primary info - Coffee name and date */}
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="font-medium text-gray-900 dark:text-dark-text-primary truncate">
+                            {columns.find(col => col.key === 'coffee')?.render ? 
+                              columns.find(col => col.key === 'coffee').render(item) : 
+                              item.coffee || 'Unknown Coffee'
+                            }
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-dark-text-secondary ml-2 flex-shrink-0">
+                            {columns.find(col => col.key === 'created_at')?.render ? 
+                              columns.find(col => col.key === 'created_at').render(item) : 
+                              item.created_at
+                            }
+                          </div>
+                        </div>
+                        
+                        {/* Secondary info - Machine, Duration, Roast Level */}
+                        <div className="flex items-center justify-between text-xs text-gray-600 dark:text-dark-text-secondary">
+                          <div className="flex items-center space-x-3">
+                            <span>
+                              {columns.find(col => col.key === 'machine_label')?.render ? 
+                                columns.find(col => col.key === 'machine_label').render(item) : 
+                                item.machine_label || 'Unknown'
+                              }
+                            </span>
+                            <span>•</span>
+                            <span>
+                              {columns.find(col => col.key === 'duration')?.render ? 
+                                columns.find(col => col.key === 'duration').render(item) : 
+                                'N/A'
+                              }
+                            </span>
+                          </div>
+                          <div>
+                            {columns.find(col => col.key === 'desired_roast_level')?.render ? 
+                              columns.find(col => col.key === 'desired_roast_level').render(item) : 
+                              item.desired_roast_level
+                            }
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {!hideActionButtons && (
+                        <div className="flex items-center space-x-2 ml-3 flex-shrink-0">
+                          {onView && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onView(item);
+                              }}
+                              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
+                              title="View details"
+                            >
+                              👁️
+                            </button>
+                          )}
+                          {customActions && customActions(item)}
+                          <button
+                            onClick={(e) => handleDelete(item, e)}
+                            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm"
+                            title="Delete item"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          </>
         )}
       </div>
     </div>

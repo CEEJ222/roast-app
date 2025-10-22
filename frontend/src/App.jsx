@@ -228,9 +228,6 @@ function RoastAssistant() {
         // Sort by created_at descending (newest first)
         const sortedRoasts = roasts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         setHistoricalRoasts(sortedRoasts);
-        
-        // Load roast details for the graph
-        loadAllRoastDetails(sortedRoasts);
       }
     } catch (error) {
       console.error('Error loading historical roasts:', error);
