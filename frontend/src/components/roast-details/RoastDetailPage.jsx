@@ -5,11 +5,13 @@ import useRoastData from '../../hooks/useRoastData';
 import useRoastEditing from '../../hooks/useRoastEditing';
 import useRoastActions from '../../hooks/useRoastActions';
 import useTastingNotes from '../../hooks/useTastingNotes';
+import useStarRating from '../../hooks/useStarRating';
 import useEventEditing from '../../hooks/useEventEditing';
 import RoastOverviewCard from './components/RoastOverviewCard';
 import RoastWeightsCard from './components/RoastWeightsCard';
 import RoastNotesCard from './components/RoastNotesCard';
 import TastingNotesCard from './components/TastingNotesCard';
+import StarRatingCard from './components/StarRatingCard';
 import RoastDetailHeader from './components/RoastDetailHeader';
 import RoastActionButtons from './components/RoastActionButtons';
 import RoastCurveSection from './components/RoastCurveSection';
@@ -40,6 +42,7 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
   const { isEditing, editFormData, setEditFormData, handleEdit, handleSaveEdit, handleCancelEdit } = useRoastEditing(roast, getAuthToken);
   const { handleDelete, handleCopyRoastData, handleCopyEvents } = useRoastActions(roast, getAuthToken, onClose);
   const { tastingNotes, setTastingNotes, savingTastingNotes, tastingNotesSaved, handleSaveTastingNotes } = useTastingNotes(roast, getAuthToken);
+  const { starRating, setStarRating, savingRating, ratingSaved, handleRatingChange } = useStarRating(roast, getAuthToken);
   const { editingEventId, editingEventFormData, setEditingEventFormData, startEditEvent, cancelEditEvent, saveEditedEvent, deleteEvent } = useEventEditing(roast, getAuthToken, loadRoastEvents);
   
   // Swipe gestures for navigation
@@ -155,6 +158,15 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
               onSaveTastingNotes={handleSaveTastingNotes}
               savingTastingNotes={savingTastingNotes}
               tastingNotesSaved={tastingNotesSaved}
+            />
+
+            {/* Star Rating */}
+            <StarRatingCard 
+              roast={roast}
+              starRating={starRating}
+              onRatingChange={handleRatingChange}
+              savingRating={savingRating}
+              ratingSaved={ratingSaved}
             />
           </div>
 

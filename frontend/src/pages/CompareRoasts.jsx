@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import RoastCurveGraph from '../components/shared/RoastCurveGraph';
+import MobileModal from '../components/shared/MobileModal';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'  // Local development
@@ -141,7 +142,9 @@ const HistoricalRoasts = ({ onClose }) => {
         id: roastId,
         name: coffeeName,
         fullName: `${coffeeName} - ${formatDate(roast?.created_at)}`,
-        events: events
+        events: events,
+        created_at: roast?.created_at,
+        coffee_region: roast?.coffee_region
       };
     });
     return result;
@@ -241,24 +244,13 @@ const HistoricalRoasts = ({ onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white dark:bg-dark-card rounded-lg w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden shadow-2xl dark:shadow-dark-glow flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-3 sm:px-4 py-1.5 sm:py-2 text-white">
-          <div className="flex justify-between items-center">
-            <div className="flex-1">
-              <h2 className="text-base sm:text-lg font-bold">📊 Historical Roast Analysis</h2>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-white hover:text-gray-200 text-lg font-bold"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-
-        <div className="p-3 sm:p-6 overflow-y-auto flex-1 min-h-0">
+    <>
+      <MobileModal
+        isOpen={true}
+        onClose={onClose}
+        title="📊 Historical Roast Analysis"
+        className="max-w-6xl"
+      >
           {showGraph ? (
             /* Graph View */
             <div className="space-y-6 -mx-3 sm:-mx-6">
@@ -286,7 +278,7 @@ const HistoricalRoasts = ({ onClose }) => {
                     mode="historical"
                     showROR={false}
                     showMilestones={false}
-                    height={window.innerWidth < 768 ? 300 : 350}
+                    height={window.innerWidth < 768 ? 400 : 800}
                     title="Roast Curve Comparison"
                     units={{ temperature: 'F', time: 'min' }}
                     showLegend={true}
@@ -429,11 +421,10 @@ const HistoricalRoasts = ({ onClose }) => {
               )}
             </div>
           )}
-        </div>
-      </div>
+    </MobileModal>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
+    {/* Delete Confirmation Modal */}
+    {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
           <div className="bg-white dark:bg-dark-card rounded-lg p-6 max-w-md mx-4 shadow-2xl dark:shadow-dark-glow">
             <div className="text-center">
@@ -495,7 +486,7 @@ const HistoricalRoasts = ({ onClose }) => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

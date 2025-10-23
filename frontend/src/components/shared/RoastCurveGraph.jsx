@@ -195,8 +195,8 @@ const RoastCurveGraph = ({
             data={showROR && mode === 'live' ? rorData : chartData}
             margin={{ 
               top: 20, 
-              right: isMobile ? -20 : -20, 
-              left: isMobile ? -20 : 20, 
+              right: isMobile ? 0 : 0, 
+              left: isMobile ? 0 : 0, 
               bottom: isMobile ? 10 : 20 
             }}
             style={{ background: '#000000' }}
@@ -379,8 +379,8 @@ const RoastCurveGraph = ({
             data={showROR && mode === 'live' ? rorData : chartData}
             margin={{ 
               top: 20, 
-              right: isMobile ? 20 : 40, 
-              left: isMobile ? 10 : 40, 
+              right: isMobile ? 0 : 0, 
+              left: isMobile ? 0 : 0, 
               bottom: isMobile ? 80 : 120 
             }}
             // OPTIMIZATION: Performance optimizations for Recharts
@@ -802,11 +802,20 @@ const CustomLegend = ({ roasts, roastLabels, getRoastColor }) => {
         const formatRoastLabel = (roast) => {
           if (!roast) return `Roast ${index + 1}`;
           
+          // Debug: Log the roast object to see what we're working with
+          console.log('Roast object for legend:', roast);
+          
           // Get the roast date from created_at
-          const roastDate = roast.created_at ? new Date(roast.created_at) : null;
-          const dateStr = roastDate ? 
-            `${(roastDate.getMonth() + 1).toString().padStart(2, '0')}/${roastDate.getDate().toString().padStart(2, '0')}/${roastDate.getFullYear().toString().slice(-2)}` : 
-            'Unknown Date';
+          let roastDate = null;
+          let dateStr = 'Unknown Date';
+          
+          if (roast.created_at) {
+            roastDate = new Date(roast.created_at);
+            // Check if the date is valid
+            if (!isNaN(roastDate.getTime())) {
+              dateStr = `${(roastDate.getMonth() + 1).toString().padStart(2, '0')}/${roastDate.getDate().toString().padStart(2, '0')}/${roastDate.getFullYear().toString().slice(-2)}`;
+            }
+          }
           
           // Get the origin from coffee_region or first word of name
           const origin = roast.coffee_region || 

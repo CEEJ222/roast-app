@@ -281,6 +281,8 @@ async def update_roast(roast_id: int, request: UpdateRoastRequest, user_id: str 
             update_data["notes"] = request.notes
         if request.tasting_notes is not None:
             update_data["tasting_notes"] = request.tasting_notes
+        if request.star_rating is not None:
+            update_data["star_rating"] = request.star_rating
             
         # Calculate weight loss percentage if weight_after_g is being updated
         if request.weight_after_g is not None:
