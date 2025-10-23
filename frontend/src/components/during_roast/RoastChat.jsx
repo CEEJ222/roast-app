@@ -442,7 +442,7 @@ Ready to start? I'll provide specific guidance based on your actual roast progre
           weight: formData.weightBefore
         },
         current_phase: currentPhase,
-        elapsed_time: elapsedTime,
+        elapsed_time: elapsedTime / 60, // Convert seconds to minutes
         environmental_conditions: environmentalConditions,
         recent_events: events.slice(-5), // Last 5 events for context
         context_type: context
@@ -527,7 +527,7 @@ Ready to start? I'll provide specific guidance based on your actual roast progre
       
       const roastProgress = {
         roast_id: roastId,
-        elapsed_time: elapsedTime,
+        elapsed_time: elapsedTime / 60, // Convert seconds to minutes
         current_phase: currentPhase,
         recent_events: recentEventsWithData,
         bean_type: formData.selectedBeanProfile?.name || "Unknown",
@@ -545,7 +545,7 @@ Ready to start? I'll provide specific guidance based on your actual roast progre
       // Ensure eventData has timing information
       const enrichedEventData = {
         ...eventData,
-        t_offset_sec: Math.floor(elapsedTime * 60) // Convert minutes to seconds
+        t_offset_sec: Math.floor(elapsedTime) // elapsedTime is already in seconds
       };
       
       console.log('📤 Sending to AI:', {
@@ -837,14 +837,47 @@ ${extensionNote}
 
       // Get current heat and fan from the latest event or form data
       const latestEvent = events.length > 0 ? events[events.length - 1] : null;
-      const currentHeat = latestEvent?.heat_level || formData.heat || 0;
-      const currentFan = latestEvent?.fan_level || formData.fan || 0;
-      const currentTemp = latestEvent?.temp_f || null;
+      
+      // Find the most recent event with heat/fan data
+      let currentHeat = 0;
+      let currentFan = 0;
+      let currentTemp = null;
+      
+      // Look through recent events for the latest heat/fan values
+      for (let i = events.length - 1; i >= 0; i--) {
+        const event = events[i];
+        if (event.heat_level !== null && event.heat_level !== undefined) {
+          currentHeat = event.heat_level;
+          break;
+        }
+      }
+      
+      for (let i = events.length - 1; i >= 0; i--) {
+        const event = events[i];
+        if (event.fan_level !== null && event.fan_level !== undefined) {
+          currentFan = event.fan_level;
+          break;
+        }
+      }
+      
+      // Fallback to formData if no event data found
+      if (currentHeat === 0) currentHeat = formData.heat || 0;
+      if (currentFan === 0) currentFan = formData.fan || 0;
+      
+      // Get temperature from latest event
+      currentTemp = latestEvent?.temp_f || null;
+      
+      // Debug logging for heat/fan values
+      console.log('🔧 DEBUG: latestEvent:', latestEvent);
+      console.log('🔧 DEBUG: formData.heat:', formData.heat);
+      console.log('🔧 DEBUG: formData.fan:', formData.fan);
+      console.log('🔧 DEBUG: currentHeat being sent:', currentHeat);
+      console.log('🔧 DEBUG: currentFan being sent:', currentFan);
 
       // Prepare roast progress context
       const roastProgress = {
         roast_id: roastId,
-        elapsed_time: elapsedTime,
+        elapsed_time: elapsedTime / 60, // Convert seconds to minutes
         current_phase: currentPhase,
         recent_events: events.slice(-5),
         bean_type: formData.selectedBeanProfile?.name || "Unknown",
@@ -933,14 +966,40 @@ ${extensionNote}
 
       // Get current heat and fan from the latest event or form data
       const latestEvent = events.length > 0 ? events[events.length - 1] : null;
-      const currentHeat = latestEvent?.heat_level || formData.heat || 0;
-      const currentFan = latestEvent?.fan_level || formData.fan || 0;
-      const currentTemp = latestEvent?.temp_f || null;
+      
+      // Find the most recent event with heat/fan data
+      let currentHeat = 0;
+      let currentFan = 0;
+      let currentTemp = null;
+      
+      // Look through recent events for the latest heat/fan values
+      for (let i = events.length - 1; i >= 0; i--) {
+        const event = events[i];
+        if (event.heat_level !== null && event.heat_level !== undefined) {
+          currentHeat = event.heat_level;
+          break;
+        }
+      }
+      
+      for (let i = events.length - 1; i >= 0; i--) {
+        const event = events[i];
+        if (event.fan_level !== null && event.fan_level !== undefined) {
+          currentFan = event.fan_level;
+          break;
+        }
+      }
+      
+      // Fallback to formData if no event data found
+      if (currentHeat === 0) currentHeat = formData.heat || 0;
+      if (currentFan === 0) currentFan = formData.fan || 0;
+      
+      // Get temperature from latest event
+      currentTemp = latestEvent?.temp_f || null;
 
       // Prepare roast progress context
       const roastProgress = {
         roast_id: roastId,
-        elapsed_time: elapsedTime,
+        elapsed_time: elapsedTime / 60, // Convert seconds to minutes
         current_phase: currentPhase,
         recent_events: events.slice(-5),
         bean_type: formData.selectedBeanProfile?.name || "Unknown",
