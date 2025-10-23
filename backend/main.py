@@ -984,13 +984,7 @@ except ImportError as e:
 
 
 
-# Include LLM Roast Coaching router
-try:
-    from RAG_system.roast_coach.llm_roast_endpoints import router as llm_roast_router
-    app.include_router(llm_roast_router, prefix="/api", tags=["LLM Roast Coaching"])
-    print("✅ LLM Roast Coaching router included successfully")
-except ImportError as e:
-    print(f"⚠️ Could not import LLM Roast Coaching router: {e}")
+# LLM Roast Coaching functionality is now integrated into the main RAG system
 
 # Include Notifications router
 try:

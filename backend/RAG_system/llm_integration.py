@@ -2,6 +2,7 @@
 DeepSeek LLM Integration for Roasting Copilot
 
 This module provides LLM-powered roasting advice using DeepSeek's free API.
+Enhanced with phase awareness, conversation state management, and learning capabilities.
 """
 
 import os
@@ -10,15 +11,140 @@ from typing import Dict, Any, List, Optional
 from openai import OpenAI
 from dotenv import load_dotenv
 
+# Import enhanced modules
+from .phase_awareness import PhaseDetector, MachineAwarePhaseDetector, PhaseAwarePromptBuilder, EnhancedSystemPrompt
+from .conversation_state import conversation_manager
+from .machine_profiles import FreshRoastMachineProfiles
+
 # Load environment variables
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
+class OpenRouterLLM:
+    """OpenRouter LLM integration using OpenAI SDK"""
+    
+    def __init__(self):
+        self.api_key = os.getenv("OPENROUTER_API_KEY")
+        if not self.api_key:
+            raise ValueError("OPENROUTER_API_KEY not found in environment variables")
+        
+        # Initialize OpenAI client pointing to OpenRouter
+        self.client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=self.api_key,
+        )
+        
+        # Your models from .env
+        self.primary_model = os.getenv("PRIMARY_MODEL", "meta-llama/llama-3.2-3b-instruct:free")
+        self.fallback_model = os.getenv("FALLBACK_MODEL", "google/gemini-flash-1.5:free")
+        
+        logger.info(f"OpenRouter LLM initialized with primary: {self.primary_model}")
+    
+    async def get_completion(
+        self,
+        system_prompt: str,
+        user_message: str = None,
+        temperature: float = 0.7,
+        max_tokens: int = 500,
+        use_fallback: bool = False
+    ) -> str:
+        """Get LLM completion from OpenRouter"""
+        
+        model = self.fallback_model if use_fallback else self.primary_model
+        
+        # Build messages
+        messages = [
+            {"role": "system", "content": system_prompt}
+        ]
+        
+        if user_message:
+            messages.append({"role": "user", "content": user_message})
+        
+        try:
+            logger.info(f"🚀 Calling OpenRouter with model: {model}")
+            logger.info(f"🔑 API Key present: {bool(self.api_key)}")
+            logger.info(f"📝 System prompt length: {len(system_prompt)} chars")
+            logger.info(f"💬 User message: {user_message[:100] if user_message else 'None'}")
+            
+            # Call OpenRouter via OpenAI SDK
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                extra_headers={
+                    "HTTP-Referer": "https://roastbuddy.app",  # Optional: for rankings
+                    "X-Title": "FreshRoast CoPilot",  # Optional: for rankings
+                }
+            )
+            
+            content = response.choices[0].message.content
+            
+            logger.info(f"✅ OpenRouter response received ({len(content)} chars)")
+            logger.info(f"📄 Response preview: {content[:200]}...")
+            return content
+            
+        except Exception as e:
+            logger.error(f"❌ OpenRouter call failed: {str(e)}")
+            logger.error(f"🔍 Error type: {type(e).__name__}")
+            logger.error(f"🔍 Error details: {str(e)}")
+            
+            # Try fallback model if primary failed
+            if not use_fallback:
+                logger.warning(f"🔄 Retrying with fallback model: {self.fallback_model}")
+                return await self.get_completion(
+                    system_prompt,
+                    user_message,
+                    temperature,
+                    max_tokens,
+                    use_fallback=True
+                )
+            
+            # If fallback also failed, return error message
+            return f"⚠️ AI coaching temporarily unavailable. Continue roasting and I'll reconnect shortly."
+    
+    async def get_streaming_completion(
+        self,
+        system_prompt: str,
+        user_message: str = None,
+        temperature: float = 0.7,
+        max_tokens: int = 500
+    ):
+        """Get streaming LLM completion (for real-time chat)"""
+        
+        messages = [
+            {"role": "system", "content": system_prompt}
+        ]
+        
+        if user_message:
+            messages.append({"role": "user", "content": user_message})
+        
+        try:
+            stream = self.client.chat.completions.create(
+                model=self.primary_model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                stream=True
+            )
+            
+            for chunk in stream:
+                if chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+                    
+        except Exception as e:
+            logger.error(f"Streaming error: {str(e)}")
+            yield "⚠️ AI coaching temporarily unavailable."
+
 class DeepSeekRoastingCopilot:
     def __init__(self):
-        """Initialize DeepSeek client"""
+        """Initialize DeepSeek client with enhanced capabilities"""
         self.client = None
+        self.phase_detector = PhaseDetector()
+        self.machine_aware_detector = MachineAwarePhaseDetector()
+        self.prompt_builder = PhaseAwarePromptBuilder()
+        self.conversation_manager = conversation_manager
         self._initialize_client()
     
     def _initialize_client(self):
@@ -111,9 +237,13 @@ class DeepSeekRoastingCopilot:
     
     def get_during_roast_advice(self, 
                               roast_progress: Dict[str, Any],
-                              user_question: str) -> str:
+                              user_question: str,
+                              user_id: Optional[str] = None,
+                              roast_id: Optional[str] = None,
+                              machine_model: Optional[str] = None,
+                              has_extension: Optional[bool] = None) -> str:
         """
-        Get real-time roasting advice during the roast
+        Get real-time roasting advice during the roast with enhanced phase awareness
         """
         if not self.client:
             return "I'm having trouble connecting to my AI brain right now. Please check your roast progress manually."
@@ -121,18 +251,54 @@ class DeepSeekRoastingCopilot:
         try:
             context = self._build_during_roast_context(roast_progress)
             
-            prompt = f"""
-            Current roast status:
-            - Elapsed time: {context.get('elapsed_time', 'Unknown')} minutes
-            - Current phase: {context.get('current_phase', 'Unknown')}
-            - Recent events: {context.get('recent_events', 'None')}
-            - Bean type: {context.get('bean_type', 'Unknown')}
-            - Target roast level: {context.get('target_roast_level', 'Unknown')}
+            # Detect current roasting phase with machine awareness
+            elapsed_seconds = context.get('elapsed_time', 0) * 60  # Convert minutes to seconds
+            current_temp = context.get('current_temp_f')
             
-            User question: {user_question}
+            # Use machine-aware phase detection if machine info available
+            if machine_model and has_extension is not None:
+                current_phase, machine_profile = self.machine_aware_detector.detect_phase_for_machine(
+                    machine_model, has_extension, elapsed_seconds, current_temp
+                )
+                phase_context = self.machine_aware_detector.get_machine_specific_context(
+                    machine_profile, current_phase, elapsed_seconds, current_temp,
+                    context.get('current_heat', 6), context.get('current_fan', 7)
+                )
+            else:
+                current_phase = self.phase_detector.detect_phase(elapsed_seconds, current_temp)
+                phase_context = self.phase_detector.get_phase_context(
+                    current_phase, elapsed_seconds, current_temp
+                )
             
-            Provide specific FreshRoast SR540/SR800 advice for this situation.
-            """
+            # Try to get improved response from learning system
+            improved_response = None
+            if user_id and roast_id:
+                improved_response = self.conversation_manager.get_improved_response(context)
+            
+            if improved_response:
+                logger.info("Using improved response from learning system")
+                return improved_response
+            
+            # Build enhanced prompt with conversation context
+            if user_id and roast_id:
+                prompt = self.conversation_manager.get_contextual_prompt(
+                    user_id, roast_id, user_question
+                )
+            else:
+                prompt = f"""
+                {phase_context}
+                
+                Current roast status:
+                - Elapsed time: {context.get('elapsed_time', 'Unknown')} minutes
+                - Current phase: {current_phase.name}
+                - Recent events: {context.get('recent_events', 'None')}
+                - Bean type: {context.get('bean_type', 'Unknown')}
+                - Target roast level: {context.get('target_roast_level', 'Unknown')}
+                
+                User question: {user_question}
+                
+                Provide specific FreshRoast SR540/SR800 advice for this situation.
+                """
             
             # Try primary model first, then fallback model
             models_to_try = [self.primary_model, self.fallback_model]
@@ -145,7 +311,10 @@ class DeepSeekRoastingCopilot:
                         messages=[
                             {
                                 "role": "system",
-                                "content": "You are a real-time coffee roasting coach for FreshRoast SR540/SR800. Provide immediate, specific advice for heat/fan adjustments and timing. Use plain text only - NO LaTeX, NO math formatting, just regular text."
+                                "content": EnhancedSystemPrompt.get_freshroast_system_prompt(
+                                    machine_model or "SR800", has_extension or False
+                                ) if machine_model and has_extension is not None 
+                                else EnhancedSystemPrompt.get_realtime_coaching_prompt()
                             },
                             {
                                 "role": "user",
@@ -157,8 +326,17 @@ class DeepSeekRoastingCopilot:
                         timeout=8
                     )
                     
+                    ai_response = response.choices[0].message.content
+                    
+                    # Store interaction in conversation history
+                    if user_id and roast_id:
+                        self.conversation_manager.add_interaction(
+                            user_id, roast_id, user_question, ai_response,
+                            current_phase.name, "user_question"
+                        )
+                    
                     logger.info(f"✅ During-roast: Successfully got response from {model_name}")
-                    return response.choices[0].message.content
+                    return ai_response
                     
                 except Exception as model_error:
                     logger.warning(f"⚠️ During-roast: Model {model_name} failed: {model_error}")
@@ -172,8 +350,10 @@ class DeepSeekRoastingCopilot:
             logger.error(f"❌ DeepSeek during-roast error: {e}")
             return "I'm having trouble providing real-time advice. Please check your roast progress and adjust heat/fan as needed."
     
-    def get_automatic_event_response(self, event_data: Dict[str, Any], roast_progress: Dict[str, Any]) -> Dict[str, Any]:
-        """Get automatic AI response when events are logged"""
+    def get_automatic_event_response(self, event_data: Dict[str, Any], roast_progress: Dict[str, Any], 
+                                   user_id: Optional[str] = None, roast_id: Optional[str] = None,
+                                   machine_model: Optional[str] = None, has_extension: Optional[bool] = None) -> Dict[str, Any]:
+        """Get automatic AI response when events are logged with enhanced phase awareness"""
         if not self.client:
             return {
                 "advice": "",
@@ -184,6 +364,18 @@ class DeepSeekRoastingCopilot:
         try:
             context = self._build_during_roast_context(roast_progress)
             context['last_event'] = event_data
+            
+            # Detect current roasting phase with machine awareness
+            elapsed_seconds = context.get('elapsed_time', 0) * 60  # Convert minutes to seconds
+            current_temp = event_data.get('temp_f')
+            
+            # Use machine-aware phase detection if machine info available
+            if machine_model and has_extension is not None:
+                current_phase, machine_profile = self.machine_aware_detector.detect_phase_for_machine(
+                    machine_model, has_extension, elapsed_seconds, current_temp
+                )
+            else:
+                current_phase = self.phase_detector.detect_phase(elapsed_seconds, current_temp)
             
             # Calculate temperature rate of rise and detect dangerous changes
             temp_analysis = self._analyze_temperature_change(event_data, context.get('recent_events', []))
@@ -199,6 +391,7 @@ class DeepSeekRoastingCopilot:
                 
                 Current roast context:
                 - Time: {context.get('elapsed_time', 'Unknown')} minutes
+                - Current phase: {current_phase.name}
                 - Current temperature: {event_data.get('temp_f', 'Unknown')}°F
                 - Current settings: Heat {context.get('current_heat', 'Unknown')}, Fan {context.get('current_fan', 'Unknown')}
                 - Bean profile: {context.get('bean_profile', 'Unknown')}
@@ -216,7 +409,7 @@ class DeepSeekRoastingCopilot:
                             messages=[
                                 {
                                     "role": "system",
-                                    "content": "You are an expert coffee roaster providing URGENT guidance for dangerous temperature spikes. Be direct, specific, and urgent. Use plain text only."
+                                    "content": EnhancedSystemPrompt.get_urgent_spike_prompt()
                                 },
                                 {
                                     "role": "user",
@@ -237,6 +430,13 @@ class DeepSeekRoastingCopilot:
                 if not ai_response:
                     ai_response = "⚠️ CRITICAL: Temperature rising dangerously fast! Immediately reduce heat by 2-3 levels to prevent scorching!"
                 logger.warning(f"🚨 URGENT TEMPERATURE SPIKE RESPONSE: {ai_response}")
+                
+                # Store interaction in conversation history
+                if user_id and roast_id:
+                    self.conversation_manager.add_interaction(
+                        user_id, roast_id, f"Temperature spike detected: {temp_analysis['rate_per_sec']:.1f}°F/sec", 
+                        ai_response, current_phase.name, "TEMPERATURE_SPIKE"
+                    )
                 
                 return {
                     "advice": ai_response,
@@ -284,13 +484,26 @@ class DeepSeekRoastingCopilot:
                 - Current temp: {event_data.get('temp_f', 'N/A')}°F
                 """
                 
+                # Add phase-specific context and timing validation (FreshRoast-aware if machine info available)
+                if machine_model and has_extension is not None:
+                    phase_context = self.machine_aware_detector.get_machine_specific_context(
+                        machine_profile, current_phase, elapsed_seconds, current_temp,
+                        event_data.get('heat_level', 6), event_data.get('fan_level', 7)
+                    )
+                else:
+                    phase_context = self.phase_detector.get_phase_context(
+                        current_phase, elapsed_seconds, current_temp
+                    )
+                
                 prompt = f"""
+                {phase_context}
+                
                 The user just logged their FreshRoast settings:
                 - Heat: {event_data.get('heat_level', 'N/A')}
                 - Fan: {event_data.get('fan_level', 'N/A')}
                 - Temperature: {event_data.get('temp_f', 'N/A')}°F
                 - Time: {context.get('elapsed_time', 'Unknown')} minutes
-                - Current phase: {context.get('current_phase', 'Unknown')}
+                - Current phase: {current_phase.name}
                 - Target roast level: {context.get('target_roast_level', 'City')}
                 
                 {temp_warning}
@@ -301,6 +514,7 @@ class DeepSeekRoastingCopilot:
                 {self._get_event_response_instructions(temp_analysis)}
                 
                 Keep response under 3 sentences and be VERY SPECIFIC about what to adjust.
+                Consider the current roasting phase and provide phase-appropriate guidance.
                 """
             elif event_data.get('kind') in ['DRY_END', 'FIRST_CRACK', 'SECOND_CRACK', 'COOL']:
                 milestone = event_data.get('kind').replace('_', ' ').lower()
@@ -360,9 +574,29 @@ class DeepSeekRoastingCopilot:
             
             logger.info(f"🤖 LLM Response (first 200 chars): {ai_response[:200]}")
             
+            # Validate timing relevance for the advice
+            if ai_response and not self.prompt_builder.validate_timing_relevance(
+                ai_response, current_phase.name, elapsed_seconds
+            ):
+                logger.warning(f"⚠️ Advice not relevant for current phase {current_phase.name} at {elapsed_seconds}s")
+                return {
+                    "advice": "",
+                    "recommendations": [],
+                    "has_meaningful_advice": False,
+                    "event_type": event_data.get('kind', 'Unknown')
+                }
+            
             # Parse the response for structured data
             parsed_response = self._parse_automatic_response(ai_response, event_data)
             logger.info(f"✅ Parsed response: has_meaningful_advice={parsed_response.get('has_meaningful_advice')}")
+            
+            # Store interaction in conversation history
+            if user_id and roast_id and parsed_response.get('has_meaningful_advice'):
+                self.conversation_manager.add_interaction(
+                    user_id, roast_id, f"Event logged: {event_data.get('kind', 'Unknown')}", 
+                    ai_response, current_phase.name, event_data.get('kind', 'Unknown')
+                )
+            
             return parsed_response
             
         except Exception as e:
@@ -928,6 +1162,231 @@ class DeepSeekRoastingCopilot:
             ],
             "llm_advice": "LLM temporarily unavailable - using fallback recommendations"
         }
+    
+    def collect_feedback(self, user_rating: int, ai_response: str, context: Dict[str, Any], 
+                        user_id: Optional[str] = None, roast_id: Optional[str] = None) -> None:
+        """Collect user feedback for learning system improvement"""
+        if user_id and roast_id:
+            self.conversation_manager.learn_from_feedback(user_rating, ai_response, context)
+            logger.info(f"Collected feedback: rating={user_rating} for {user_id}_{roast_id}")
+    
+    def get_learning_stats(self) -> Dict[str, Any]:
+        """Get learning system statistics"""
+        return self.conversation_manager.get_learning_stats()
+    
+    def get_conversation_summary(self, user_id: str, roast_id: str) -> Dict[str, Any]:
+        """Get conversation summary for a roast"""
+        return self.conversation_manager.get_conversation_summary(user_id, roast_id)
 
-# Global instance
+class MachineAwareLLMIntegration:
+    """LLM integration with deep FreshRoast machine knowledge"""
+    
+    def __init__(self):
+        self.phase_detector = MachineAwarePhaseDetector()
+        self.machine_profiles = FreshRoastMachineProfiles()
+        self.llm = None
+        self._initialize_llm()
+    
+    def _initialize_llm(self):
+        """Initialize OpenRouter LLM"""
+        try:
+            self.llm = OpenRouterLLM()
+            logger.info("✅ OpenRouter LLM initialized for machine-aware coaching")
+        except ValueError as e:
+            logger.warning(f"⚠️ OpenRouter LLM not available: {e}")
+            logger.info("💡 To enable AI features, set OPENROUTER_API_KEY environment variable")
+            self.llm = None
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize OpenRouter LLM: {e}")
+            self.llm = None
+    
+    async def get_machine_aware_coaching(
+        self,
+        roast_progress: Dict[str, Any],
+        user_message: Optional[str] = None
+    ) -> str:
+        """Generate machine-specific coaching"""
+        
+        # Extract machine info from roast_progress (same pattern as other endpoints)
+        machine_info = roast_progress.get('machine_info', {})
+        machine_model = machine_info.get('model', 'SR800')
+        has_extension = machine_info.get('has_extension', False)
+        
+        # Get roast events from roast_progress
+        events = roast_progress.get('events', [])
+        
+        # Get current settings from roast_progress (preferred) or latest event
+        current_heat = roast_progress.get('current_heat', 0)
+        current_fan = roast_progress.get('current_fan', 0)
+        current_temp = roast_progress.get('current_temp')
+        
+        # Debug logging
+        logger.info(f"🔧 DEBUG: roast_progress keys: {list(roast_progress.keys())}")
+        logger.info(f"🔧 DEBUG: current_heat from roast_progress: {current_heat}")
+        logger.info(f"🔧 DEBUG: current_fan from roast_progress: {current_fan}")
+        logger.info(f"🔧 DEBUG: current_temp from roast_progress: {current_temp}")
+        
+        # Get elapsed time from events or roast_progress
+        if events:
+            latest_event = max(events, key=lambda e: e['t_offset_sec'])
+            elapsed_seconds = latest_event['t_offset_sec']
+            # Use event temp if current_temp not provided
+            if current_temp is None:
+                current_temp = latest_event.get('temp_f')
+        else:
+            elapsed_seconds = roast_progress.get('elapsed_time', 0)
+        
+        # Detect phase with machine awareness
+        phase, profile = self.phase_detector.detect_phase_for_machine(
+            machine_model,
+            has_extension,
+            elapsed_seconds,
+            current_temp
+        )
+        
+        # Build machine-specific context
+        machine_context = self.phase_detector.get_machine_specific_context(
+            profile,
+            phase,
+            elapsed_seconds,
+            current_temp,
+            current_heat,
+            current_fan
+        )
+        
+        # Analyze temperature trend
+        temp_analysis = self.analyze_temperature_trend(events)
+        
+        # Get specific recommendations
+        if current_temp:
+            phase_name = phase.name.lower().replace(' phase', '')
+            phase_data = getattr(profile, f"{phase_name}_phase")
+            target_temp = sum(phase_data['target_temp_range']) / 2
+            
+            recommendations = self.machine_profiles.get_heat_recommendation(
+                profile,
+                phase_name,
+                current_temp,
+                target_temp,
+                temp_analysis.get('ror_per_min', 0)
+            )
+        else:
+            recommendations = None
+        
+        # Build comprehensive prompt
+        system_prompt = f"""You are an EXPERT FreshRoast coffee roaster with DEEP knowledge of the {profile.display_name}.
+
+{machine_context}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📈 CURRENT ROAST STATUS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+{temp_analysis.get('summary', 'No temperature data yet')}
+
+{"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" if recommendations else ""}
+{"🎯 RECOMMENDED ACTIONS:" if recommendations else ""}
+{"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" if recommendations else ""}
+{self._format_recommendations(recommendations, current_heat, current_fan) if recommendations else ""}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 {profile.display_name} PRO TIPS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+{chr(10).join(f"• {tip}" for tip in profile.pro_tips[:3])}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 YOUR COACHING GUIDELINES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. BE SPECIFIC to the {profile.display_name} - reference machine characteristics
+2. Give EXACT heat/fan numbers (e.g., "Set heat to 6, fan to 8")
+3. Explain WHY - reference machine behavior (e.g., "SR800 responds fast, so...")
+4. Keep responses under 100 words unless urgent
+5. Reference common issues for this specific machine
+6. If temperature spike/crash, respond URGENTLY
+7. Remember: User has {profile.display_name} {'WITH' if has_extension else 'WITHOUT'} extension tube
+
+{f"USER QUESTION: {user_message}" if user_message else "Provide proactive coaching based on current roast state."}
+
+RESPOND IN A HELPFUL, SPECIFIC, ACTIONABLE WAY FOR THE {profile.display_name}:
+"""
+        
+        # Call LLM
+        if self.llm:
+            logger.info(f"🤖 Calling LLM with system prompt length: {len(system_prompt)}")
+            logger.info(f"🤖 User message: {user_message}")
+            response = await self.llm.get_completion(
+                system_prompt=system_prompt,
+                user_message=user_message,
+                temperature=0.7,
+                max_tokens=500
+            )
+            logger.info(f"🤖 LLM response length: {len(response)}")
+            logger.info(f"🤖 LLM response preview: {response[:200]}...")
+        else:
+            logger.error("❌ LLM not initialized")
+            response = "⚠️ AI coaching temporarily unavailable. Please set OPENROUTER_API_KEY to enable AI features."
+        
+        return response
+    
+    def _format_recommendations(
+        self,
+        recommendations: Dict,
+        current_heat: int,
+        current_fan: int
+    ) -> str:
+        """Format recommendations clearly"""
+        
+        urgency_emoji = {
+            "urgent": "🚨",
+            "high": "⚠️",
+            "normal": "💡"
+        }
+        
+        emoji = urgency_emoji.get(recommendations['urgency'], "💡")
+        
+        output = f"\n{emoji} URGENCY: {recommendations['urgency'].upper()}\n\n"
+        
+        if recommendations['heat_action'] != "maintain":
+            new_heat = current_heat + recommendations['heat_change']
+            output += f"HEAT: {recommendations['heat_action'].upper()} from {current_heat} → {new_heat}\n"
+        else:
+            output += f"HEAT: Maintain at {current_heat}\n"
+        
+        if recommendations['fan_action'] != "maintain":
+            new_fan = current_fan + recommendations['fan_change']
+            output += f"FAN: {recommendations['fan_action'].upper()} from {current_fan} → {new_fan}\n"
+        else:
+            output += f"FAN: Maintain at {current_fan}\n"
+        
+        output += f"\nReasoning: {recommendations['reasoning']}\n"
+        
+        return output
+    
+    
+    def analyze_temperature_trend(self, events: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Analyze temperature trend from events"""
+        if not events:
+            return {"summary": "No temperature data yet"}
+        
+        # Simple trend analysis
+        temps = [e.get('temp_f') for e in events if e.get('temp_f')]
+        if len(temps) < 2:
+            return {"summary": "Insufficient temperature data"}
+        
+        latest_temp = temps[-1]
+        temp_change = temps[-1] - temps[0] if len(temps) > 1 else 0
+        time_span = events[-1]['t_offset_sec'] - events[0]['t_offset_sec']
+        ror_per_min = (temp_change / time_span * 60) if time_span > 0 else 0
+        
+        return {
+            "summary": f"Current: {latest_temp:.1f}°F, ROR: {ror_per_min:.1f}°F/min",
+            "ror_per_min": ror_per_min,
+            "latest_temp": latest_temp
+        }
+    
+
+# Global instances
 llm_copilot = DeepSeekRoastingCopilot()
+machine_aware_llm = MachineAwareLLMIntegration()

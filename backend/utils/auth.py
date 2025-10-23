@@ -31,8 +31,6 @@ def verify_jwt_token(credentials: HTTPAuthorizationCredentials = Depends(securit
         if not isinstance(token, str) or not token.strip():
             raise HTTPException(status_code=401, detail="Invalid token format")
         
-        print(f"DEBUG: Attempting to verify token, secret length: {len(SUPABASE_JWT_SECRET)}")
-        
         # Decode JWT token
         payload = jwt.decode(
             token,
@@ -44,8 +42,6 @@ def verify_jwt_token(credentials: HTTPAuthorizationCredentials = Depends(securit
         user_id = payload.get("sub")
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token payload")
-        
-        print(f"DEBUG: Token verified successfully for user: {user_id}")
         return user_id
     except jwt.ExpiredSignatureError:
         print("DEBUG: Token expired")

@@ -314,7 +314,7 @@ async def get_roasts(limit: int = 100, user_id: str = Depends(verify_jwt_token))
     try:
         sb = get_supabase()
         # Join with machines and bean_profiles tables to get machine name, bean profile name, origin, and process
-        result = sb.table("roast_entries").select("*, machines(name), bean_profiles(name, origin, process_method)").eq("user_id", user_id).order("created_at", desc=True).limit(limit).execute()
+        result = sb.table("roast_entries").select("*, machines(name), bean_profiles(name, origin, process_method, variety, bean_type)").eq("user_id", user_id).order("created_at", desc=True).limit(limit).execute()
         
         # Flatten the machine name and bean profile data into the roast data
         roasts = []
@@ -329,7 +329,6 @@ async def get_roasts(limit: int = 100, user_id: str = Depends(verify_jwt_token))
                 bean_profile = roast['bean_profiles']
                 if bean_profile.get('name'):
                     roast_data['bean_profile_name'] = bean_profile['name']
-                    print(f"DEBUG: Roast {roast.get('id')} linked to bean profile: {bean_profile['name']}")
                 else:
                     roast_data['bean_profile_name'] = None
                 
@@ -341,6 +340,10 @@ async def get_roasts(limit: int = 100, user_id: str = Depends(verify_jwt_token))
                     roast_data['coffee_region'] = bean_profile['name'].split()[0] if bean_profile['name'] else None
                 if bean_profile.get('process_method'):
                     roast_data['coffee_process'] = bean_profile['process_method']
+                if bean_profile.get('variety'):
+                    roast_data['variety'] = bean_profile['variety']
+                if bean_profile.get('bean_type'):
+                    roast_data['coffee_type'] = bean_profile['bean_type']
             else:
                 roast_data['bean_profile_name'] = None
                 print(f"DEBUG: Roast {roast.get('id')} has no linked bean profile")
@@ -350,7 +353,6 @@ async def get_roasts(limit: int = 100, user_id: str = Depends(verify_jwt_token))
             roast_data.pop('bean_profiles', None)
             roasts.append(roast_data)
         
-        print(f"DEBUG: Returning {len(roasts)} roasts with bean profile names")
         return roasts
         
     except Exception as e:

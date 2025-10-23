@@ -13,7 +13,7 @@ import logging
 
 # Import functions inside endpoints to avoid circular imports
 from main import get_supabase, verify_jwt_token
-from .llm_integration import llm_copilot
+from .llm_integration import llm_copilot, machine_aware_llm
 
 def get_freshroast_recommendations(roast_level: str, environmental_conditions: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
@@ -167,18 +167,10 @@ class RoastOutcomeRequest(BaseModel):
     max_temp_f: float
     avg_ror: float
     tasting_notes: str
-    flavor_profile: List[str]
-    aroma_profile: List[str]
-    body_rating: int
-    acidity_rating: int
-    sweetness_rating: int
-    overall_rating: int
-    roast_quality: str
-    roast_consistency: str
-    roast_challenges: List[str]
-    roast_successes: List[str]
-    improvement_notes: str
-    roast_reflections: str
+
+class DuringRoastAdviceRequest(BaseModel):
+    roast_progress: Dict[str, Any]
+    user_question: str
 
 # RAG Copilot Endpoints
 @router.post("/rag/pre-roast-planning")
@@ -274,24 +266,35 @@ async def create_roast_outcome(
 
 @router.post("/rag/during-roast-advice")
 async def during_roast_advice(
-    roast_progress: Dict[str, Any],
-    user_question: str,
+    request: DuringRoastAdviceRequest,
     user_id: str = Depends(verify_jwt_token)
 ):
     """
-    Get real-time LLM-powered roasting advice during the roast
+    Get real-time LLM-powered roasting advice during the roast with enhanced phase awareness
     """
     try:
-        # Use LLM for real-time advice
-        llm_response = llm_copilot.get_during_roast_advice(
-            roast_progress=roast_progress,
-            user_question=user_question
+        # Extract roast_id from roast_progress if available
+        roast_id = request.roast_progress.get('roast_id', 'unknown')
+        
+        # Extract machine information from roast_progress
+        machine_model = request.roast_progress.get('machine_model', 'SR800')
+        has_extension = request.roast_progress.get('has_extension', False)
+        
+        # Use machine-aware LLM for real-time advice
+        llm_response = await machine_aware_llm.get_machine_aware_coaching(
+            roast_progress=request.roast_progress,
+            user_message=request.user_question
         )
         
         return {
             "advice": llm_response,
             "timestamp": datetime.now().isoformat(),
-            "llm_available": llm_copilot.client is not None
+            "llm_available": llm_copilot.client is not None,
+            "enhanced_features": {
+                "phase_awareness": True,
+                "conversation_state": True,
+                "learning_system": True
+            }
         }
         
     except Exception as e:
@@ -305,14 +308,29 @@ async def automatic_event_response(
     user_id: str = Depends(verify_jwt_token)
 ):
     """
-    Get automatic AI response when events are logged
+    Get automatic AI response when events are logged with enhanced phase awareness
     """
     try:
-        # Use LLM for automatic event response
-        response = llm_copilot.get_automatic_event_response(
-            event_data=event_data,
-            roast_progress=roast_progress
+        # Extract roast_id from roast_progress if available
+        roast_id = roast_progress.get('roast_id', 'unknown')
+        
+        # Extract machine information from roast_progress
+        machine_model = roast_progress.get('machine_model', 'SR800')
+        has_extension = roast_progress.get('has_extension', False)
+        
+        # Use machine-aware LLM for automatic event response
+        response_text = machine_aware_llm.get_machine_aware_coaching(
+            roast_progress=roast_progress,
+            user_message=None
         )
+        
+        # Format response to match expected structure
+        response = {
+            "advice": response_text,
+            "recommendations": [],
+            "event_type": "automatic",
+            "has_meaningful_advice": bool(response_text and response_text.strip())
+        }
         
         return {
             "advice": response.get("advice", ""),
@@ -320,7 +338,12 @@ async def automatic_event_response(
             "event_type": response.get("event_type", "Unknown"),
             "has_meaningful_advice": response.get("has_meaningful_advice", True),
             "timestamp": datetime.now().isoformat(),
-            "llm_available": llm_copilot.client is not None
+            "llm_available": llm_copilot.client is not None,
+            "enhanced_features": {
+                "phase_awareness": True,
+                "timing_validation": True,
+                "conversation_state": True
+            }
         }
         
     except Exception as e:
@@ -334,22 +357,150 @@ async def automatic_event_response(
             "llm_available": False
         }
 
+@router.post("/rag/collect-feedback")
+async def collect_feedback(
+    user_rating: int,
+    ai_response: str,
+    context: Dict[str, Any],
+    user_id: str = Depends(verify_jwt_token)
+):
+    """
+    Collect user feedback for AI learning system
+    """
+    try:
+        roast_id = context.get('roast_id', 'unknown')
+        
+        # Collect feedback for learning system
+        llm_copilot.collect_feedback(
+            user_rating=user_rating,
+            ai_response=ai_response,
+            context=context,
+            user_id=user_id,
+            roast_id=roast_id
+        )
+        
+        return {
+            "message": "Feedback collected successfully",
+            "timestamp": datetime.now().isoformat(),
+            "learning_enabled": True
+        }
+        
+    except Exception as e:
+        logger.error(f"Collect feedback error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/rag/conversation-summary/{roast_id}")
+async def get_conversation_summary(
+    roast_id: str,
+    user_id: str = Depends(verify_jwt_token)
+):
+    """
+    Get conversation summary for a specific roast
+    """
+    try:
+        summary = llm_copilot.get_conversation_summary(user_id, roast_id)
+        
+        return {
+            "roast_id": roast_id,
+            "summary": summary,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Get conversation summary error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/rag/learning-stats")
+async def get_learning_stats(
+    user_id: str = Depends(verify_jwt_token)
+):
+    """
+    Get learning system statistics
+    """
+    try:
+        stats = llm_copilot.get_learning_stats()
+        
+        return {
+            "learning_stats": stats,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Get learning stats error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/rag/machine-aware-coaching")
+async def get_machine_aware_coaching(
+    roast_progress: Dict[str, Any],
+    user_message: Optional[str] = None,
+    user_id: str = Depends(verify_jwt_token)
+):
+    """
+    Get machine-aware coaching with deep FreshRoast knowledge
+    """
+    try:
+        # Extract machine information from roast_progress (same pattern as other endpoints)
+        machine_info = roast_progress.get('machine_info', {})
+        machine_model = machine_info.get('model', 'SR800')
+        has_extension = machine_info.get('has_extension', False)
+        
+        # Extract roast_id from roast_progress
+        roast_id = roast_progress.get('roast_id', 1)
+        
+        # Use machine-aware LLM integration with machine info
+        coaching = await machine_aware_llm.get_machine_aware_coaching(
+            roast_progress=roast_progress,
+            user_message=user_message
+        )
+        
+        return {
+            "coaching": coaching,
+            "timestamp": datetime.now().isoformat(),
+            "machine_aware": True,
+            "machine_info": {
+                "model": machine_model,
+                "has_extension": has_extension
+            },
+            "enhanced_features": {
+                "machine_specific": True,
+                "phase_aware": True,
+                "temperature_analysis": True,
+                "heat_recommendations": True
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Machine-aware coaching error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/rag/health")
 async def rag_health():
     """
-    Health check for RAG system
+    Health check for RAG system with enhanced features
     """
     llm_status = "connected" if llm_copilot.client else "disconnected"
+    learning_stats = llm_copilot.get_learning_stats()
     
     return {
         "status": "healthy",
-        "message": "RAG Copilot API is running",
+        "message": "RAG Copilot API is running with enhanced features",
         "llm_status": llm_status,
+        "enhanced_features": {
+            "phase_awareness": True,
+            "conversation_state": True,
+            "learning_system": True,
+            "timing_validation": True
+        },
+        "learning_stats": learning_stats,
         "endpoints": [
             "/rag/pre-roast-planning",
             "/rag/roast-outcome",
             "/rag/during-roast-advice",
             "/rag/automatic-event-response",
+            "/rag/collect-feedback",
+            "/rag/conversation-summary/{roast_id}",
+            "/rag/learning-stats",
+            "/rag/machine-aware-coaching",
             "/rag/health"
         ]
     }
