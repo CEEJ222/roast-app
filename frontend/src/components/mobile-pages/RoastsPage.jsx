@@ -171,6 +171,7 @@ const RoastsPage = ({
             roastId={roastId}
             onDataChange={onDataChange}
             setShowStartRoastWizard={setShowStartRoastWizard}
+            setShowHistoricalRoasts={setShowHistoricalRoasts}
           />
       </div>
 

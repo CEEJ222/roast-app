@@ -92,7 +92,7 @@ const RecentRoasts = ({
             </div>
           ) : (
             <div className="space-y-3 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0">
-              {historicalRoasts.slice(0, 5).map((roast) => (
+              {(isMobile && showFullHistoricalRoasts ? historicalRoasts : historicalRoasts.slice(0, 5)).map((roast) => (
                 <div 
                   key={roast.id}
                   className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary cursor-pointer"
@@ -147,8 +147,8 @@ const RecentRoasts = ({
                 </div>
               ))}
               
-              {/* View All Roasts card - show when there are more than 5 roasts */}
-              {historicalRoasts.length > 5 && (
+              {/* View All Roasts card - show when there are more than 5 roasts and not showing all on mobile */}
+              {historicalRoasts.length > 5 && !(isMobile && showFullHistoricalRoasts) && (
                 <div 
                   className="flex flex-col sm:flex-row sm:items-center sm:justify-center p-3 sm:p-4 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg hover:from-indigo-100 hover:to-purple-100 dark:hover:from-indigo-900/30 dark:hover:to-purple-900/30 transition-all duration-200 border-2 border-dashed border-indigo-200 dark:border-indigo-700 cursor-pointer group"
                   onClick={() => setShowFullHistoricalRoasts(true)}
