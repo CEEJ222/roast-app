@@ -525,6 +525,38 @@ Ready to start? I'll provide specific guidance based on your actual roast progre
         note: e.note
       }));
       
+      // Get current heat and fan from the latest event or form data
+      const latestEvent = events.length > 0 ? events[events.length - 1] : null;
+      
+      // Find the most recent event with heat/fan data
+      let currentHeat = 0;
+      let currentFan = 0;
+      let currentTemp = null;
+      
+      // Look through recent events for the latest heat/fan values
+      for (let i = events.length - 1; i >= 0; i--) {
+        const event = events[i];
+        if (event.heat_level !== null && event.heat_level !== undefined) {
+          currentHeat = event.heat_level;
+          break;
+        }
+      }
+      
+      for (let i = events.length - 1; i >= 0; i--) {
+        const event = events[i];
+        if (event.fan_level !== null && event.fan_level !== undefined) {
+          currentFan = event.fan_level;
+          break;
+        }
+      }
+      
+      // Fallback to formData if no event data found
+      if (currentHeat === 0) currentHeat = formData.heat || 0;
+      if (currentFan === 0) currentFan = formData.fan || 0;
+      
+      // Get temperature from latest event
+      currentTemp = latestEvent?.temp_f || null;
+
       const roastProgress = {
         roast_id: roastId,
         elapsed_time: elapsedTime / 60, // Convert seconds to minutes
@@ -534,6 +566,9 @@ Ready to start? I'll provide specific guidance based on your actual roast progre
         target_roast_level: formData.roastLevel || "City",
         environmental_conditions: environmentalConditions || {},
         user_units: userProfile?.units || {},
+        current_heat: currentHeat,
+        current_fan: currentFan,
+        current_temp: currentTemp,
         machine_info: {
           model: (formData.selectedMachine?.model || formData.model || "SR800"),
           has_extension: (formData.selectedMachine?.has_extension || formData.hasExtension || false)
