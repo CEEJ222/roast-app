@@ -13,7 +13,7 @@ const RoastCurveSection = ({
           Roast Curve
         </h3>
       </div>
-      <div className="p-4">
+      <div className="px-0 py-2">
         <RoastCurveGraph
           data={[{ id: roast?.id, name: roast?.bean_profile_name || 'Roast', events: events }]}
           mode="historical"

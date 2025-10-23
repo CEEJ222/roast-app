@@ -194,10 +194,10 @@ const RoastCurveGraph = ({
             key={`chart-${isMobile ? 'mobile' : 'desktop'}`}
             data={showROR && mode === 'live' ? rorData : chartData}
             margin={{ 
-              top: 20, 
+              top: 10, 
               right: isMobile ? 0 : 0, 
               left: isMobile ? 0 : 0, 
-              bottom: isMobile ? 10 : 20 
+              bottom: isMobile ? 5 : 10 
             }}
             style={{ background: '#000000' }}
             {...(enableZoom && { zoom: { enabled: true } })}
@@ -336,8 +336,8 @@ const RoastCurveGraph = ({
   }
 
   return (
-    <div className={`bg-transparent ${compact ? 'p-4' : isMobile ? 'px-1 py-2' : title ? 'p-6' : 'px-6 py-2'} ${className}`}>
-      <div className={`${compact ? 'mb-3' : 'mb-4'} ${isMobile ? 'pl-3' : ''}`}>
+    <div className={`bg-transparent ${compact ? 'p-4' : isMobile ? 'px-0 py-2' : title ? 'px-2 py-6' : 'px-2 py-2'} ${className}`}>
+      <div className={`${compact ? 'mb-3' : 'mb-4'}`}>
         {title && <h3 className={`${compact ? 'text-base' : 'text-lg'} font-semibold text-gray-800 dark:text-dark-text-primary`}>{title}</h3>}
         {mode === 'historical' && (
           <div className="flex items-center justify-between">
@@ -378,10 +378,10 @@ const RoastCurveGraph = ({
             key={`chart-${isMobile ? 'mobile' : 'desktop'}`}
             data={showROR && mode === 'live' ? rorData : chartData}
             margin={{ 
-              top: 20, 
+              top: 10, 
               right: isMobile ? 0 : 0, 
               left: isMobile ? 0 : 0, 
-              bottom: isMobile ? 20 : 30 
+              bottom: isMobile ? 10 : 15 
             }}
             // OPTIMIZATION: Performance optimizations for Recharts
             syncId="roast-chart"

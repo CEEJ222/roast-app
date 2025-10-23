@@ -7,11 +7,13 @@ import useRoastActions from '../../hooks/useRoastActions';
 import useTastingNotes from '../../hooks/useTastingNotes';
 import useStarRating from '../../hooks/useStarRating';
 import useEventEditing from '../../hooks/useEventEditing';
+import MobileModal from '../shared/MobileModal';
 import RoastOverviewCard from './components/RoastOverviewCard';
 import RoastWeightsCard from './components/RoastWeightsCard';
 import RoastNotesCard from './components/RoastNotesCard';
 import TastingNotesCard from './components/TastingNotesCard';
 import StarRatingCard from './components/StarRatingCard';
+import RoastDetailsSection from './components/RoastDetailsSection';
 import RoastDetailHeader from './components/RoastDetailHeader';
 import RoastActionButtons from './components/RoastActionButtons';
 import RoastCurveSection from './components/RoastCurveSection';
@@ -121,27 +123,63 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
     return null;
   }
 
+  // Create action buttons for the modal footer
+  const renderActionButtons = () => (
+    <RoastActionButtons 
+      isEditing={isEditing}
+      onEdit={handleEdit}
+      onSaveEdit={handleSaveEdit}
+      onCancelEdit={handleCancelEdit}
+      onCopyRoastData={handleCopyRoastData}
+      onShare={() => setShowShareModal(true)}
+      onExport={handleExport}
+      onDelete={() => setShowDeleteConfirm(true)}
+      onClose={onClose}
+    />
+  );
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+    <MobileModal
+      isOpen={true}
+      onClose={onClose}
+      title={roast.bean_name || roast.bean_profile_name || 'Roast Details'}
+      subtitle={roast.roast_name || `Roasted on ${formatDate(roast.created_at)}`}
+      className="max-w-6xl"
+      headerClassName="border-b border-gray-200 dark:border-gray-700"
+      showCloseButton={false}
+    >
       <div 
         ref={swipeRef}
-        className="bg-white dark:bg-dark-card rounded-lg w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden shadow-2xl dark:shadow-dark-glow"
         id="roast-detail"
       >
-        {/* Header */}
-        <RoastDetailHeader 
-          roast={roast}
-          isEditing={isEditing}
-          onEdit={handleEdit}
-          onSaveEdit={handleSaveEdit}
-          onCancelEdit={handleCancelEdit}
-          onCopyRoastData={handleCopyRoastData}
-          onShare={() => setShowShareModal(true)}
-          onDelete={() => setShowDeleteConfirm(true)}
-          onClose={onClose}
-        />
+        {/* Header - Hidden since MobileModal provides its own header */}
+        <div className="hidden">
+          <RoastDetailHeader 
+            roast={roast}
+            isEditing={isEditing}
+            onEdit={handleEdit}
+            onSaveEdit={handleSaveEdit}
+            onCancelEdit={handleCancelEdit}
+            onCopyRoastData={handleCopyRoastData}
+            onShare={() => setShowShareModal(true)}
+            onDelete={() => setShowDeleteConfirm(true)}
+            onClose={onClose}
+          />
+        </div>
 
-        <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-120px)]">
+        <div className="p-2 sm:p-4">
+          {/* Action Buttons */}
+          <div className="mb-4">
+            {renderActionButtons()}
+          </div>
+          
+          {/* Roast Details Section */}
+          <RoastDetailsSection 
+            roast={roast}
+            events={events}
+            formatDuration={formatDuration}
+          />
+          
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left Column - Roast Info */}
           <div className="lg:col-span-1 space-y-6">
@@ -261,7 +299,7 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
         }}
         roast={roast}
       />
-    </div>
+    </MobileModal>
   );
 };
 

@@ -26,13 +26,6 @@ const RoastActionButtons = ({
         >
           ❌ Cancel
         </button>
-        <button 
-          onClick={onClose} 
-          className="text-white hover:text-gray-200 text-xl sm:text-2xl font-bold p-1"
-          aria-label="Close modal"
-        >
-          ×
-        </button>
       </div>
     );
   }
@@ -73,13 +66,6 @@ const RoastActionButtons = ({
         title="Delete roast"
       >
         🗑️ Delete
-      </button>
-      <button 
-        onClick={onClose} 
-        className="text-white hover:text-gray-200 text-xl sm:text-2xl font-bold p-1"
-        aria-label="Close modal"
-      >
-        ×
       </button>
     </div>
   );
