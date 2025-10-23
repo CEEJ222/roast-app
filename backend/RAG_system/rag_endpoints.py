@@ -281,8 +281,8 @@ async def during_roast_advice(
         machine_model = request.roast_progress.get('machine_model', 'SR800')
         has_extension = request.roast_progress.get('has_extension', False)
         
-        # Use machine-aware LLM for real-time advice
-        llm_response = await machine_aware_llm.get_machine_aware_coaching(
+        # Use DTR-aware LLM for real-time advice (includes DTR coaching)
+        llm_response = await machine_aware_llm.get_dtr_aware_coaching(
             roast_progress=request.roast_progress,
             user_message=request.user_question
         )
@@ -384,8 +384,8 @@ async def automatic_event_response(
         machine_model = roast_progress.get('machine_model', 'SR800')
         has_extension = roast_progress.get('has_extension', False)
         
-        # Use machine-aware LLM for automatic event response
-        response_text = await machine_aware_llm.get_machine_aware_coaching(
+        # Use DTR-aware LLM for automatic event response (includes DTR coaching)
+        response_text = await machine_aware_llm.get_dtr_aware_coaching(
             roast_progress=roast_progress,
             user_message=None
         )
