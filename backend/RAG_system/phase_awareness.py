@@ -149,7 +149,7 @@ CURRENT ROASTING PHASE: {phase.name}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Phase Progress: {progress_pct:.0f}% through this phase
-Elapsed Time: {elapsed_seconds // 60}:{elapsed_seconds % 60:02d}
+Elapsed Time: {int(elapsed_seconds) // 60}:{int(elapsed_seconds) % 60:02d}
 {"Current Temperature: " + f"{current_temp_f:.1f}°F" if current_temp_f else "Temperature: Not available"}
 
 WHAT'S HAPPENING NOW:
@@ -200,7 +200,7 @@ MACHINE: {machine_profile.display_name}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Phase Progress: {progress_pct:.0f}% through this phase
-Elapsed Time: {elapsed_seconds // 60}:{elapsed_seconds % 60:02d}
+Elapsed Time: {int(elapsed_seconds) // 60}:{int(elapsed_seconds) % 60:02d}
 {"Current Temperature: " + f"{current_temp_f:.1f}°F" if current_temp_f else "Temperature: Not available"}
 {"Current Settings: Heat " + str(current_heat) + ", Fan " + str(current_fan) if current_heat and current_fan else ""}
 
@@ -383,7 +383,7 @@ class MachineAwarePhaseDetector:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 CURRENT ROASTING PHASE: {phase.name}
-Elapsed Time: {elapsed_seconds // 60}:{elapsed_seconds % 60:02d}
+Elapsed Time: {int(elapsed_seconds) // 60}:{int(elapsed_seconds) % 60:02d}
 {"Current Temperature: " + f"{current_temp:.1f}°F" if current_temp else "Temperature: Not available"}
 Current Settings: Heat {current_heat} | Fan {current_fan}
 

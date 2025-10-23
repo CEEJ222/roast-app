@@ -271,9 +271,9 @@ FLAVOR PROFILE: {roast_profile.flavor_profile}
 {emoji} Current DTR: {current_dtr:.1f}%
 Status: {dtr_assessment['message']}
 
-First Crack Time: {first_crack_time_sec // 60}:{first_crack_time_sec % 60:02d}
-Current Elapsed: {elapsed_seconds // 60}:{elapsed_seconds % 60:02d}
-Development Time So Far: {(elapsed_seconds - first_crack_time_sec) // 60}:{(elapsed_seconds - first_crack_time_sec) % 60:02d}
+First Crack Time: {int(first_crack_time_sec) // 60}:{int(first_crack_time_sec) % 60:02d}
+Current Elapsed: {int(elapsed_seconds) // 60}:{int(elapsed_seconds) % 60:02d}
+Development Time So Far: {int(elapsed_seconds - first_crack_time_sec) // 60}:{int(elapsed_seconds - first_crack_time_sec) % 60:02d}
 
 """
         
