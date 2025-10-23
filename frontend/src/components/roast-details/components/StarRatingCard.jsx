@@ -5,6 +5,7 @@ const StarRatingCard = ({
   roast, 
   starRating, 
   onRatingChange,
+  onClearRating,
   savingRating,
   ratingSaved 
 }) => {
@@ -13,9 +14,6 @@ const StarRatingCard = ({
       <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary mb-4">
         Roast Rating
       </h3>
-      <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
-        Rate this roast on a scale of 1-5 stars
-      </p>
       
       <div className="flex items-center justify-center mb-4">
         <StarRating
@@ -25,6 +23,7 @@ const StarRatingCard = ({
           size="lg"
           interactive={true}
           showLabel={true}
+          allowHalfStars={true}
         />
       </div>
       
@@ -41,6 +40,17 @@ const StarRatingCard = ({
           </span>
         )}
       </div>
+      
+      {starRating > 0 && (
+        <div className="flex justify-center mt-3">
+          <button
+            onClick={onClearRating}
+            className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200 underline"
+          >
+            Clear Rating
+          </button>
+        </div>
+      )}
     </div>
   );
 };

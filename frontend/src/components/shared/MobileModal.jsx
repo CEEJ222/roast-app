@@ -12,7 +12,8 @@ const MobileModal = ({
   hasUnsavedChanges = null,
   className = "",
   headerClassName = "",
-  disableSwipeToClose = false
+  disableSwipeToClose = false,
+  headerActions = null
 }) => {
   const [showConfirmClose, setShowConfirmClose] = useState(false);
   const [touchStartY, setTouchStartY] = useState(null);
@@ -151,15 +152,23 @@ const MobileModal = ({
                 <p className="opacity-90 text-sm sm:text-base">{subtitle}</p>
               )}
             </div>
-            {/* Desktop only close button */}
-            {showCloseButton && (
-              <button
-                onClick={handleClose}
-                className="text-gray-900 dark:text-dark-text-primary hover:text-gray-600 dark:hover:text-gray-300 text-xl sm:text-2xl hidden sm:block"
-              >
-                ✕
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {/* Header Actions - Desktop only */}
+              {headerActions && (
+                <div className="hidden sm:block">
+                  {headerActions}
+                </div>
+              )}
+              {/* Desktop only close button */}
+              {showCloseButton && (
+                <button
+                  onClick={handleClose}
+                  className="text-gray-900 dark:text-dark-text-primary hover:text-gray-600 dark:hover:text-gray-300 text-xl sm:text-2xl hidden sm:block"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

@@ -44,7 +44,7 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
   const { isEditing, editFormData, setEditFormData, handleEdit, handleSaveEdit, handleCancelEdit } = useRoastEditing(roast, getAuthToken);
   const { handleDelete, handleCopyRoastData, handleCopyEvents } = useRoastActions(roast, getAuthToken, onClose);
   const { tastingNotes, setTastingNotes, savingTastingNotes, tastingNotesSaved, handleSaveTastingNotes } = useTastingNotes(roast, getAuthToken);
-  const { starRating, setStarRating, savingRating, ratingSaved, handleRatingChange } = useStarRating(roast, getAuthToken);
+  const { starRating, setStarRating, savingRating, ratingSaved, handleRatingChange, handleClearRating } = useStarRating(roast, getAuthToken);
   const { editingEventId, editingEventFormData, setEditingEventFormData, startEditEvent, cancelEditEvent, saveEditedEvent, deleteEvent } = useEventEditing(roast, getAuthToken, loadRoastEvents);
   
   // Swipe gestures for navigation
@@ -124,7 +124,7 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
   }
 
   // Create action buttons for the modal footer
-  const renderActionButtons = () => (
+  const renderActionButtons = (showOnMobile = true) => (
     <RoastActionButtons 
       isEditing={isEditing}
       onEdit={handleEdit}
@@ -135,6 +135,7 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
       onExport={handleExport}
       onDelete={() => setShowDeleteConfirm(true)}
       onClose={onClose}
+      showOnMobile={showOnMobile}
     />
   );
 
@@ -147,6 +148,7 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
       className="max-w-6xl"
       headerClassName="border-b border-gray-200 dark:border-gray-700"
       showCloseButton={false}
+      headerActions={renderActionButtons(false)}
     >
       <div 
         ref={swipeRef}
@@ -168,17 +170,28 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
         </div>
 
         <div className="p-2 sm:p-4">
-          {/* Action Buttons */}
-          <div className="mb-4">
-            {renderActionButtons()}
+          {/* Tasting Notes and Star Rating at the top */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+            {/* Tasting Notes */}
+            <TastingNotesCard 
+              roast={roast}
+              tastingNotes={tastingNotes}
+              onTastingNotesChange={setTastingNotes}
+              onSaveTastingNotes={handleSaveTastingNotes}
+              savingTastingNotes={savingTastingNotes}
+              tastingNotesSaved={tastingNotesSaved}
+            />
+
+            {/* Star Rating */}
+            <StarRatingCard 
+              roast={roast}
+              starRating={starRating}
+              onRatingChange={handleRatingChange}
+              onClearRating={handleClearRating}
+              savingRating={savingRating}
+              ratingSaved={ratingSaved}
+            />
           </div>
-          
-          {/* Roast Details Section */}
-          <RoastDetailsSection 
-            roast={roast}
-            events={events}
-            formatDuration={formatDuration}
-          />
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left Column - Roast Info */}
@@ -215,24 +228,6 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
               onEditFormChange={setEditFormData}
             />
 
-            {/* Tasting Notes */}
-            <TastingNotesCard 
-              roast={roast}
-              tastingNotes={tastingNotes}
-              onTastingNotesChange={setTastingNotes}
-              onSaveTastingNotes={handleSaveTastingNotes}
-              savingTastingNotes={savingTastingNotes}
-              tastingNotesSaved={tastingNotesSaved}
-            />
-
-            {/* Star Rating */}
-            <StarRatingCard 
-              roast={roast}
-              starRating={starRating}
-              onRatingChange={handleRatingChange}
-              savingRating={savingRating}
-              ratingSaved={ratingSaved}
-            />
           </div>
 
           {/* Right Column - Roast Curve and Events */}
