@@ -1383,7 +1383,7 @@ RESPOND IN A HELPFUL, SPECIFIC, ACTIONABLE WAY FOR THE {profile.display_name}:
         if (phase.name.lower().replace(' phase', '') == 'development' and 
             first_crack_time and current_temp):
             
-            current_dtr = DTRTargets.calculate_dtr(int(first_crack_time) if first_crack_time else 0, int(elapsed_time * 60) if elapsed_time else 0)  # Convert minutes to seconds
+            current_dtr = DTRTargets.calculate_dtr(int(first_crack_time) if first_crack_time else 0, int(float(elapsed_time) * 60) if elapsed_time else 0)  # Convert minutes to seconds
             machine_dtr_advice = self.machine_profiles.get_dtr_aware_development_advice(
                 profile=profile,
                 roast_level=roast_level,

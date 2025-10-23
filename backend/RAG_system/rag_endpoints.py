@@ -385,7 +385,7 @@ async def automatic_event_response(
         has_extension = roast_progress.get('has_extension', False)
         
         # Use machine-aware LLM for automatic event response
-        response_text = machine_aware_llm.get_machine_aware_coaching(
+        response_text = await machine_aware_llm.get_machine_aware_coaching(
             roast_progress=roast_progress,
             user_message=None
         )
