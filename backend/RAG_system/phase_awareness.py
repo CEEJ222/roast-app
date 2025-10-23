@@ -343,15 +343,27 @@ class MachineAwarePhaseDetector:
         typical_roast_time_minutes = sum(profile.typical_roast_time) / 2
         time_scale = typical_roast_time_minutes / 10  # Scale to typical roast
         
-        # Detect phase with machine-aware timing
-        if elapsed_seconds < 240 * time_scale:
-            phase = self.phases["drying"]
-        elif elapsed_seconds < 480 * time_scale:
-            phase = self.phases["maillard"]
-        elif elapsed_seconds < 720 * time_scale:
-            phase = self.phases["development"]
+        # If we have temperature, use temperature-based detection as primary
+        if current_temp is not None:
+            # Temperature-based phase detection (more accurate)
+            if current_temp < 300:
+                phase = self.phases["drying"]
+            elif current_temp <= 380:  # Include 380°F in Maillard phase
+                phase = self.phases["maillard"]
+            elif current_temp < 420:
+                phase = self.phases["development"]
+            else:
+                phase = self.phases["finishing"]
         else:
-            phase = self.phases["finishing"]
+            # Fall back to time-based detection
+            if elapsed_seconds < 240 * time_scale:
+                phase = self.phases["drying"]
+            elif elapsed_seconds < 480 * time_scale:
+                phase = self.phases["maillard"]
+            elif elapsed_seconds < 720 * time_scale:
+                phase = self.phases["development"]
+            else:
+                phase = self.phases["finishing"]
         
         return phase, profile
     
