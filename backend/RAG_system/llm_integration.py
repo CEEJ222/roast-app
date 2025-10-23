@@ -1364,10 +1364,33 @@ RESPOND IN A HELPFUL, SPECIFIC, ACTIONABLE WAY FOR THE {profile.display_name}:
         except ValueError:
             profile = self.machine_profiles.get_profile('SR800', False)  # Fallback
         
-        # Detect current phase
-        phase, _ = self.phase_detector.detect_phase_for_machine(
-            machine_model, has_extension, elapsed_time, current_temp
-        )
+        # Respect manual phase transitions from frontend, fallback to detection
+        frontend_phase = roast_progress.get('current_phase', '').lower()
+        if frontend_phase in ['drying', 'maillard', 'development', 'finishing']:
+            # Use frontend phase if it's a valid phase
+            phase_name_map = {
+                'drying': 'Drying Phase',
+                'maillard': 'Maillard Reaction Phase', 
+                'development': 'Development Phase',
+                'finishing': 'Finishing Phase'
+            }
+            phase_name = phase_name_map[frontend_phase]
+            # Find the phase object
+            phase = None
+            for p in self.phase_detector.phases.values():
+                if p.name == phase_name:
+                    phase = p
+                    break
+            if phase is None:
+                # Fallback to detection if phase not found
+                phase, _ = self.phase_detector.detect_phase_for_machine(
+                    machine_model, has_extension, elapsed_time, current_temp
+                )
+        else:
+            # No valid frontend phase, use detection
+            phase, _ = self.phase_detector.detect_phase_for_machine(
+                machine_model, has_extension, elapsed_time, current_temp
+            )
         
         # Get DTR-aware coaching using comprehensive context
         dtr_coaching_context = build_dtr_coaching_context(
