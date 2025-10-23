@@ -100,6 +100,16 @@ const DashboardHistoricalRoasts = ({
     // Try to get duration from roast events if available
     if (roastDetails[roast.id] && roastDetails[roast.id].length > 0) {
       const events = roastDetails[roast.id];
+      // Use COOL event as the end of roasting (not END event)
+      const coolEvent = events.find(e => e.kind === 'COOL');
+      if (coolEvent) {
+        const duration = coolEvent.t_offset_sec;
+        const minutes = Math.floor(duration / 60);
+        const seconds = duration % 60;
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      }
+      
+      // Fallback to END event if no COOL event exists
       const endEvent = events.find(e => e.kind === 'END');
       if (endEvent) {
         const duration = endEvent.t_offset_sec;

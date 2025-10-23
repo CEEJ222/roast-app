@@ -55,12 +55,37 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
 
 
 
-  const formatDuration = (startTime, endTime) => {
-    if (!startTime || !endTime) return 'N/A';
-    const duration = Math.floor((new Date(endTime) - new Date(startTime)) / 1000);
-    const minutes = Math.floor(duration / 60);
-    const seconds = duration % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  const formatDuration = (roast) => {
+    // Try to get duration from roast events if available
+    if (events && events.length > 0) {
+      // Use COOL event as the end of roasting (not END event)
+      const coolEvent = events.find(e => e.kind === 'COOL');
+      if (coolEvent) {
+        const duration = coolEvent.t_offset_sec;
+        const minutes = Math.floor(duration / 60);
+        const seconds = duration % 60;
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      }
+      
+      // Fallback to END event if no COOL event exists
+      const endEvent = events.find(e => e.kind === 'END');
+      if (endEvent) {
+        const duration = endEvent.t_offset_sec;
+        const minutes = Math.floor(duration / 60);
+        const seconds = duration % 60;
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      }
+    }
+    
+    // Fallback to created_at vs updated_at if no events
+    if (roast.created_at && roast.updated_at) {
+      const duration = Math.floor((new Date(roast.updated_at) - new Date(roast.created_at)) / 1000);
+      const minutes = Math.floor(duration / 60);
+      const seconds = duration % 60;
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    return 'N/A';
   };
 
   const formatTime = (seconds) => {
@@ -126,6 +151,8 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
               isEditing={isEditing}
               editFormData={editFormData}
               onEditFormChange={setEditFormData}
+              events={events}
+              formatDuration={formatDuration}
             />
 
             {/* Weights */}

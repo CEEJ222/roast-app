@@ -6,6 +6,8 @@ const RoastOverviewCard = ({
   isEditing,
   editFormData,
   onEditFormChange,
+  events,
+  formatDuration,
 }) => {
   return (
     <div className="bg-gray-50 dark:bg-dark-bg-tertiary rounded-lg p-4">
@@ -87,6 +89,13 @@ const RoastOverviewCard = ({
             <span className="text-sm font-medium text-gray-600 dark:text-dark-text-secondary">Target Roast:</span>
             <span className="px-2 py-1 bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 rounded-full text-sm font-medium">
               {roast.desired_roast_level}
+            </span>
+          </div>
+          
+          <div className="flex justify-between">
+            <span className="text-sm font-medium text-gray-600 dark:text-dark-text-secondary">Duration:</span>
+            <span className="text-gray-900 dark:text-dark-text-primary font-medium">
+              {formatDuration ? formatDuration(roast) : 'N/A'}
             </span>
           </div>
           

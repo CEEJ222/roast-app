@@ -99,6 +99,10 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
   const handleCloseProfile = () => {
     setSelectedProfile(null);
     setShowProfileModal(false);
+    // On mobile, also reset to the main beans view when closing modal
+    if (isMobile) {
+      setShowAll(false);
+    }
   };
 
   const handleEditProfile = () => {
@@ -118,6 +122,10 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
   const handleEditClose = () => {
     setShowEditForm(false);
     setSelectedProfile(null);
+    // On mobile, also reset to the main beans view when closing edit form
+    if (isMobile) {
+      setShowAll(false);
+    }
   };
 
   const handleDeleteClick = (profile, e) => {
@@ -271,6 +279,10 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
 
   const handleCreateClose = () => {
     setShowCreateForm(false);
+    // On mobile, also reset to the main beans view when closing create form
+    if (isMobile) {
+      setShowAll(false);
+    }
   };
 
   const showError = (message) => {
@@ -374,7 +386,12 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
     return (
       <div className="bg-transparent">
         <div className="px-4 sm:px-6 py-4">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">Bean Profiles</h3>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary flex items-center">
+            Bean Profiles
+            <span className="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+              {beanProfiles.length}
+            </span>
+          </h3>
         </div>
         <div className="p-6 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-dark-accent-primary mx-auto mb-4"></div>
@@ -390,79 +407,38 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
       {!isMobile && (
         <div className="px-4 sm:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">Bean Profiles</h3>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-              <button
-                onClick={handleCreateProfile}
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-dark-accent-primary dark:to-dark-accent-secondary text-white px-3 sm:px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-medium shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base"
-              >
-                📝 Create New
-              </button>
-              {beanProfiles.length > 0 && (
-                <button
-                  onClick={() => setShowAll(!showAll)}
-                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium text-sm sm:text-base whitespace-nowrap"
-                >
-                  {showAll ? 'Show Recent Only →' : 'View All Profiles →'}
-                </button>
-              )}
-            </div>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary flex items-center">
+              Bean Profiles
+              <span className="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                {beanProfiles.length}
+              </span>
+            </h3>
           </div>
         </div>
       )}
       
       {showAll ? (
-        // Full table view with selection and delete functionality
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary ml-4">Delete Bean Profiles</h3>
-            <button
-              onClick={() => setShowAll(false)}
-              className="mr-4 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-          <StandardTable
-          data={beanProfiles}
-          columns={columns}
-          onDelete={(profile) => handleDeleteClick(profile, { stopPropagation: () => {} })}
-          onBulkDelete={(profileIds) => {
-            setSelectedProfiles(new Set(profileIds));
-            setShowBulkDeleteConfirm(true);
-          }}
-          selectedItems={selectedProfiles}
-          onSelectionChange={(newSelection) => setSelectedProfiles(newSelection)}
-          onSelectAll={(allIds) => setSelectedProfiles(new Set(allIds))}
-          showSelection={true}
-          showBulkDelete={true}
-          loading={loading}
-          emptyMessage="No Bean Profiles Yet. Create your first bean profile to track detailed coffee information for better AI coaching!"
-          className=""
-          onView={(profile) => handleViewProfile(profile)}
-          showHeader={true}
-          hideActionButtons={isMobile}
-        />
-        </div>
-      ) : (
-        // Dashboard card view
-        <div className={isMobile ? "p-4 pb-24" : "p-4 sm:p-6"}>
-          {beanProfiles.length === 0 ? (
-            <div className="text-center py-8 sm:py-12 text-gray-500 dark:text-dark-text-tertiary px-4">
-              <div className="text-4xl sm:text-6xl mb-4">☕</div>
-              <p className="text-base sm:text-lg font-semibold mb-2 dark:text-dark-text-primary">No Bean Profiles Yet</p>
-              <p className="text-xs sm:text-sm mb-6 dark:text-dark-text-secondary max-w-sm mx-auto">
-                Create your first bean profile to track detailed coffee information for better AI coaching!
-              </p>
-              <button
-                onClick={handleCreateProfile}
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-dark-accent-primary dark:to-dark-accent-secondary text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:from-indigo-700 hover:to-purple-700 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-bold shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105 text-sm sm:text-base"
-              >
-                📝 Create Bean Profile
-              </button>
+        // Full view - table on desktop, cards on mobile
+        isMobile ? (
+          // Mobile: Show all profiles in card format
+          <div className={isMobile ? "p-4 pb-24" : "p-4 sm:p-6"}>
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary flex items-center">
+                  All Bean Profiles
+                  <span className="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                    {beanProfiles.length}
+                  </span>
+                </h3>
+                <button
+                  onClick={() => setShowAll(false)}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
               {beanProfiles.map((profile) => {
                 // Check if profile is good for espresso (check both database field and notes for backwards compatibility)
                 const isGoodForEspresso = profile.espresso_suitable === true || 
@@ -515,6 +491,145 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
                   </div>
                 );
               })}
+            </div>
+          </div>
+        ) : (
+          // Desktop: Show table with selection and delete functionality
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary ml-4 flex items-center">
+                Delete Bean Profiles
+                <span className="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                  {beanProfiles.length}
+                </span>
+              </h3>
+              <button
+                onClick={() => setShowAll(false)}
+                className="mr-4 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+            <StandardTable
+            data={beanProfiles}
+            columns={columns}
+            onDelete={(profile) => handleDeleteClick(profile, { stopPropagation: () => {} })}
+            onBulkDelete={(profileIds) => {
+              setSelectedProfiles(new Set(profileIds));
+              setShowBulkDeleteConfirm(true);
+            }}
+            selectedItems={selectedProfiles}
+            onSelectionChange={(newSelection) => setSelectedProfiles(newSelection)}
+            onSelectAll={(allIds) => setSelectedProfiles(new Set(allIds))}
+            showSelection={true}
+            showBulkDelete={true}
+            loading={loading}
+            emptyMessage="No Bean Profiles Yet. Create your first bean profile to track detailed coffee information for better AI coaching!"
+            className=""
+            onView={(profile) => handleViewProfile(profile)}
+            showHeader={true}
+            hideActionButtons={isMobile}
+          />
+          </div>
+        )
+      ) : (
+        // Dashboard card view
+        <div className={isMobile ? "p-4 pb-24" : "p-4 sm:p-6"}>
+          {beanProfiles.length === 0 ? (
+            <div className="text-center py-8 sm:py-12 text-gray-500 dark:text-dark-text-tertiary px-4">
+              <div className="text-4xl sm:text-6xl mb-4">☕</div>
+              <p className="text-base sm:text-lg font-semibold mb-2 dark:text-dark-text-primary">No Bean Profiles Yet</p>
+              <p className="text-xs sm:text-sm mb-6 dark:text-dark-text-secondary max-w-sm mx-auto">
+                Create your first bean profile to track detailed coffee information for better AI coaching!
+              </p>
+              <button
+                onClick={handleCreateProfile}
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-dark-accent-primary dark:to-dark-accent-secondary text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:from-indigo-700 hover:to-purple-700 dark:hover:from-dark-accent-primary dark:hover:to-dark-accent-tertiary font-bold shadow-lg dark:shadow-vibrant-glow transform transition hover:scale-105 text-sm sm:text-base"
+              >
+                📝 Create Bean Profile
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
+              {beanProfiles.slice(0, 8).map((profile) => {
+                // Check if profile is good for espresso (check both database field and notes for backwards compatibility)
+                const isGoodForEspresso = profile.espresso_suitable === true || 
+                                          profile.notes?.toLowerCase().includes('espresso') ||
+                                          profile.notes?.toLowerCase().includes('good for espresso') ||
+                                          profile.roasting_notes?.toLowerCase().includes('espresso');
+                
+                return (
+                  <div 
+                    key={profile.id}
+                    onClick={() => handleViewProfile(profile)}
+                    className="flex flex-col p-4 sm:p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary cursor-pointer"
+                  >
+                    <div className="flex items-start space-x-3 sm:space-x-4">
+                      <div className="w-10 h-10 bg-indigo-100 dark:bg-dark-bg-tertiary rounded-full flex items-center justify-center border dark:border-dark-border-primary flex-shrink-0">
+                        <span className="text-indigo-600 dark:text-dark-accent-primary font-bold">
+                          {getProfileIcon()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 dark:text-dark-text-primary text-sm sm:text-base break-words">
+                          {profile.name}
+                        </p>
+                        <div className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary mt-1">
+                          {profile.origin && (
+                            <div className="break-words flex items-center">
+                              <svg className="w-3 h-3 text-red-500 dark:text-red-400 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                              </svg>
+                              <span>{profile.origin}</span>
+                            </div>
+                          )}
+                          {profile.variety && (
+                            <div className="break-words mt-1 flex items-center">
+                              <span className="text-green-500 dark:text-green-400 mr-1">🌱</span>
+                              <span>{profile.variety}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2 items-center text-sm mt-3">
+                          {getProcessMethodChip(profile.process_method)}
+                          {isGoodForEspresso && (
+                            <span className="px-2 py-1 rounded-full text-xs font-medium border dark:border-dark-border-primary bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300 flex-shrink-0">
+                              Good for Espresso
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {/* View All Profiles card - only show when there are more than 8 profiles */}
+              {beanProfiles.length > 8 && (
+                <div 
+                  className="flex flex-col items-center justify-center p-4 sm:p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg hover:from-purple-100 hover:to-pink-100 dark:hover:from-purple-900/30 dark:hover:to-pink-900/30 transition-all duration-200 border-2 border-dashed border-purple-200 dark:border-purple-700 cursor-pointer group"
+                  onClick={() => setShowAll(true)}
+                >
+                  <div className="flex flex-col items-center space-y-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                      <span className="text-white text-lg">☕</span>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-semibold text-purple-800 dark:text-purple-200 text-sm sm:text-base">
+                        View All Profiles
+                      </p>
+                      <p className="text-xs sm:text-sm text-purple-600 dark:text-purple-400">
+                        {beanProfiles.length - 8} more profiles
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-center">
+                      <span className="text-purple-600 dark:text-purple-400 text-sm font-medium group-hover:text-purple-700 dark:group-hover:text-purple-300">
+                        View All →
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

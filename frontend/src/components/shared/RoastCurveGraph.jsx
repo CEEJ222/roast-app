@@ -336,9 +336,9 @@ const RoastCurveGraph = ({
   }
 
   return (
-    <div className={`bg-transparent ${compact ? 'p-4' : isMobile ? 'px-1 py-3' : 'p-6'} ${className}`}>
+    <div className={`bg-transparent ${compact ? 'p-4' : isMobile ? 'px-1 py-2' : title ? 'p-6' : 'px-6 py-2'} ${className}`}>
       <div className={`${compact ? 'mb-3' : 'mb-4'} ${isMobile ? 'pl-3' : ''}`}>
-        <h3 className={`${compact ? 'text-base' : 'text-lg'} font-semibold text-gray-800 dark:text-dark-text-primary`}>{title}</h3>
+        {title && <h3 className={`${compact ? 'text-base' : 'text-lg'} font-semibold text-gray-800 dark:text-dark-text-primary`}>{title}</h3>}
         {mode === 'historical' && (
           <div className="flex items-center justify-between">
             {onRoastToggle && (
@@ -381,7 +381,7 @@ const RoastCurveGraph = ({
               top: 20, 
               right: isMobile ? 0 : 0, 
               left: isMobile ? 0 : 0, 
-              bottom: isMobile ? 80 : 120 
+              bottom: isMobile ? 20 : 30 
             }}
             // OPTIMIZATION: Performance optimizations for Recharts
             syncId="roast-chart"
@@ -527,16 +527,23 @@ const RoastCurveGraph = ({
 
 // Helper functions
 function processLiveData(events) {
+  // Find COOL event time to determine when roast ended
+  const coolEvent = events.find(event => event.kind === 'COOL');
+  const coolTimeInSeconds = coolEvent ? coolEvent.t_offset_sec : null;
+  
+  
   // Filter temperature events and convert to chart format
-  // Only include events that have actual temperature data (exclude milestone events without temps)
+  // Only include events that have actual temperature data and occur before COOL
   const tempEvents = events.filter(event => {
+    const isBeforeCool = !coolTimeInSeconds || event.t_offset_sec <= coolTimeInSeconds;
     
     return event.temp_f !== null && 
            event.temp_f !== undefined && 
            event.temp_f !== 0 && // Exclude 0 degree readings
            event.t_offset_sec !== null && 
            event.t_offset_sec !== undefined &&
-           event.kind === 'SET'; // Only include SET events which have temperature data
+           event.kind === 'SET' && // Only include SET events which have temperature data
+           isBeforeCool; // Only include events before COOL
   });
   
   // Sort by time and remove duplicates
@@ -568,16 +575,29 @@ function processHistoricalData(roasts) {
   // For historical mode, we need to process multiple roasts
   if (!roasts || roasts.length === 0) return [];
   
-  // Find the maximum time across all roasts, but only consider events with temperature data
+  // Find the maximum time across all roasts, but only consider events with temperature data before COOL
   const maxTime = Math.max(...roasts.map(roast => {
     if (!roast.events || roast.events.length === 0) return 0;
-    const tempEvents = roast.events.filter(event => 
-      event.temp_f !== null && 
-      event.temp_f !== undefined && 
-      event.temp_f !== 0 && 
-      event.kind === 'SET'
-    );
+    
+    // Find COOL event time for this roast
+    const coolEvent = roast.events.find(event => event.kind === 'COOL');
+    const coolTimeInSeconds = coolEvent ? coolEvent.t_offset_sec : null;
+    
+    
+    const tempEvents = roast.events.filter(event => {
+      const isBeforeCool = !coolTimeInSeconds || event.t_offset_sec <= coolTimeInSeconds;
+      return event.temp_f !== null && 
+             event.temp_f !== undefined && 
+             event.temp_f !== 0 && 
+             event.kind === 'SET' &&
+             isBeforeCool; // Only include events before COOL
+    });
     if (tempEvents.length === 0) return 0;
+    
+    // Use COOL time as the endpoint if it exists, otherwise use the last temperature event
+    if (coolTimeInSeconds) {
+      return coolTimeInSeconds / 60; // Convert to minutes
+    }
     return Math.max(...tempEvents.map(event => event.t_offset_sec / 60));
   }));
 
@@ -595,27 +615,40 @@ function processHistoricalData(roasts) {
     const dataPoint = { time };
     
     roasts.forEach((roast, index) => {
-      const tempAtTime = getTemperatureAtTime(roast.events, time * 60);
-      dataPoint[`temp_${roast.id || index}`] = tempAtTime;
+      // Find COOL event time for this roast
+      const coolEvent = roast.events.find(event => event.kind === 'COOL');
+      const coolTimeInMinutes = coolEvent ? coolEvent.t_offset_sec / 60 : null;
       
-       // Calculate RoR for this roast at this time point
-       if (timeIndex > 0) {
-         const prevTime = timePoints[timeIndex - 1];
-         const prevTemp = getTemperatureAtTime(roast.events, prevTime * 60);
-         const timeDiff = time - prevTime;
-         
-         let ror = 0;
-         if (tempAtTime && prevTemp && timeDiff > 0) {
-           ror = (tempAtTime - prevTemp) / timeDiff;
+      // Only include data if we're before the COOL event (or if no COOL event exists)
+      const isBeforeCool = !coolTimeInMinutes || time <= coolTimeInMinutes;
+      
+      if (isBeforeCool) {
+        const tempAtTime = getTemperatureAtTime(roast.events, time * 60);
+        dataPoint[`temp_${roast.id || index}`] = tempAtTime;
+        
+         // Calculate RoR for this roast at this time point
+         if (timeIndex > 0) {
+           const prevTime = timePoints[timeIndex - 1];
+           const prevTemp = getTemperatureAtTime(roast.events, prevTime * 60);
+           const timeDiff = time - prevTime;
            
-           // Apply basic bounds
-           ror = Math.max(-20, Math.min(80, ror));
+           let ror = 0;
+           if (tempAtTime && prevTemp && timeDiff > 0) {
+             ror = (tempAtTime - prevTemp) / timeDiff;
+             
+             // Apply basic bounds
+             ror = Math.max(-20, Math.min(80, ror));
+           }
+           
+           dataPoint[`ror_${roast.id || index}`] = ror;
+         } else {
+           dataPoint[`ror_${roast.id || index}`] = 0;
          }
-         
-         dataPoint[`ror_${roast.id || index}`] = ror;
-       } else {
-         dataPoint[`ror_${roast.id || index}`] = 0;
-       }
+      } else {
+        // After COOL event, set to null to create a break in the line
+        dataPoint[`temp_${roast.id || index}`] = null;
+        dataPoint[`ror_${roast.id || index}`] = null;
+      }
     });
     
     return dataPoint;
@@ -629,7 +662,13 @@ function processHistoricalData(roasts) {
       const rorKey = `ror_${roast.id || index}`;
       let smoothedRor = point[rorKey];
       
-      if (timeIndex > 0 && smoothedRor !== undefined) {
+      // Find COOL event time for this roast
+      const coolEvent = roast.events.find(event => event.kind === 'COOL');
+      const coolTimeInMinutes = coolEvent ? coolEvent.t_offset_sec / 60 : null;
+      const isBeforeCool = !coolTimeInMinutes || point.time <= coolTimeInMinutes;
+      
+      // Only apply smoothing if we're before COOL and have valid RoR data
+      if (timeIndex > 0 && smoothedRor !== undefined && isBeforeCool) {
         // Apply exponential smoothing
         const prevRor = timeIndex > 1 ? rawData[timeIndex - 1][rorKey] || 0 : 0;
         const alpha = 0.4; // Smoothing factor
@@ -652,6 +691,9 @@ function processHistoricalData(roasts) {
         
         // Final bounds check
         smoothedRor = Math.max(-20, Math.min(80, smoothedRor));
+      } else if (!isBeforeCool) {
+        // After COOL event, ensure RoR is null
+        smoothedRor = null;
       }
       
       smoothedPoint[rorKey] = smoothedRor;
@@ -664,13 +706,19 @@ function processHistoricalData(roasts) {
 }
 
 function getTemperatureAtTime(events, timeInSeconds) {
-  // Only use SET events with valid temperature data
-  const tempEvents = events.filter(event => 
-    event.temp_f !== null && 
-    event.temp_f !== undefined && 
-    event.temp_f !== 0 && 
-    event.kind === 'SET'
-  );
+  // Find COOL event time to determine when roast ended
+  const coolEvent = events.find(event => event.kind === 'COOL');
+  const coolTimeInSeconds = coolEvent ? coolEvent.t_offset_sec : null;
+  
+  // Only use SET events with valid temperature data that occur before COOL
+  const tempEvents = events.filter(event => {
+    const isBeforeCool = !coolTimeInSeconds || event.t_offset_sec <= coolTimeInSeconds;
+    return event.temp_f !== null && 
+           event.temp_f !== undefined && 
+           event.temp_f !== 0 && 
+           event.kind === 'SET' &&
+           isBeforeCool; // Only include events before COOL
+  });
   
   if (tempEvents.length === 0) return null;
   

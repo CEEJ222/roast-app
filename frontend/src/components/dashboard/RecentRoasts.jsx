@@ -10,7 +10,8 @@ const RecentRoasts = ({
   onRoastResume, 
   roastId,
   onDataChange = null,
-  setShowStartRoastWizard
+  setShowStartRoastWizard,
+  setShowHistoricalRoasts
 }) => {
   const [showFullHistoricalRoasts, setShowFullHistoricalRoasts] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -38,25 +39,34 @@ const RecentRoasts = ({
     <div className="bg-transparent">
       <div className="px-4 sm:px-6 py-4">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text-primary flex items-center">
             {isMobile ? 'All Roasts' : (showFullHistoricalRoasts ? 'All Roasts' : 'Recent Roasts')}
+            <span className="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
+              {historicalRoasts?.length || 0}
+            </span>
           </h3>
-          {!isMobile && (
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-              {historicalRoasts?.length > 0 && (
-                <button
-                  onClick={() => setShowFullHistoricalRoasts(!showFullHistoricalRoasts)}
-                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium text-sm sm:text-base whitespace-nowrap"
-                >
-                  {showFullHistoricalRoasts ? 'Show Recent Only →' : 'View All Roasts →'}
-                </button>
-              )}
-            </div>
+          {!isMobile && !showFullHistoricalRoasts && (
+            <button
+              onClick={() => setShowHistoricalRoasts(true)}
+              className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
+            >
+              Compare Roasts →
+            </button>
           )}
         </div>
       </div>
       {showFullHistoricalRoasts && !isMobile ? (
         <div className="p-0">
+          <div className="mb-4">
+            <div className="flex items-center justify-end mb-4">
+              <button
+                onClick={() => setShowFullHistoricalRoasts(false)}
+                className="mr-4 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
           <DashboardHistoricalRoasts
             selectedRoasts={selectedRoasts}
             setSelectedRoasts={setSelectedRoasts}
@@ -82,7 +92,7 @@ const RecentRoasts = ({
             </div>
           ) : (
             <div className="space-y-3 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0">
-              {(isMobile ? historicalRoasts : historicalRoasts.slice(0, 5)).map((roast) => (
+              {historicalRoasts.slice(0, 5).map((roast) => (
                 <div 
                   key={roast.id}
                   className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary cursor-pointer"
@@ -130,14 +140,39 @@ const RecentRoasts = ({
                         if (timeDiff < 120 && !roast.weight_after_g) {
                           return <span className="text-xs sm:text-sm">Continue Roast →</span>;
                         }
-                        return (
-                          <span title="View roast details" className="text-lg">👁️</span>
-                        );
+                        return null;
                       })()}
                     </div>
                   </div>
                 </div>
               ))}
+              
+              {/* View All Roasts card - show when there are more than 5 roasts */}
+              {historicalRoasts.length > 5 && (
+                <div 
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-center p-3 sm:p-4 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg hover:from-indigo-100 hover:to-purple-100 dark:hover:from-indigo-900/30 dark:hover:to-purple-900/30 transition-all duration-200 border-2 border-dashed border-indigo-200 dark:border-indigo-700 cursor-pointer group"
+                  onClick={() => setShowFullHistoricalRoasts(true)}
+                >
+                  <div className="flex items-center justify-center space-x-3 flex-1">
+                    <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                      <span className="text-white text-lg">📊</span>
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <p className="font-semibold text-indigo-800 dark:text-indigo-200 text-sm sm:text-base">
+                        View All Roasts
+                      </p>
+                      <p className="text-xs sm:text-sm text-indigo-600 dark:text-indigo-400">
+                        {historicalRoasts.length - 5} more roasts
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center mt-2 sm:mt-0">
+                    <span className="text-indigo-600 dark:text-indigo-400 text-sm font-medium group-hover:text-indigo-700 dark:group-hover:text-indigo-300">
+                      View All →
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -71,7 +71,7 @@ const Dashboard = ({
   }, []);
   
   return (
-    <div className="space-y-6" ref={pullToRefreshRef} id="dashboard">
+    <div className="space-y-4" ref={pullToRefreshRef} id="dashboard">
       {/* Pull-to-refresh indicator */}
       {pullDistance > 0 && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-indigo-600 text-white text-center py-2 text-sm">
@@ -142,16 +142,6 @@ const Dashboard = ({
       {/* Roast Curve Visualization */}
       {historicalRoasts?.length > 0 && (
         <div className="bg-transparent">
-          <div className="px-6 py-4">
-            <div className="flex justify-between items-center">
-              <button
-                onClick={() => setShowHistoricalRoasts(true)}
-                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium "
-              >
-                Compare Roasts →
-              </button>
-            </div>
-          </div>
           {/* Extra wide graph container for desktop */}
           <div className="w-full">
             <Suspense fallback={null}>
@@ -202,6 +192,7 @@ const Dashboard = ({
         roastId={roastId}
         onDataChange={onDataChange}
         setShowStartRoastWizard={setShowStartRoastWizard}
+        setShowHistoricalRoasts={setShowHistoricalRoasts}
       />
 
       {/* Bean Profiles */}

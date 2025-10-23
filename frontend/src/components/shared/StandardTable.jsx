@@ -246,13 +246,13 @@ const StandardTable = ({
                           <div className="font-medium text-gray-900 dark:text-dark-text-primary truncate">
                             {columns.find(col => col.key === 'coffee')?.render ? 
                               columns.find(col => col.key === 'coffee').render(item) : 
-                              item.coffee || 'Unknown Coffee'
+                              item.coffee || item.name || 'Unknown Coffee'
                             }
                           </div>
                           <div className="text-xs text-gray-500 dark:text-dark-text-secondary ml-2 flex-shrink-0">
                             {columns.find(col => col.key === 'created_at')?.render ? 
                               columns.find(col => col.key === 'created_at').render(item) : 
-                              item.created_at
+                              item.created_at ? new Date(item.created_at).toLocaleDateString() : ''
                             }
                           </div>
                         </div>
