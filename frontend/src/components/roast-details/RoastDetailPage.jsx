@@ -147,7 +147,7 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
       subtitle={roast.roast_name || `Roasted on ${formatDate(roast.created_at)}`}
       className="max-w-6xl"
       headerClassName="border-b border-gray-200 dark:border-gray-700"
-      showCloseButton={false}
+      showCloseButton={true}
       headerActions={renderActionButtons(false)}
     >
       <div 
@@ -170,29 +170,6 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
         </div>
 
         <div className="p-2 sm:p-4">
-          {/* Tasting Notes and Star Rating at the top */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
-            {/* Tasting Notes */}
-            <TastingNotesCard 
-              roast={roast}
-              tastingNotes={tastingNotes}
-              onTastingNotesChange={setTastingNotes}
-              onSaveTastingNotes={handleSaveTastingNotes}
-              savingTastingNotes={savingTastingNotes}
-              tastingNotesSaved={tastingNotesSaved}
-            />
-
-            {/* Star Rating */}
-            <StarRatingCard 
-              roast={roast}
-              starRating={starRating}
-              onRatingChange={handleRatingChange}
-              onClearRating={handleClearRating}
-              savingRating={savingRating}
-              ratingSaved={ratingSaved}
-            />
-          </div>
-          
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left Column - Roast Info */}
           <div className="lg:col-span-1 space-y-6">
@@ -212,6 +189,26 @@ const RoastDetailPage = ({ roast, onClose, userProfile }) => {
               isEditing={isEditing}
               editFormData={editFormData}
               onEditFormChange={setEditFormData}
+            />
+
+            {/* Star Rating */}
+            <StarRatingCard 
+              roast={roast}
+              starRating={starRating}
+              onRatingChange={handleRatingChange}
+              onClearRating={handleClearRating}
+              savingRating={savingRating}
+              ratingSaved={ratingSaved}
+            />
+
+            {/* Tasting Notes */}
+            <TastingNotesCard 
+              roast={roast}
+              tastingNotes={tastingNotes}
+              onTastingNotesChange={setTastingNotes}
+              onSaveTastingNotes={handleSaveTastingNotes}
+              savingTastingNotes={savingTastingNotes}
+              tastingNotesSaved={tastingNotesSaved}
             />
 
             {/* Environmental Conditions */}

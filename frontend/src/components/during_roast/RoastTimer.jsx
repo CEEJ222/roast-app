@@ -1,6 +1,4 @@
 import React, { useEffect } from 'react';
-import { PushNotifications } from '@capacitor/push-notifications';
-import { LocalNotifications } from '@capacitor/local-notifications';
 import { announceToScreenReader, formatTimeForScreenReader, getRoastPhaseDescription } from '../../utils/accessibility';
 
 const RoastTimer = ({
@@ -31,47 +29,8 @@ const RoastTimer = ({
 
   const dtrTarget = getDTRTarget(roastLevel);
 
-  // Setup push notifications
-  useEffect(() => {
-    // Request notification permissions
-    PushNotifications.requestPermissions().then(result => {
-      if (result.receive === 'granted') {
-        PushNotifications.register();
-      }
-    });
-
-    // Handle notification events
-    PushNotifications.addListener('registration', token => {
-      console.log('Push registration success, token: ' + token);
-      // Send token to backend for future use
-    });
-
-    PushNotifications.addListener('registrationError', err => {
-      console.error('Push registration error: ' + JSON.stringify(err));
-    });
-
-    PushNotifications.addListener('pushNotificationReceived', notification => {
-      console.log('Push notification received: ', notification);
-    });
-  }, []);
-
-  // Schedule milestone notifications
-  const scheduleMilestoneNotification = async (milestone, time) => {
-    try {
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            title: "Roast Milestone",
-            body: `${milestone} should occur around ${formatTime(time)}`,
-            id: Date.now(),
-            schedule: { at: new Date(Date.now() + time * 1000) }
-          }
-        ]
-      });
-    } catch (error) {
-      console.error('Failed to schedule notification:', error);
-    }
-  };
+  // Note: Push notifications removed for web compatibility
+  // Notifications are not needed for roast events in web browsers
 
   return (
     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 lg:gap-8">

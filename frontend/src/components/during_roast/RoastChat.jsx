@@ -16,6 +16,7 @@ const RoastChat = ({
   isOpen,
   onClose
 }) => {
+  // Debug logging completely disabled to prevent re-renders
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -77,17 +78,27 @@ const RoastChat = ({
 
   // Trigger AI call once data becomes available
   useEffect(() => {
-    if (isOpen && messages.length > 0 && formData.selectedBeanProfile && formData.selectedMachine) {
+        // Debug logs completely disabled
+    
+    if (isOpen && formData.selectedBeanProfile && formData.selectedMachine) {
       // Check if we already have AI recommendations (avoid duplicate calls)
       const hasAIRecommendation = messages.some(msg => 
         msg.content.includes('**FreshRoast Pre-Roast Strategy:**')
       );
       
       if (!hasAIRecommendation) {
+        // console.log('🚀 Triggering initial AI recommendation');
         getAIRecommendation('initial_setup');
       }
+    } else {
+      // console.log('❌ Missing data for AI call:', {
+      //   isOpen,
+      //   messagesLength: messages.length,
+      //   hasBeanProfile: !!formData.selectedBeanProfile,
+      //   hasSelectedMachine: !!formData.selectedMachine
+      // });
     }
-  }, [isOpen, formData.selectedBeanProfile, formData.selectedMachine]);
+  }, [isOpen, formData.selectedBeanProfile?.id, formData.selectedMachine?.id]);
 
   // Auto-trigger AI responses when events change (new events logged)
   useEffect(() => {
@@ -198,6 +209,16 @@ const RoastChat = ({
       // Debug: Log machine data
       console.log('Machine data for AI chat:', formData.selectedMachine);
       console.log('Form data for AI chat:', formData);
+      
+      // Ensure we have machine data - provide fallback if missing
+      if (!formData.selectedMachine) {
+        console.warn('⚠️ No machine data found, using fallback');
+        formData.selectedMachine = {
+          model: 'SR800',
+          has_extension: false,
+          name: 'FreshRoast SR800'
+        };
+      }
       
       const getBeanOriginGuidance = () => {
         if (!bean) return `🌍 **Bean Origin:** No bean profile selected`;
@@ -361,7 +382,7 @@ Ready to start? I'll provide specific guidance based on your actual roast progre
     };
 
     const welcomeMessage = {
-      id: Date.now(),
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type: 'ai',
       content: getStructuredWelcome(),
       timestamp: new Date()
@@ -370,23 +391,32 @@ Ready to start? I'll provide specific guidance based on your actual roast progre
     setMessages([welcomeMessage]);
     
     // Get initial AI recommendation only if we have the required data
+    // Initial chat setup complete
+    
     if (formData.selectedBeanProfile && formData.selectedMachine) {
+      console.log('🚀 Getting initial AI recommendation');
       try {
         await getAIRecommendation('initial_setup');
       } catch (error) {
         console.error('AI recommendation failed:', error);
         const errorMessage = {
-          id: Date.now(),
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           type: 'ai',
           content: "I'm having trouble connecting right now. Please start your roast and I'll help guide you through it!",
           timestamp: new Date()
         };
         setMessages(prev => [...prev, errorMessage]);
       }
+    } else {
+      console.log('❌ Missing data for initial AI call:', {
+        hasBeanProfile: !!formData.selectedBeanProfile,
+        hasSelectedMachine: !!formData.selectedMachine
+      });
     }
   };
 
   const getAIRecommendation = async (context = 'general') => {
+    console.log('🚨 getAIRecommendation called with context:', context);
     setIsLoading(true);
     
     // Add a timeout to prevent hanging (increased to 30 seconds)
@@ -451,7 +481,7 @@ Ready to start? I'll provide specific guidance based on your actual roast progre
       
       // Add AI response to messages
       const aiMessage = {
-        id: Date.now(),
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         type: 'ai',
         content: formatAIResponse(data, context),
         timestamp: new Date()
@@ -464,7 +494,7 @@ Ready to start? I'll provide specific guidance based on your actual roast progre
       
       // Provide a quick fallback response instead of error message
       const fallbackMessage = {
-        id: Date.now(),
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         type: 'ai',
         content: formatFallbackResponse(),
         timestamp: new Date()
@@ -496,13 +526,20 @@ Ready to start? I'll provide specific guidance based on your actual roast progre
       }));
       
       const roastProgress = {
+        roast_id: roastId,
         elapsed_time: elapsedTime,
         current_phase: currentPhase,
         recent_events: recentEventsWithData,
         bean_type: formData.selectedBeanProfile?.name || "Unknown",
         target_roast_level: formData.roastLevel || "City",
         environmental_conditions: environmentalConditions || {},
-        user_units: userProfile?.units || {}
+        user_units: userProfile?.units || {},
+        machine_info: {
+          model: (formData.selectedMachine?.model || formData.model || "SR800"),
+          has_extension: (formData.selectedMachine?.has_extension || formData.hasExtension || false)
+        },
+        machine_model: (formData.selectedMachine?.model || formData.model || "SR800"),
+        has_extension: (formData.selectedMachine?.has_extension || formData.hasExtension || false)
       };
       
       // Ensure eventData has timing information
@@ -546,19 +583,23 @@ Ready to start? I'll provide specific guidance based on your actual roast progre
         recommendations_count: data.recommendations?.length
       });
       
+        // TEMPORARILY DISABLE FILTERING TO DEBUG
+        // console.log('🔍 DEBUG: Full AI response data:', data);
+      
       // Only show a message if there's meaningful advice
-      if (data.advice && data.advice.trim() && data.has_meaningful_advice !== false) {
+      if (data.advice && data.advice.trim()) {
         const aiResponse = {
-          id: Date.now(),
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           type: 'ai',
           content: formatAutomaticResponse(data, eventData),
           timestamp: new Date()
         };
 
         setMessages(prev => [...prev, aiResponse]);
-        console.log('✅ AI message added to chat');
+        // console.log('✅ AI message added to chat');
       } else {
         console.log('🔇 AI had no meaningful advice, staying silent');
+        // Debug info removed to prevent re-renders
       }
 
     } catch (error) {
@@ -628,6 +669,10 @@ ${data.recommendations?.map(rec => `• ${rec}`).join('\n') || '• Continue mon
       } else if (formData.model) {
         machineName = formData.model;
         hasExtension = formData.hasExtension || formData.has_extension || false;
+      } else {
+        // Fallback if no machine data is available
+        machineName = 'FreshRoast SR800';
+        hasExtension = false;
       }
 
       return `🎯 **FreshRoast Pre-Roast Strategy:**
@@ -770,10 +815,11 @@ ${extensionNote}
   };
 
   const sendMessage = async () => {
+    console.log('🚨 sendMessage called with inputMessage:', inputMessage);
     if (!inputMessage.trim() || isLoading) return;
 
     const userMessage = {
-      id: Date.now(),
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type: 'user',
       content: inputMessage,
       timestamp: new Date()
@@ -789,17 +835,40 @@ ${extensionNote}
         throw new Error('No authentication token available');
       }
 
+      // Get current heat and fan from the latest event or form data
+      const latestEvent = events.length > 0 ? events[events.length - 1] : null;
+      const currentHeat = latestEvent?.heat_level || formData.heat || 0;
+      const currentFan = latestEvent?.fan_level || formData.fan || 0;
+      const currentTemp = latestEvent?.temp_f || null;
+
       // Prepare roast progress context
       const roastProgress = {
+        roast_id: roastId,
         elapsed_time: elapsedTime,
         current_phase: currentPhase,
         recent_events: events.slice(-5),
         bean_type: formData.selectedBeanProfile?.name || "Unknown",
         target_roast_level: formData.roastLevel || "City",
-        user_units: userProfile?.units || {}
+        user_units: userProfile?.units || {},
+        current_heat: currentHeat,
+        current_fan: currentFan,
+        current_temp: currentTemp,
+        machine_info: {
+          model: (formData.selectedMachine?.model || formData.model || "SR800"),
+          has_extension: (formData.selectedMachine?.has_extension || formData.hasExtension || false)
+        },
+        machine_model: (formData.selectedMachine?.model || formData.model || "SR800"),
+        has_extension: (formData.selectedMachine?.has_extension || formData.hasExtension || false)
       };
 
       // Call the LLM-powered during-roast advice endpoint
+      console.log('🚀 Sending user question to AI:', userMessage.content);
+      console.log('🚀 Roast progress data:', roastProgress);
+      console.log('🔧 DEBUG: current_heat being sent:', currentHeat);
+      console.log('🔧 DEBUG: current_fan being sent:', currentFan);
+      console.log('🔧 DEBUG: current_temp being sent:', currentTemp);
+      console.log('🚀 Making request to:', `${API_BASE}/api/rag/during-roast-advice`);
+      
       const response = await fetch(`${API_BASE}/api/rag/during-roast-advice`, {
         method: 'POST',
         headers: {
@@ -808,7 +877,7 @@ ${extensionNote}
         },
         body: JSON.stringify({
           roast_progress: roastProgress,
-          user_question: inputMessage
+          user_question: userMessage.content
         })
       });
 
@@ -817,9 +886,10 @@ ${extensionNote}
       }
 
       const data = await response.json();
+      console.log('🤖 AI Response received:', data);
       
       const aiResponse = {
-        id: Date.now(),
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         type: 'ai',
         content: data.advice,
         timestamp: new Date()
@@ -831,7 +901,7 @@ ${extensionNote}
       console.error('Error sending message:', error);
       
       const errorResponse = {
-        id: Date.now(),
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         type: 'ai',
         content: "I'm having trouble connecting to my AI brain right now. Please check your roast progress manually and adjust heat/fan as needed.",
         timestamp: new Date()
@@ -843,29 +913,109 @@ ${extensionNote}
     }
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
+
+  const sendQuickMessage = async (message) => {
+    const userMessage = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      type: 'user',
+      content: message,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
+
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      // Get current heat and fan from the latest event or form data
+      const latestEvent = events.length > 0 ? events[events.length - 1] : null;
+      const currentHeat = latestEvent?.heat_level || formData.heat || 0;
+      const currentFan = latestEvent?.fan_level || formData.fan || 0;
+      const currentTemp = latestEvent?.temp_f || null;
+
+      // Prepare roast progress context
+      const roastProgress = {
+        roast_id: roastId,
+        elapsed_time: elapsedTime,
+        current_phase: currentPhase,
+        recent_events: events.slice(-5),
+        bean_type: formData.selectedBeanProfile?.name || "Unknown",
+        target_roast_level: formData.roastLevel || "City",
+        user_units: userProfile?.units || {},
+        current_heat: currentHeat,
+        current_fan: currentFan,
+        current_temp: currentTemp,
+        machine_info: {
+          model: (formData.selectedMachine?.model || formData.model || "SR800"),
+          has_extension: (formData.selectedMachine?.has_extension || formData.hasExtension || false)
+        },
+        machine_model: (formData.selectedMachine?.model || formData.model || "SR800"),
+        has_extension: (formData.selectedMachine?.has_extension || formData.hasExtension || false)
+      };
+
+      const response = await fetch(`${API_BASE}/api/rag/during-roast-advice`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          roast_progress: roastProgress,
+          user_question: message
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      const aiResponse = {
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        type: 'ai',
+        content: data.advice,
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, aiResponse]);
+
+    } catch (error) {
+      console.error('Error sending quick message:', error);
+      
+      const errorResponse = {
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        type: 'ai',
+        content: "I'm having trouble connecting to my AI brain right now. Please check your roast progress manually and adjust heat/fan as needed.",
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorResponse]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const quickActions = [
-    { label: "How's my roast going?", action: () => getAIRecommendation('progress_check') },
-    { label: "Heat/Fan adjustment", action: () => getAIRecommendation('heat_fan') },
-    { label: "First crack timing", action: () => getAIRecommendation('first_crack') },
-    { label: "Color check", action: () => getAIRecommendation('color_development') }
+    { label: "How's my roast going?", action: () => sendQuickMessage("How's my roast going?") },
+    { label: "Heat/Fan adjustment", action: () => sendQuickMessage("What heat and fan adjustments should I make?") },
+    { label: "First crack timing", action: () => sendQuickMessage("When should I expect first crack?") },
+    { label: "Temperature check", action: () => sendQuickMessage("Is my temperature on track for this phase?") }
   ];
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed bottom-4 right-4 z-50 max-w-[calc(100vw-2rem)] sm:max-w-none">
       <div 
         ref={chatContainerRef}
         onClick={isMinimized ? () => setIsMinimized(false) : undefined}
         className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 transition-all duration-300 flex flex-col ${
-          isMinimized ? 'w-80 h-16 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750' : 'w-96 h-[500px]'
+          isMinimized ? 'w-80 h-16 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750' : 'w-96 h-[500px] max-w-[calc(100vw-2rem)] sm:max-w-none'
         }`}
       >
         {/* Header */}
@@ -929,7 +1079,7 @@ ${extensionNote}
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                     }`}
                   >
-                    <div className="whitespace-pre-wrap text-sm">
+                    <div className="whitespace-pre-wrap text-sm break-words overflow-wrap-anywhere">
                       {message.content}
                     </div>
                     <div className="text-xs opacity-70 mt-1">
@@ -962,7 +1112,7 @@ ${extensionNote}
                   <button
                     key={index}
                     onClick={action.action}
-                    className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors"
+                    className="px-3 py-1 text-xs text-white bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors"
                   >
                     {action.label}
                   </button>
@@ -976,14 +1126,27 @@ ${extensionNote}
                 <input
                   type="text"
                   value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  onChange={(e) => {
+                    console.log('📝 Input changed:', e.target.value);
+                    setInputMessage(e.target.value);
+                  }}
+                  onKeyPress={(e) => {
+                    console.log('🔑 Key pressed:', e.key, 'inputMessage:', inputMessage);
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      console.log('🚀 Enter key pressed, calling sendMessage');
+                      sendMessage();
+                    }
+                  }}
                   placeholder="Ask your AI copilot anything..."
                   className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   disabled={isLoading}
                 />
                 <button
-                  onClick={sendMessage}
+                  onClick={() => {
+                    console.log('🖱️ Send button clicked, inputMessage:', inputMessage);
+                    sendMessage();
+                  }}
                   disabled={!inputMessage.trim() || isLoading}
                   className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >

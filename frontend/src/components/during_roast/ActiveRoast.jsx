@@ -9,7 +9,7 @@ import EnvironmentalConditions from '../shared/EnvironmentalConditions';
 import GatedRoastChat from './GatedRoastChat';
 import { useDevMessageSeen } from '../../hooks/useDevMessageSeen';
 import { useAuth } from '../../contexts/AuthContext';
-import { LocalNotifications } from '@capacitor/local-notifications';
+// LocalNotifications removed for web compatibility
 import useShakeDetection from '../../hooks/useShakeDetection';
 import useDeviceSensors from '../../hooks/useDeviceSensors';
 
@@ -89,76 +89,8 @@ const ActiveRoast = ({
     }
   }, [isMobileDevice, roastId, roastEnded, lockOrientation, unlockOrientation]);
 
-  // Background processing for roast timers
-  useEffect(() => {
-    if (roastId && !roastEnded) {
-      // Set up background notifications for upcoming milestones
-      const scheduleBackgroundNotifications = async () => {
-        try {
-          // Calculate upcoming milestones based on typical roast times
-          const upcomingMilestones = calculateUpcomingMilestones();
-          
-          for (const milestone of upcomingMilestones) {
-            await LocalNotifications.schedule({
-              notifications: [
-                {
-                  title: "Roast Milestone",
-                  body: `${milestone.name} is approaching`,
-                  id: milestone.id,
-                  schedule: { at: new Date(Date.now() + milestone.timeRemaining * 1000) }
-                }
-              ]
-            });
-          }
-        } catch (error) {
-          console.error('Failed to schedule background notifications:', error);
-        }
-      };
-
-      // Schedule notifications when roast starts
-      scheduleBackgroundNotifications();
-
-      // Set up visibility change handler for background processing
-      const handleVisibilityChange = () => {
-        if (document.hidden && !roastEnded) {
-          // App is going to background, schedule notifications for milestones
-          scheduleBackgroundNotifications();
-        }
-      };
-
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-
-      return () => {
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-      };
-    }
-  }, [roastId, roastEnded, elapsedTime, milestonesMarked]);
-
-  // Calculate upcoming milestones for background notifications
-  const calculateUpcomingMilestones = () => {
-    const milestones = [];
-    const currentTime = elapsedTime;
-    
-    // Typical roast milestones (in seconds)
-    const typicalMilestones = {
-      'Dry End': 240, // 4 minutes
-      'First Crack': 480, // 8 minutes
-      'Second Crack': 720, // 12 minutes
-      'Development Complete': 600 // 10 minutes
-    };
-
-    for (const [name, time] of Object.entries(typicalMilestones)) {
-      if (time > currentTime && !milestonesMarked[name.toLowerCase().replace(' ', '')]) {
-        milestones.push({
-          id: `milestone_${name.replace(' ', '_')}`,
-          name,
-          timeRemaining: time - currentTime
-        });
-      }
-    }
-
-    return milestones;
-  };
+  // Note: Background notifications removed for web compatibility
+  // Notifications are not needed for roast events in web browsers
   
   const handleBackToDashboard = () => {
     setRoastId(null);
@@ -181,7 +113,7 @@ const ActiveRoast = ({
     <>
       {/* Active Roast - During */}
       {roastId && !roastEnded && (
-        <div className="space-y-6 mt-6 mx-2">
+        <div className="space-y-6 mt-8 mx-6 mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 relative">
             {/* Mobile: Simple X button in top right, Desktop: Full button */}
             <button
@@ -334,7 +266,7 @@ const ActiveRoast = ({
             title="Live Roast Curve"
             units={{ temperature: userProfile?.units?.temperature === 'celsius' ? 'C' : 'F', time: 'min' }}
             className="mb-6 mx-2"
-            showLegend={true}
+            showLegend={false}
             showGrid={true}
             showTooltip={true}
             enableZoom={false}

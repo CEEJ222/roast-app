@@ -454,6 +454,7 @@ function RoastAssistant() {
   useEffect(() => {
     if (userMachines.length > 0) {
       const firstMachine = userMachines[0];
+      console.log('🔧 DEBUG: Setting initial machine data:', firstMachine);
       setFormData(prev => ({
         ...prev,
         selectedMachineId: firstMachine.id,
@@ -1333,8 +1334,12 @@ function RoastAssistant() {
               selectedBeanProfile: data.bean_profile, // Use bean profile from backend response
               selectedMachine: selectedMachine // Construct machine object
             };
-            console.log('DEBUG: Setting formData with backend data');
-            console.log('DEBUG: Backend bean_profile:', data.bean_profile);
+            console.log('🔧 DEBUG: Setting formData with backend data');
+            console.log('🔧 DEBUG: Backend bean_profile:', data.bean_profile);
+            console.log('🔧 DEBUG: selectedMachine:', selectedMachine);
+            console.log('🔧 DEBUG: foundMachine:', foundMachine);
+            console.log('🔧 DEBUG: selectedMachineId:', selectedMachineId);
+            console.log('🔧 DEBUG: hasExtension:', hasExtension);
             return newData;
           });
           

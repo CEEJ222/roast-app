@@ -78,7 +78,21 @@ const RoastCurveGraph = ({
       baseData = processHistoricalData(limitedRoasts);
     }
     
-    return baseData;
+    // Ensure all data points have valid values to prevent negative widths
+    return baseData.map(point => ({
+      ...point,
+      time: Math.max(0, point.time || 0),
+      temperature: Math.max(0, point.temperature || 0),
+      ror: Math.max(-20, Math.min(80, point.ror || 0))
+    })).filter(point => {
+      // Additional validation to ensure no invalid data points
+      return point.time >= 0 && 
+             point.temperature >= 0 && 
+             !isNaN(point.time) && 
+             !isNaN(point.temperature) &&
+             isFinite(point.time) && 
+             isFinite(point.temperature);
+    });
   }, [data, mode, filteredRoasts]);
 
   // Calculate Rate of Rise (ROR) for live mode with proper smoothing
@@ -157,7 +171,7 @@ const RoastCurveGraph = ({
        
        return {
          ...point,
-         ror: smoothedRor
+         ror: Math.max(-20, Math.min(80, smoothedRor || 0))
        };
      });
   }, [chartData, showROR, mode]);
@@ -279,7 +293,7 @@ const RoastCurveGraph = ({
                 // Extract region from roast name (first word)
                 const region = roast.name ? roast.name.split(' ')[0] : 'Unknown';
                 return (
-                  <React.Fragment key={roast.id || index}>
+                  <React.Fragment key={`roast-${index}-${roast.id || 'no-id'}-${roast.created_at || 'no-date'}-${roast.name || 'no-name'}`}>
                     {/* Temperature line */}
                     <Line
                       yAxisId="temp"
@@ -465,7 +479,7 @@ const RoastCurveGraph = ({
                 // Extract region from roast name (first word)
                 const region = roast.name ? roast.name.split(' ')[0] : 'Unknown';
                 return (
-                  <React.Fragment key={roast.id || index}>
+                  <React.Fragment key={`roast-${index}-${roast.id || 'no-id'}-${roast.created_at || 'no-date'}-${roast.name || 'no-name'}`}>
                     {/* Temperature line */}
                     <Line
                       yAxisId="temp"
@@ -549,8 +563,8 @@ function processLiveData(events) {
   // Sort by time and remove duplicates
   const sortedEvents = tempEvents
     .map(event => ({
-      time: event.t_offset_sec / 60, // Convert to minutes
-      temperature: event.temp_f,
+      time: Math.max(0, event.t_offset_sec / 60), // Convert to minutes, ensure non-negative
+      temperature: Math.max(0, event.temp_f), // Ensure temperature is never negative
       timestamp: event.created_at,
       originalEvent: event
     }))
@@ -612,7 +626,7 @@ function processHistoricalData(roasts) {
   }
 
   const rawData = timePoints.map((time, timeIndex) => {
-    const dataPoint = { time };
+    const dataPoint = { time: Math.max(0, time) }; // Ensure time is never negative
     
     roasts.forEach((roast, index) => {
       // Find COOL event time for this roast
@@ -624,13 +638,14 @@ function processHistoricalData(roasts) {
       
       if (isBeforeCool) {
         const tempAtTime = getTemperatureAtTime(roast.events, time * 60);
-        dataPoint[`temp_${roast.id || index}`] = tempAtTime;
+        // Ensure temperature is never negative
+        dataPoint[`temp_${roast.id || index}`] = tempAtTime ? Math.max(0, tempAtTime) : null;
         
          // Calculate RoR for this roast at this time point
          if (timeIndex > 0) {
            const prevTime = timePoints[timeIndex - 1];
            const prevTemp = getTemperatureAtTime(roast.events, prevTime * 60);
-           const timeDiff = time - prevTime;
+           const timeDiff = Math.max(0.1, time - prevTime); // Ensure timeDiff is never 0 or negative
            
            let ror = 0;
            if (tempAtTime && prevTemp && timeDiff > 0) {
@@ -873,7 +888,7 @@ const CustomLegend = ({ roasts, roastLabels, getRoastColor }) => {
         };
         
         return (
-          <div key={roast.id || index} className="flex items-center gap-2">
+          <div key={`roast-${index}-${roast.id || 'no-id'}-${roast.created_at || 'no-date'}-${roast.name || 'no-name'}`} className="flex items-center gap-2">
             {/* Roast line symbol */}
             <div className="flex items-center gap-1">
               <div 

@@ -150,7 +150,7 @@ const GatedRoastChat = (props) => {
   if (!user) {
     return (
       <>
-        <div className="fixed bottom-4 right-4 z-50">
+        <div className="fixed bottom-4 right-4 z-50 max-w-[calc(100vw-2rem)] sm:max-w-none">
         <div 
           onClick={isMinimized ? (e) => {
             if (e.target === e.currentTarget) {
@@ -158,7 +158,7 @@ const GatedRoastChat = (props) => {
             }
           } : undefined}
           className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 transition-all duration-300 flex flex-col ${
-            isMinimized ? 'w-80 h-16 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750' : 'w-96 h-[500px]'
+            isMinimized ? 'w-80 h-16 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750' : 'w-96 h-[500px] max-w-[calc(100vw-2rem)] sm:max-w-none'
           }`}
         >
           {/* Header */}
@@ -254,7 +254,7 @@ const GatedRoastChat = (props) => {
   if (user && subscriptionStatus === 'free') {
     return (
       <>
-        <div className="fixed bottom-4 right-4 z-50">
+        <div className="fixed bottom-4 right-4 z-50 max-w-[calc(100vw-2rem)] sm:max-w-none">
         <div 
           onClick={isMinimized ? (e) => {
             if (e.target === e.currentTarget) {
@@ -262,7 +262,7 @@ const GatedRoastChat = (props) => {
             }
           } : undefined}
           className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 transition-all duration-300 flex flex-col ${
-            isMinimized ? 'w-80 h-16 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750' : 'w-96 h-[500px]'
+            isMinimized ? 'w-80 h-16 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750' : 'w-96 h-[500px] max-w-[calc(100vw-2rem)] sm:max-w-none'
           } ${hasSeenDevMessage ? 'opacity-75 border-gray-300' : ''}`}
         >
           {/* Header */}
