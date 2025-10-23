@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from .phase_awareness import PhaseDetector, MachineAwarePhaseDetector, PhaseAwarePromptBuilder, EnhancedSystemPrompt
 from .conversation_state import conversation_manager
 from .machine_profiles import FreshRoastMachineProfiles
+from .dtr_coaching import build_dtr_coaching_context, DTRTargets
 
 # Load environment variables
 load_dotenv()
@@ -288,17 +289,17 @@ class DeepSeekRoastingCopilot:
                 prompt = f"""
                 {phase_context}
                 
-                Current roast status:
-                - Elapsed time: {context.get('elapsed_time', 'Unknown')} minutes
+            Current roast status:
+            - Elapsed time: {context.get('elapsed_time', 'Unknown')} minutes
                 - Current phase: {current_phase.name}
-                - Recent events: {context.get('recent_events', 'None')}
-                - Bean type: {context.get('bean_type', 'Unknown')}
-                - Target roast level: {context.get('target_roast_level', 'Unknown')}
-                
-                User question: {user_question}
-                
-                Provide specific FreshRoast SR540/SR800 advice for this situation.
-                """
+            - Recent events: {context.get('recent_events', 'None')}
+            - Bean type: {context.get('bean_type', 'Unknown')}
+            - Target roast level: {context.get('target_roast_level', 'Unknown')}
+            
+            User question: {user_question}
+            
+            Provide specific FreshRoast SR540/SR800 advice for this situation.
+            """
             
             # Try primary model first, then fallback model
             models_to_try = [self.primary_model, self.fallback_model]
@@ -333,7 +334,7 @@ class DeepSeekRoastingCopilot:
                         self.conversation_manager.add_interaction(
                             user_id, roast_id, user_question, ai_response,
                             current_phase.name, "user_question"
-                        )
+                    )
                     
                     logger.info(f"✅ During-roast: Successfully got response from {model_name}")
                     return ai_response
@@ -1162,7 +1163,7 @@ class DeepSeekRoastingCopilot:
             ],
             "llm_advice": "LLM temporarily unavailable - using fallback recommendations"
         }
-    
+
     def collect_feedback(self, user_rating: int, ai_response: str, context: Dict[str, Any], 
                         user_id: Optional[str] = None, roast_id: Optional[str] = None) -> None:
         """Collect user feedback for learning system improvement"""
@@ -1329,6 +1330,170 @@ RESPOND IN A HELPFUL, SPECIFIC, ACTIONABLE WAY FOR THE {profile.display_name}:
             response = "⚠️ AI coaching temporarily unavailable. Please set OPENROUTER_API_KEY to enable AI features."
         
         return response
+    
+    async def get_dtr_aware_coaching(
+        self,
+        roast_progress: Dict[str, Any],
+        user_message: Optional[str] = None
+    ) -> str:
+        """Generate DTR-aware coaching with machine-specific guidance"""
+        
+        # Extract roast information
+        machine_info = roast_progress.get('machine_info', {})
+        machine_model = machine_info.get('model', 'SR800')
+        has_extension = machine_info.get('has_extension', False)
+        roast_level = roast_progress.get('roast_level', 'City')
+        
+        # Get current roast state
+        events = roast_progress.get('events', [])
+        current_heat = roast_progress.get('current_heat', 0)
+        current_fan = roast_progress.get('current_fan', 0)
+        current_temp = roast_progress.get('current_temp')
+        elapsed_time = roast_progress.get('elapsed_time', 0)
+        
+        # Find first crack time
+        first_crack_time = None
+        for event in events:
+            if event.get('event_type') == 'first_crack':
+                first_crack_time = event.get('t_offset_sec')
+                break
+        
+        # Get machine profile
+        try:
+            profile = self.machine_profiles.get_profile(machine_model, has_extension)
+        except ValueError:
+            profile = self.machine_profiles.get_profile('SR800', False)  # Fallback
+        
+        # Detect current phase
+        phase, _ = self.phase_detector.detect_phase_for_machine(
+            machine_model, has_extension, elapsed_time, current_temp
+        )
+        
+        # Get DTR-aware coaching using comprehensive context
+        dtr_coaching_context = build_dtr_coaching_context(
+            target_roast_level=roast_level,
+            current_phase=phase.name.lower().replace(' phase', ''),
+            first_crack_time_sec=first_crack_time,
+            elapsed_seconds=elapsed_time,
+            current_temp=current_temp or 0
+        )
+        
+        # Get machine-specific DTR advice if in development phase
+        machine_dtr_advice = None
+        if (phase.name.lower().replace(' phase', '') == 'development' and 
+            first_crack_time and current_temp):
+            
+            current_dtr = DTRTargets.calculate_dtr(int(first_crack_time), int(elapsed_time))
+            machine_dtr_advice = self.machine_profiles.get_dtr_aware_development_advice(
+                profile=profile,
+                roast_level=roast_level,
+                current_dtr=current_dtr,
+                current_heat=current_heat,
+                current_fan=current_fan,
+                current_temp=current_temp,
+                ror=roast_progress.get('ror', 0)
+            )
+        
+        # Build DTR-enhanced system prompt with comprehensive context
+        system_prompt = self._build_dtr_aware_system_prompt(
+            profile=profile,
+            roast_level=roast_level,
+            dtr_coaching_context=dtr_coaching_context,
+            machine_dtr_advice=machine_dtr_advice,
+            current_phase=phase.name.lower().replace(' phase', ''),
+            elapsed_time=elapsed_time,
+            current_temp=current_temp,
+            user_message=user_message,
+            has_extension=has_extension
+        )
+        
+        # Call LLM with DTR-aware prompt
+        if self.llm:
+            logger.info(f"🤖 Calling DTR-aware LLM with prompt length: {len(system_prompt)}")
+            response = await self.llm.get_completion(
+                system_prompt=system_prompt,
+                user_message=user_message,
+                temperature=0.7,
+                max_tokens=600
+            )
+            logger.info(f"🤖 DTR-aware LLM response length: {len(response)}")
+        else:
+            logger.error("❌ LLM not initialized")
+            response = "⚠️ AI coaching temporarily unavailable. Please set OPENROUTER_API_KEY to enable AI features."
+        
+        return response
+    
+    def _build_dtr_aware_system_prompt(
+        self,
+        profile,
+        roast_level: str,
+        dtr_coaching_context: str,
+        machine_dtr_advice: Optional[Dict[str, Any]],
+        current_phase: str,
+        elapsed_time: float,
+        current_temp: Optional[float],
+        user_message: Optional[str],
+        has_extension: bool = False
+    ) -> str:
+        """Build comprehensive DTR-aware system prompt"""
+        
+        # Use the comprehensive DTR coaching context
+        dtr_status_section = dtr_coaching_context
+        
+        # Machine-specific DTR advice
+        machine_advice_section = ""
+        if machine_dtr_advice:
+            machine_advice_section = f"""
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔧 {profile.display_name} DTR GUIDANCE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+{machine_dtr_advice.get('coaching_message', '')}
+
+Heat Recommendation: {machine_dtr_advice.get('heat_recommendation', {}).get('reasoning', 'N/A')}
+Fan Recommendation: {machine_dtr_advice.get('fan_recommendation', {}).get('reasoning', 'N/A')}
+"""
+        
+        # Current roast status
+        current_status = f"""
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 CURRENT ROAST STATUS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Phase: {current_phase.upper()}
+Elapsed Time: {elapsed_time:.1f} minutes
+Current Temperature: {current_temp:.0f}°F (if available)
+Roast Level Target: {roast_level}
+"""
+        
+        # Build complete prompt
+        system_prompt = f"""You are an EXPERT FreshRoast coffee roaster with DEEP knowledge of the {profile.display_name} and DTR (Development Time Ratio) optimization.
+
+{current_status}
+
+{dtr_status_section}
+
+{machine_advice_section}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 YOUR DTR-AWARE COACHING GUIDELINES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. PRIORITIZE DTR optimization for {roast_level} roast level
+2. BE SPECIFIC to the {profile.display_name} - reference machine characteristics
+3. Give EXACT heat/fan numbers (e.g., "Set heat to 6, fan to 8")
+4. Explain WHY - reference DTR targets and machine behavior
+5. Keep responses under 150 words unless urgent DTR issue
+6. Reference DTR status and urgency level
+7. If DTR is critical (too high/low), respond URGENTLY
+8. Remember: User has {profile.display_name} {'WITH' if has_extension else 'WITHOUT'} extension tube
+
+{f"USER QUESTION: {user_message}" if user_message else "Provide DTR-aware coaching based on current roast state."}
+
+RESPOND IN A HELPFUL, SPECIFIC, ACTIONABLE WAY FOR THE {profile.display_name} WITH DTR OPTIMIZATION:
+"""
+        
+        return system_prompt
     
     def _format_recommendations(
         self,

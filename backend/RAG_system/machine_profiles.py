@@ -1,6 +1,9 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple, Any
 from enum import Enum
+import logging
+
+logger = logging.getLogger(__name__)
 
 class RoastModel(Enum):
     SR540 = "SR540"
@@ -78,8 +81,14 @@ class FreshRoastMachineProfiles:
                     "recommended_fan": (6, 7),
                     "target_temp_range": (385, 425),
                     "development_time_pct": (15, 25),  # 15-25% of total roast
-                    "advice": "For City+, drop at 405-410°F. Reduce heat to 5-6 after first crack starts.",
-                    "common_mistake": "Letting temperature spike after first crack"
+                    "dtr_targets": {
+                        "City": (15, 18),
+                        "City+": (17, 20),
+                        "Full City": (20, 25),
+                        "Full City+": (22, 28)
+                    },
+                    "advice": "For City+, drop at 405-410°F. Reduce heat to 5-6 after first crack starts. Monitor DTR closely - SR540 responds fast to heat changes.",
+                    "common_mistake": "Letting temperature spike after first crack - watch DTR to prevent over-development"
                 },
                 
                 common_issues=[
@@ -136,8 +145,14 @@ class FreshRoastMachineProfiles:
                     "recommended_fan": (7, 8),
                     "target_temp_range": (385, 425),
                     "development_time_pct": (15, 25),
-                    "advice": "Extension tube gives more control. Can maintain heat at 6-7 through development.",
-                    "common_mistake": "Over-controlling - extension tube is forgiving, trust the process"
+                    "dtr_targets": {
+                        "City": (15, 18),
+                        "City+": (17, 20),
+                        "Full City": (20, 25),
+                        "Full City+": (22, 28)
+                    },
+                    "advice": "Extension tube gives more control. Can maintain heat at 6-7 through development. Monitor DTR - extension tube provides stable development environment.",
+                    "common_mistake": "Over-controlling - extension tube is forgiving, trust the process but watch DTR for proper development"
                 },
                 
                 common_issues=[
@@ -202,8 +217,14 @@ class FreshRoastMachineProfiles:
                     "recommended_fan": (6, 8),
                     "target_temp_range": (385, 430),
                     "development_time_pct": (15, 25),
-                    "advice": "Heat 4-5 often enough after first crack. SR800 maintains momentum well.",
-                    "common_mistake": "Not reducing heat enough - temperature spikes"
+                    "dtr_targets": {
+                        "City": (15, 18),
+                        "City+": (17, 20),
+                        "Full City": (20, 25),
+                        "Full City+": (22, 28)
+                    },
+                    "advice": "Heat 4-5 often enough after first crack. SR800 maintains momentum well. CRITICAL: Monitor DTR closely - SR800's power can cause rapid development.",
+                    "common_mistake": "Not reducing heat enough - temperature spikes and DTR can get too high quickly with SR800's power"
                 },
                 
                 common_issues=[
@@ -260,8 +281,14 @@ class FreshRoastMachineProfiles:
                     "recommended_fan": (7, 8),
                     "target_temp_range": (385, 430),
                     "development_time_pct": (15, 25),
-                    "advice": "SR800+ET gives best development control. Heat 5-6 is often perfect.",
-                    "common_mistake": "Over-adjusting - let the machine work, it's very stable"
+                    "dtr_targets": {
+                        "City": (15, 18),
+                        "City+": (17, 20),
+                        "Full City": (20, 25),
+                        "Full City+": (22, 28)
+                    },
+                    "advice": "SR800+ET gives best development control. Heat 5-6 is often perfect. Monitor DTR - this combination provides excellent development control.",
+                    "common_mistake": "Over-adjusting - let the machine work, it's very stable, but still monitor DTR for optimal development"
                 },
                 
                 common_issues=[
@@ -426,3 +453,170 @@ class FreshRoastMachineProfiles:
             recommendations["reasoning"] += f" | {profile.display_name} responds quickly, small adjustment recommended"
         
         return recommendations
+    
+    def get_dtr_aware_development_advice(
+        self,
+        profile: MachineCharacteristics,
+        roast_level: str,
+        current_dtr: float,
+        current_heat: int,
+        current_fan: int,
+        current_temp: float,
+        ror: float
+    ) -> Dict[str, Any]:
+        """Get DTR-aware development advice for specific machine and roast level"""
+        
+        # Get DTR targets for this roast level
+        phase_data = profile.development_phase
+        dtr_targets = phase_data.get("dtr_targets", {})
+        target_dtr_range = dtr_targets.get(roast_level, (20, 25))  # Default fallback
+        
+        # Assess current DTR status
+        min_dtr, max_dtr = target_dtr_range
+        if current_dtr < min_dtr:
+            dtr_status = "underdeveloped"
+            urgency = "high" if current_dtr < (min_dtr - 3) else "medium"
+        elif current_dtr > max_dtr:
+            dtr_status = "overdeveloped"
+            urgency = "high" if current_dtr > (max_dtr + 3) else "medium"
+        else:
+            dtr_status = "on_target"
+            urgency = "low"
+        
+        # Get machine-specific recommendations
+        recommendations = {
+            "dtr_status": dtr_status,
+            "urgency": urgency,
+            "current_dtr": current_dtr,
+            "target_dtr_range": target_dtr_range,
+            "heat_recommendation": self._get_dtr_heat_recommendation(profile, dtr_status, current_heat, current_temp, ror),
+            "fan_recommendation": self._get_dtr_fan_recommendation(profile, dtr_status, current_fan, current_temp, ror),
+            "coaching_message": self._get_dtr_coaching_message(profile, roast_level, dtr_status, current_dtr, target_dtr_range)
+        }
+        
+        return recommendations
+    
+    def _get_dtr_heat_recommendation(
+        self,
+        profile: MachineCharacteristics,
+        dtr_status: str,
+        current_heat: int,
+        current_temp: float,
+        ror: float
+    ) -> Dict[str, Any]:
+        """Get heat recommendation based on DTR status and machine characteristics"""
+        
+        phase_data = profile.development_phase
+        rec_heat_range = phase_data["recommended_heat"]
+        target_temp_range = phase_data["target_temp_range"]
+        
+        recommendation = {
+            "action": "maintain",
+            "change": 0,
+            "reasoning": "",
+            "urgency": "normal"
+        }
+        
+        if dtr_status == "underdeveloped":
+            # Need more development - increase heat if temp is low
+            if current_temp < target_temp_range[0]:
+                recommendation["action"] = "increase"
+                recommendation["change"] = 1 if "SR800" in profile.model.value else 2
+                recommendation["reasoning"] = f"DTR too low and temperature low ({current_temp:.0f}°F) - increase heat for more development"
+                recommendation["urgency"] = "high"
+            else:
+                recommendation["reasoning"] = f"DTR too low but temperature good - maintain heat and extend development time"
+                
+        elif dtr_status == "overdeveloped":
+            # Development going too fast - reduce heat
+            recommendation["action"] = "decrease"
+            recommendation["change"] = -2 if "SR800" in profile.model.value else -1
+            recommendation["reasoning"] = f"DTR too high - reduce heat to slow development"
+            recommendation["urgency"] = "high"
+            
+        else:  # on_target
+            # Maintain current settings but watch for changes
+            if ror > 15:
+                recommendation["action"] = "decrease"
+                recommendation["change"] = -1
+                recommendation["reasoning"] = f"DTR on target but ROR high ({ror:.1f}°F/min) - reduce heat slightly"
+            elif ror < 5:
+                recommendation["action"] = "increase"
+                recommendation["change"] = 1
+                recommendation["reasoning"] = f"DTR on target but ROR low ({ror:.1f}°F/min) - increase heat slightly"
+            else:
+                recommendation["reasoning"] = f"DTR on target - maintain current heat settings"
+        
+        return recommendation
+    
+    def _get_dtr_fan_recommendation(
+        self,
+        profile: MachineCharacteristics,
+        dtr_status: str,
+        current_fan: int,
+        current_temp: float,
+        ror: float
+    ) -> Dict[str, Any]:
+        """Get fan recommendation based on DTR status and machine characteristics"""
+        
+        phase_data = profile.development_phase
+        rec_fan_range = phase_data["recommended_fan"]
+        
+        recommendation = {
+            "action": "maintain",
+            "change": 0,
+            "reasoning": "",
+            "urgency": "normal"
+        }
+        
+        if dtr_status == "overdeveloped" and ror > 15:
+            # High ROR and overdeveloped - increase fan to cool
+            recommendation["action"] = "increase"
+            recommendation["change"] = 1
+            recommendation["reasoning"] = f"DTR too high and ROR high ({ror:.1f}°F/min) - increase fan to cool and slow development"
+            recommendation["urgency"] = "high"
+        elif current_fan < rec_fan_range[0]:
+            recommendation["action"] = "increase"
+            recommendation["change"] = 1
+            recommendation["reasoning"] = f"Fan at {current_fan} is below recommended range {rec_fan_range[0]}-{rec_fan_range[1]}"
+        elif current_fan > rec_fan_range[1]:
+            recommendation["action"] = "decrease"
+            recommendation["change"] = -1
+            recommendation["reasoning"] = f"Fan at {current_fan} is above recommended range {rec_fan_range[0]}-{rec_fan_range[1]}"
+        else:
+            recommendation["reasoning"] = f"Fan at {current_fan} is good for development phase"
+        
+        return recommendation
+    
+    def _get_dtr_coaching_message(
+        self,
+        profile: MachineCharacteristics,
+        roast_level: str,
+        dtr_status: str,
+        current_dtr: float,
+        target_dtr_range: Tuple[float, float]
+    ) -> str:
+        """Get coaching message based on DTR status and machine characteristics"""
+        
+        min_dtr, max_dtr = target_dtr_range
+        machine_name = profile.display_name
+        
+        if dtr_status == "underdeveloped":
+            deficit = min_dtr - current_dtr
+            if deficit > 5:
+                return f"🚨 CRITICAL: DTR {current_dtr:.1f}% is {deficit:.1f}% below target for {roast_level}. {machine_name} needs more development time. Increase heat if temperature is low, or extend development time."
+            elif deficit > 2:
+                return f"⚠️ DTR {current_dtr:.1f}% is {deficit:.1f}% below target. {machine_name} needs more development. Continue for 1-2 minutes, watching for color change."
+            else:
+                return f"✓ DTR {current_dtr:.1f}% is close to target. Continue development for 30-60 seconds with {machine_name}."
+                
+        elif dtr_status == "overdeveloped":
+            excess = current_dtr - max_dtr
+            if excess > 5:
+                return f"🚨 CRITICAL: DTR {current_dtr:.1f}% is {excess:.1f}% above target. {machine_name} roast is overdeveloped. Drop immediately to prevent over-roasting."
+            elif excess > 2:
+                return f"⚠️ DTR {current_dtr:.1f}% is {excess:.1f}% above target. {machine_name} development is getting long. Consider dropping soon."
+            else:
+                return f"✓ DTR {current_dtr:.1f}% is slightly above target but acceptable for {roast_level}. Monitor closely with {machine_name}."
+        else:
+            return f"🎯 Perfect! DTR {current_dtr:.1f}% is on target for {roast_level}. {machine_name} is performing well. Continue monitoring development."

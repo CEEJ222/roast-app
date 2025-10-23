@@ -14,6 +14,7 @@ import logging
 # Import functions inside endpoints to avoid circular imports
 from main import get_supabase, verify_jwt_token
 from .llm_integration import llm_copilot, machine_aware_llm
+from .dtr_knowledge import DTRTargets, dtr_coach
 
 def get_freshroast_recommendations(roast_level: str, environmental_conditions: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
@@ -280,8 +281,8 @@ async def during_roast_advice(
         machine_model = request.roast_progress.get('machine_model', 'SR800')
         has_extension = request.roast_progress.get('has_extension', False)
         
-        # Use machine-aware LLM for real-time advice
-        llm_response = await machine_aware_llm.get_machine_aware_coaching(
+        # Use DTR-aware LLM for real-time advice
+        llm_response = await machine_aware_llm.get_dtr_aware_coaching(
             roast_progress=request.roast_progress,
             user_message=request.user_question
         )
@@ -293,12 +294,77 @@ async def during_roast_advice(
             "enhanced_features": {
                 "phase_awareness": True,
                 "conversation_state": True,
-                "learning_system": True
+                "learning_system": True,
+                "dtr_optimization": True
             }
         }
         
     except Exception as e:
         logger.error(f"During-roast advice error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/rag/dtr-analysis")
+async def dtr_analysis(
+    roast_progress: Dict[str, Any],
+    user_id: str = Depends(verify_jwt_token)
+):
+    """
+    Get detailed DTR (Development Time Ratio) analysis and recommendations
+    """
+    try:
+        # Extract roast information
+        roast_level = roast_progress.get('roast_level', 'City')
+        events = roast_progress.get('events', [])
+        elapsed_time = roast_progress.get('elapsed_time', 0)
+        current_temp = roast_progress.get('current_temp')
+        
+        # Find first crack time
+        first_crack_time = None
+        for event in events:
+            if event.get('event_type') == 'first_crack':
+                first_crack_time = event.get('t_offset_sec')
+                break
+        
+        # Get DTR analysis
+        dtr_analysis = dtr_coach.get_dtr_aware_coaching(
+            roast_level=roast_level,
+            current_phase=roast_progress.get('current_phase', 'drying'),
+            elapsed_time=elapsed_time,
+            first_crack_time=first_crack_time,
+            current_temp=current_temp,
+            ror=roast_progress.get('ror', 0)
+        )
+        
+        # Get roast level profile
+        roast_profile = DTRTargets.get_profile(roast_level)
+        profile_info = None
+        if roast_profile:
+            profile_info = {
+                "name": roast_profile.name,
+                "dtr_target_range": roast_profile.dtr_target_range,
+                "drop_temp_range": roast_profile.drop_temp_range,
+                "development_time_range": roast_profile.development_time_range,
+                "total_time_range": roast_profile.total_time_range,
+                "characteristics": roast_profile.characteristics,
+                "flavor_profile": roast_profile.flavor_profile,
+                "visual_cues": roast_profile.visual_cues,
+                "common_mistakes": roast_profile.common_mistakes
+            }
+        
+        return {
+            "dtr_analysis": dtr_analysis,
+            "roast_profile": profile_info,
+            "current_dtr": dtr_analysis.get('current_dtr'),
+            "target_dtr_range": dtr_analysis.get('target_dtr_range'),
+            "dtr_status": dtr_analysis.get('dtr_status'),
+            "urgency": dtr_analysis.get('dtr_urgency'),
+            "coaching": dtr_analysis.get('coaching'),
+            "recommendations": dtr_analysis.get('recommendations', []),
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"DTR analysis error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/rag/automatic-event-response")
