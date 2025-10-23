@@ -1404,7 +1404,9 @@ RESPOND IN A HELPFUL, SPECIFIC, ACTIONABLE WAY FOR THE {profile.display_name}:
             elapsed_time=elapsed_time,
             current_temp=current_temp,
             user_message=user_message,
-            has_extension=has_extension
+            has_extension=has_extension,
+            current_heat=current_heat,
+            current_fan=current_fan
         )
         
         # Call LLM with DTR-aware prompt
@@ -1433,7 +1435,9 @@ RESPOND IN A HELPFUL, SPECIFIC, ACTIONABLE WAY FOR THE {profile.display_name}:
         elapsed_time: float,
         current_temp: Optional[float],
         user_message: Optional[str],
-        has_extension: bool = False
+        has_extension: bool = False,
+        current_heat: int = 0,
+        current_fan: int = 0
     ) -> str:
         """Build comprehensive DTR-aware system prompt"""
         
@@ -1463,6 +1467,7 @@ Fan Recommendation: {machine_dtr_advice.get('fan_recommendation', {}).get('reaso
 Phase: {current_phase.upper()}
 Elapsed Time: {elapsed_time:.1f} minutes
 Current Temperature: {current_temp:.0f}°F (if available)
+Current Settings: Heat {current_heat}, Fan {current_fan}
 Roast Level Target: {roast_level}
 """
         
