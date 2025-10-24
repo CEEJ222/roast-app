@@ -8,7 +8,7 @@ const API_BASE = import.meta.env.DEV
   : 'https://roast-backend-production-8883.up.railway.app';  // Production
 
 const HistoricalRoasts = ({ onClose }) => {
-  const { getAuthToken } = useAuth();
+  const { getAuthToken, userProfile } = useAuth();
   const [roasts, setRoasts] = useState([]);
   const [selectedRoasts, setSelectedRoasts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -280,7 +280,7 @@ const HistoricalRoasts = ({ onClose }) => {
                     showMilestones={false}
                     height={window.innerWidth < 768 ? 400 : 800}
                     title="Roast Curve Comparison"
-                    units={{ temperature: 'F', time: 'min' }}
+                    units={{ temperature: userProfile?.units?.temperature === 'celsius' ? 'C' : 'F', time: 'min' }}
                     showLegend={true}
                     showGrid={true}
                     showTooltip={true}

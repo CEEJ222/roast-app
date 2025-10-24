@@ -368,7 +368,7 @@ const DashboardHistoricalRoasts = ({
                   showMilestones={false}
                   height={500}
                   title="Historical Roast Comparison"
-                  units={{ temperature: 'F', time: 'min' }}
+                  units={{ temperature: userProfile?.units?.temperature === 'celsius' ? 'C' : 'F', time: 'min' }}
                   showLegend={true}
                   showGrid={true}
                   showTooltip={true}

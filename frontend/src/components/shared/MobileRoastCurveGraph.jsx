@@ -1,5 +1,13 @@
 import React, { useMemo, useState, useEffect } from 'react';
 
+// Temperature conversion utility
+function convertTemperature(tempF, targetUnit) {
+  if (targetUnit === 'C') {
+    return (tempF - 32) * 5/9;
+  }
+  return tempF; // Default to Fahrenheit
+}
+
 const MobileRoastCurveGraph = ({
   data = [],
   height = 300,
@@ -47,19 +55,24 @@ const MobileRoastCurveGraph = ({
       const dataPoint = { time };
       
       data.forEach((roast, index) => {
-        const tempAtTime = getTemperatureAtTime(roast.events, time * 60);
+        const tempAtTimeF = getTemperatureAtTime(roast.events, time * 60);
+        const tempAtTime = tempAtTimeF ? convertTemperature(tempAtTimeF, units.temperature) : null;
         dataPoint[`temp_${roast.id || index}`] = tempAtTime;
         
         // Calculate RoR for this roast at this time point
         if (timeIndex > 0) {
           const prevTime = timePoints[timeIndex - 1];
-          const prevTemp = getTemperatureAtTime(roast.events, prevTime * 60);
+          const prevTempF = getTemperatureAtTime(roast.events, prevTime * 60);
+          const prevTemp = prevTempF ? convertTemperature(prevTempF, units.temperature) : null;
           const timeDiff = time - prevTime;
           
           let ror = 0;
           if (tempAtTime && prevTemp && timeDiff > 0) {
             ror = (tempAtTime - prevTemp) / timeDiff;
-            ror = Math.max(-20, Math.min(80, ror));
+            // Apply bounds based on temperature unit
+            const maxRor = units.temperature === 'C' ? 44 : 80;
+            const minRor = units.temperature === 'C' ? -11 : -20;
+            ror = Math.max(minRor, Math.min(maxRor, ror));
           }
           
           dataPoint[`ror_${roast.id || index}`] = ror;
@@ -72,7 +85,7 @@ const MobileRoastCurveGraph = ({
     });
 
     return rawData;
-  }, [data]);
+  }, [data, units]);
 
   const colors = [
     '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', 

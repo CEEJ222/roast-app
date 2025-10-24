@@ -70,12 +70,12 @@ const RoastCurveGraph = ({
     // For live mode, we expect a single roast's events
     // For historical mode, we expect multiple roasts
     if (mode === 'live') {
-      baseData = processLiveData(data);
+      baseData = processLiveData(data, units);
     } else {
       // OPTIMIZATION: Limit number of roasts for better performance
       const maxRoasts = 8; // Limit to 8 roasts max for performance
       const limitedRoasts = filteredRoasts.slice(0, maxRoasts);
-      baseData = processHistoricalData(limitedRoasts);
+      baseData = processHistoricalData(limitedRoasts, units);
     }
     
     // Ensure all data points have valid values to prevent negative widths
@@ -83,7 +83,7 @@ const RoastCurveGraph = ({
       ...point,
       time: Math.max(0, point.time || 0),
       temperature: Math.max(0, point.temperature || 0),
-      ror: Math.max(-20, Math.min(80, point.ror || 0))
+      ror: Math.max(units.temperature === 'C' ? -11 : -20, Math.min(units.temperature === 'C' ? 44 : 80, point.ror || 0))
     })).filter(point => {
       // Additional validation to ensure no invalid data points
       return point.time >= 0 && 
@@ -93,7 +93,7 @@ const RoastCurveGraph = ({
              isFinite(point.time) && 
              isFinite(point.temperature);
     });
-  }, [data, mode, filteredRoasts]);
+  }, [data, mode, filteredRoasts, units]);
 
   // Calculate Rate of Rise (ROR) for live mode with proper smoothing
   const rorData = useMemo(() => {
@@ -235,7 +235,7 @@ const RoastCurveGraph = ({
               stroke="#6b7280"
               className="dark:stroke-dark-text-tertiary"
               tick={{ fontSize: isMobile ? 10 : 12 }}
-              domain={[200, 500]}
+              domain={units.temperature === 'C' ? [93, 260] : [200, 500]}
             />
             {(showROR && mode === 'live') || mode === 'historical' ? (
               <YAxis 
@@ -244,13 +244,13 @@ const RoastCurveGraph = ({
                 tickFormatter={(value) => `${value.toFixed(0)}°/m`}
                 stroke="#6b7280"
                 className="dark:stroke-dark-text-tertiary"
-                domain={[-20, 100]}
+                domain={units.temperature === 'C' ? [-11, 44] : [-20, 100]}
                 tick={{ fontSize: isMobile ? 10 : 12 }}
               />
             ) : null}
             {showTooltip && !isMobile && (
               <Tooltip
-                content={<CustomTooltip data={data} />}
+                content={<CustomTooltip data={data} units={units} />}
               />
             )}
             {showLegend && !isMobile && (
@@ -421,7 +421,7 @@ const RoastCurveGraph = ({
               stroke="#6b7280"
               className="dark:stroke-dark-text-tertiary"
               tick={{ fontSize: isMobile ? 10 : 12 }}
-              domain={[200, 500]}
+              domain={units.temperature === 'C' ? [93, 260] : [200, 500]}
             />
             {(showROR && mode === 'live') || mode === 'historical' ? (
               <YAxis 
@@ -430,13 +430,13 @@ const RoastCurveGraph = ({
                 tickFormatter={(value) => `${value.toFixed(0)}°/m`}
                 stroke="#6b7280"
                 className="dark:stroke-dark-text-tertiary"
-                domain={[-20, 100]}
+                domain={units.temperature === 'C' ? [-11, 44] : [-20, 100]}
                 tick={{ fontSize: isMobile ? 10 : 12 }}
               />
             ) : null}
             {showTooltip && !isMobile && (
               <Tooltip
-                content={<CustomTooltip data={data} />}
+                content={<CustomTooltip data={data} units={units} />}
               />
             )}
             {showLegend && !isMobile && (
@@ -540,7 +540,15 @@ const RoastCurveGraph = ({
 };
 
 // Helper functions
-function processLiveData(events) {
+// Temperature conversion utility
+function convertTemperature(tempF, targetUnit) {
+  if (targetUnit === 'C') {
+    return (tempF - 32) * 5/9;
+  }
+  return tempF; // Default to Fahrenheit
+}
+
+function processLiveData(events, units = { temperature: 'F' }) {
   // Find COOL event time to determine when roast ended
   const coolEvent = events.find(event => event.kind === 'COOL');
   const coolTimeInSeconds = coolEvent ? coolEvent.t_offset_sec : null;
@@ -564,7 +572,7 @@ function processLiveData(events) {
   const sortedEvents = tempEvents
     .map(event => ({
       time: Math.max(0, event.t_offset_sec / 60), // Convert to minutes, ensure non-negative
-      temperature: Math.max(0, event.temp_f), // Ensure temperature is never negative
+      temperature: Math.max(0, convertTemperature(event.temp_f, units.temperature)), // Convert temperature to user's preferred unit
       timestamp: event.created_at,
       originalEvent: event
     }))
@@ -585,7 +593,7 @@ function processLiveData(events) {
   return Array.from(timeMap.values()).sort((a, b) => a.time - b.time);
 }
 
-function processHistoricalData(roasts) {
+function processHistoricalData(roasts, units = { temperature: 'F' }) {
   // For historical mode, we need to process multiple roasts
   if (!roasts || roasts.length === 0) return [];
   
@@ -637,22 +645,26 @@ function processHistoricalData(roasts) {
       const isBeforeCool = !coolTimeInMinutes || time <= coolTimeInMinutes;
       
       if (isBeforeCool) {
-        const tempAtTime = getTemperatureAtTime(roast.events, time * 60);
+        const tempAtTimeF = getTemperatureAtTime(roast.events, time * 60);
+        const tempAtTime = tempAtTimeF ? convertTemperature(tempAtTimeF, units.temperature) : null;
         // Ensure temperature is never negative
         dataPoint[`temp_${roast.id || index}`] = tempAtTime ? Math.max(0, tempAtTime) : null;
         
          // Calculate RoR for this roast at this time point
          if (timeIndex > 0) {
            const prevTime = timePoints[timeIndex - 1];
-           const prevTemp = getTemperatureAtTime(roast.events, prevTime * 60);
+           const prevTempF = getTemperatureAtTime(roast.events, prevTime * 60);
+           const prevTemp = prevTempF ? convertTemperature(prevTempF, units.temperature) : null;
            const timeDiff = Math.max(0.1, time - prevTime); // Ensure timeDiff is never 0 or negative
            
            let ror = 0;
            if (tempAtTime && prevTemp && timeDiff > 0) {
              ror = (tempAtTime - prevTemp) / timeDiff;
              
-             // Apply basic bounds
-             ror = Math.max(-20, Math.min(80, ror));
+             // Apply basic bounds (adjust bounds for Celsius if needed)
+             const maxRor = units.temperature === 'C' ? 44 : 80; // 80°F/min = ~44°C/min
+             const minRor = units.temperature === 'C' ? -11 : -20; // -20°F/min = ~-11°C/min
+             ror = Math.max(minRor, Math.min(maxRor, ror));
            }
            
            dataPoint[`ror_${roast.id || index}`] = ror;
@@ -767,7 +779,7 @@ function getTemperatureAtMilestoneTime(events, milestoneTimeInSeconds) {
 }
 
 // Custom tooltip component
-const CustomTooltip = ({ active, payload, label, data }) => {
+const CustomTooltip = ({ active, payload, label, data, units = { temperature: 'F' } }) => {
   if (active && payload && payload.length) {
     // Use the actual time value from the payload data instead of the label
     const timeMinutes = payload[0]?.payload?.time || label;
@@ -793,11 +805,15 @@ const CustomTooltip = ({ active, payload, label, data }) => {
         {milestoneEvents.length > 0 && (
           <div className="mt-2 pt-2 border-t border-gray-200 dark:border-dark-border-primary">
             <p className="font-medium text-gray-700 dark:text-dark-text-secondary">Milestones:</p>
-            {milestoneEvents.map((event, index) => (
-              <p key={index} className="text-sm" style={{ color: getMilestoneColor(event.kind) }}>
-                {getMilestoneLabel(event.kind)} {event.temp_f ? `at ${event.temp_f}°F` : ''}
-              </p>
-            ))}
+            {milestoneEvents.map((event, index) => {
+              const convertedTemp = event.temp_f ? convertTemperature(event.temp_f, units.temperature) : null;
+              const tempUnit = units.temperature === 'C' ? '°C' : '°F';
+              return (
+                <p key={index} className="text-sm" style={{ color: getMilestoneColor(event.kind) }}>
+                  {getMilestoneLabel(event.kind)} {convertedTemp ? `at ${convertedTemp.toFixed(1)}${tempUnit}` : ''}
+                </p>
+              );
+            })}
           </div>
         )}
       </div>
