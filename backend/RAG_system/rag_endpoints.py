@@ -313,7 +313,7 @@ async def dtr_analysis(
     """
     try:
         # Extract roast information
-        roast_level = roast_progress.get('roast_level', 'City')
+        roast_level = roast_progress.get('roast_level') or roast_progress.get('target_roast_level', 'City')
         events = roast_progress.get('events', [])
         elapsed_time = roast_progress.get('elapsed_time', 0)
         current_temp = roast_progress.get('current_temp')

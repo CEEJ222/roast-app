@@ -1342,7 +1342,7 @@ RESPOND IN A HELPFUL, SPECIFIC, ACTIONABLE WAY FOR THE {profile.display_name}:
         machine_info = roast_progress.get('machine_info', {})
         machine_model = machine_info.get('model', 'SR800')
         has_extension = machine_info.get('has_extension', False)
-        roast_level = roast_progress.get('roast_level', 'City')
+        roast_level = roast_progress.get('roast_level') or roast_progress.get('target_roast_level', 'City')
         
         # Get current roast state
         events = roast_progress.get('events', [])
