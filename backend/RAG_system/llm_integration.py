@@ -1132,7 +1132,7 @@ class DeepSeekRoastingCopilot:
             recommendations = [
                 f"Start with Heat {heat_setting}, Fan {fan_setting}",
                 "Monitor roast progression and adjust as needed",
-                "Listen for first crack around 5-7 minutes",
+                "Listen for first crack around 6-7 minutes (end of Maillard phase)",
                 "Watch for even bean movement and color development"
             ]
         
@@ -1185,7 +1185,7 @@ class DeepSeekRoastingCopilot:
                 f"Start with Heat {config['heat']}, Fan {config['fan']}",
                 "AI guidance temporarily unavailable - using fallback recommendations",
                 "Monitor roast progression and adjust as needed",
-                "Listen for first crack around 5-7 minutes",
+                "Listen for first crack around 6-7 minutes (end of Maillard phase)",
                 "Watch for even bean movement and color development"
             ],
             "llm_advice": "LLM temporarily unavailable - using fallback recommendations"

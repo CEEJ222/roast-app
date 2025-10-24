@@ -317,7 +317,7 @@ CONTINUE:
         context += f"""
 ⏳ WAITING FOR FIRST CRACK
 
-Expected first crack: 6-9 minutes (FreshRoast timing)
+Expected first crack: 6-7 minutes (end of Maillard phase, FreshRoast timing)
 Once first crack occurs, development phase begins.
 
 TARGET DEVELOPMENT TIME: {roast_profile.development_time_range[0]}-{roast_profile.development_time_range[1]} minutes
