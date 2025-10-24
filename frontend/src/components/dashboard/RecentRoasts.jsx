@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DashboardHistoricalRoasts from './DashboardHistoricalRoasts';
+import { useWalkthrough } from '../../contexts/WalkthroughContext';
 
 const RecentRoasts = ({ 
   historicalRoasts, 
@@ -11,8 +12,11 @@ const RecentRoasts = ({
   roastId,
   onDataChange = null,
   setShowStartRoastWizard,
-  setShowHistoricalRoasts
+  setShowHistoricalRoasts,
+  setShowDemoRoastDetail,
+  setSelectedDemoRoast
 }) => {
+  const { isWalkthrough } = useWalkthrough();
   const [showFullHistoricalRoasts, setShowFullHistoricalRoasts] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -69,6 +73,17 @@ const RecentRoasts = ({
     return 'N/A';
   };
 
+  const handleRoastClick = (roast) => {
+    if (isWalkthrough && roast.is_demo) {
+      // Demo roasts are display-only, no detail pages
+      console.log('Demo roast clicked - no detail page');
+      return;
+    } else {
+      // For real roasts, you could add navigation to roast detail page here
+      console.log('Real roast clicked:', roast.id);
+    }
+  };
+
   return (
     <div className="bg-transparent">
       <div className="px-4 sm:px-6 py-4">
@@ -110,6 +125,8 @@ const RecentRoasts = ({
             currentActiveRoastId={roastId}
             hideCompareButton={true}
             onDataChange={onDataChange}
+            setShowDemoRoastDetail={setShowDemoRoastDetail}
+            setSelectedDemoRoast={setSelectedDemoRoast}
           />
         </div>
       ) : (
@@ -127,23 +144,34 @@ const RecentRoasts = ({
           ) : (
             <div className="space-y-3 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0">
               {(isMobile && showFullHistoricalRoasts ? historicalRoasts : historicalRoasts.slice(0, 5)).map((roast) => (
-                <div 
+                <div
                   key={roast.id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary cursor-pointer"
-                  onClick={() => onRoastResume(roast)}
+                  onClick={() => handleRoastClick(roast)}
+                  className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 rounded-lg border dark:border-dark-border-primary ${
+                    isWalkthrough && roast.demo_highlight 
+                      ? 'bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-2 border-yellow-400 dark:border-yellow-300 shadow-lg animate-pulse' 
+                      : 'bg-gray-50 dark:bg-dark-bg-quaternary cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors'
+                  }`}
                 >
                   <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
                     <div className="w-10 h-10 bg-amber-100 dark:bg-dark-bg-tertiary rounded-full flex items-center justify-center border dark:border-dark-border-primary flex-shrink-0">
                       <span className="text-amber-600 dark:text-dark-accent-warning text-lg">🔥</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 dark:text-dark-text-primary text-sm sm:text-base break-words">
-                        {roast.bean_profile_name || 
-                         (roast.coffee_region && roast.coffee_type 
-                          ? `${roast.coffee_region} ${roast.coffee_type}` 
-                          : roast.coffee_type || roast.coffee_region || 'Unknown Coffee')
-                        }
-                      </p>
+                      <div className="flex items-center space-x-2">
+                        <p className="font-medium text-gray-900 dark:text-dark-text-primary text-sm sm:text-base break-words">
+                          {roast.bean_profile_name || 
+                           (roast.coffee_region && roast.coffee_type 
+                            ? `${roast.coffee_region} ${roast.coffee_type}` 
+                            : roast.coffee_type || roast.coffee_region || 'Unknown Coffee')
+                          }
+                        </p>
+                        {isWalkthrough && roast.demo_highlight && (
+                          <span className="px-2 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full shadow-lg animate-bounce">
+                            DEMO
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary mt-1">
                         {formatDate(roast.created_at)} • {formatDuration(roast)}
                       </p>

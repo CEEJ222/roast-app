@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useWalkthrough } from '../../contexts/WalkthroughContext';
 import RoastCurveGraph from '../shared/RoastCurveGraph';
 import StandardTable from '../shared/StandardTable';
 
@@ -15,9 +16,12 @@ const DashboardHistoricalRoasts = ({
   onRoastResume,
   currentActiveRoastId,
   hideCompareButton = false,
-  onDataChange = null // Callback to refresh parent data
+  onDataChange = null, // Callback to refresh parent data
+  setShowDemoRoastDetail,
+  setSelectedDemoRoast
 }) => {
   const { getAuthToken } = useAuth();
+  const { isWalkthrough } = useWalkthrough();
   const [roasts, setRoasts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showGraph, setShowGraph] = useState(false);
@@ -399,7 +403,16 @@ const DashboardHistoricalRoasts = ({
         <StandardTable
             data={roasts}
             columns={columns}
-            onRowClick={(roast) => toggleRoastSelection(roast.id)}
+            onRowClick={(roast) => {
+              if (isWalkthrough && roast.is_demo) {
+                // Demo roasts are display-only, no detail pages
+                console.log('Demo roast clicked - no detail page');
+                return;
+              } else {
+                // Normal roast selection
+                toggleRoastSelection(roast.id);
+              }
+            }}
             onDelete={(roast) => setShowDeleteConfirm(roast.id)}
             onBulkDelete={(roastIds) => {
               setSelectedRoasts(roastIds);

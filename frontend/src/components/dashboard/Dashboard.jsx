@@ -22,6 +22,10 @@ const Dashboard = ({
   onDataChange = null,
   showStartRoastWizard = false,
   showRoastDetail = false,
+  setShowDemoRoastDetail,
+  setSelectedDemoRoast,
+  setShowDemoBeanProfileDetail,
+  setSelectedDemoBeanProfile,
 }) => {
   const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const [triggerBeanProfileCreate, setTriggerBeanProfileCreate] = useState(false);
@@ -151,11 +155,13 @@ const Dashboard = ({
                                   (roast.coffee_region && roast.coffee_type 
                                    ? `${roast.coffee_region} ${roast.coffee_type}` 
                                    : roast.coffee_type || roast.coffee_region || 'Unknown Coffee');
+                const events = recentRoastDetails[roast.id] || [];
+                console.log(`📊 Dashboard: Roast ${roast.id} has ${events.length} events`, events.slice(0, 3));
                 return {
                   id: roast.id,
                   name: coffeeName,
                   fullName: `${coffeeName} - ${new Date(roast.created_at).toLocaleDateString()}`,
-                  events: recentRoastDetails[roast.id] || [],
+                  events: events,
                   created_at: roast.created_at,
                   coffee_region: roast.coffee_region
                 };
@@ -193,6 +199,8 @@ const Dashboard = ({
         onDataChange={onDataChange}
         setShowStartRoastWizard={setShowStartRoastWizard}
         setShowHistoricalRoasts={setShowHistoricalRoasts}
+        setShowDemoRoastDetail={setShowDemoRoastDetail}
+        setSelectedDemoRoast={setSelectedDemoRoast}
       />
 
       {/* Bean Profiles */}
@@ -204,6 +212,8 @@ const Dashboard = ({
           onTriggerReset={() => setTriggerBeanProfileCreate(false)}
           onProfileStateChange={handleBeanProfileStateChange}
           showRoastDetail={showRoastDetail}
+          setShowDemoBeanProfileDetail={setShowDemoBeanProfileDetail}
+          setSelectedDemoBeanProfile={setSelectedDemoBeanProfile}
         />
       </div>
 

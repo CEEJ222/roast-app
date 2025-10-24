@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { WalkthroughProvider, useWalkthrough } from './contexts/WalkthroughContext';
 import LoginForm from './components/user_profile/LoginForm';
 import UserProfile from './components/user_profile/UserProfile';
 import SetupWizard from './components/wizards/SetupWizard';
@@ -25,6 +26,9 @@ import ActiveRoast from './components/during_roast/ActiveRoast';
 import Dashboard from './components/dashboard/Dashboard';
 import AppLayout from './components/layout/AppLayout';
 import AdminDashboard from './components/admin/AdminDashboard';
+import WalkthroughPrompt from './components/walkthrough/WalkthroughPrompt';
+import WalkthroughBanner from './components/walkthrough/WalkthroughBanner';
+// Demo detail components removed - no detail pages for demo data
 import { Analytics } from '@vercel/analytics/react';
 
 const API_BASE = import.meta.env.DEV 
@@ -35,6 +39,7 @@ const API_BASE = import.meta.env.DEV
 
 function RoastAssistant() {
   const { user, getAuthToken, loading: authLoading } = useAuth();
+  const { isWalkthrough, getMockData } = useWalkthrough();
   const [userProfile, setUserProfile] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [userMachines, setUserMachines] = useState([]);
@@ -63,6 +68,10 @@ function RoastAssistant() {
   const [showRoastDetail, setShowRoastDetail] = useState(false);
   const [selectedRoast, setSelectedRoast] = useState(null);
   const [showStartRoastWizard, setShowStartRoastWizard] = useState(false);
+  const [showDemoRoastDetail, setShowDemoRoastDetail] = useState(false);
+  const [showDemoBeanProfileDetail, setShowDemoBeanProfileDetail] = useState(false);
+  const [selectedDemoRoast, setSelectedDemoRoast] = useState(null);
+  const [selectedDemoBeanProfile, setSelectedDemoBeanProfile] = useState(null);
   const [roastSetupStep, setRoastSetupStep] = useState('machine'); // 'machine', 'coffee', 'review'
   const [pendingMilestone, setPendingMilestone] = useState(null);
   const [historicalRoasts, setHistoricalRoasts] = useState([]);
@@ -216,6 +225,16 @@ function RoastAssistant() {
     
     setLoadingHistoricalRoasts(true);
     try {
+      // Check if we're in walkthrough mode
+      if (isWalkthrough) {
+        const mockData = getMockData('/roasts?limit=100');
+        if (mockData) {
+          setHistoricalRoasts(mockData);
+          setLoadingHistoricalRoasts(false);
+          return;
+        }
+      }
+
       const token = await getAuthToken();
       const response = await fetch(`${API_BASE}/roasts?limit=100`, {
         headers: {
@@ -244,6 +263,19 @@ function RoastAssistant() {
     }
 
     try {
+      // Check if we're in walkthrough mode
+      if (isWalkthrough) {
+        const detailsMap = {};
+        allRoasts.forEach(roast => {
+          const mockEvents = getMockData(`/roasts/${roast.id}/events`);
+          if (mockEvents) {
+            detailsMap[roast.id] = mockEvents;
+          }
+        });
+        setRecentRoastDetails(detailsMap);
+        return;
+      }
+
       const token = await getAuthToken();
       
       // Load details for each roast
@@ -1082,31 +1114,55 @@ function RoastAssistant() {
 
   return (
     <div className="min-h-screen bg-light-gradient-blue dark:bg-dark-gradient">
+      {/* Walkthrough Banner */}
+      <WalkthroughBanner />
+      
+      {/* Walkthrough Prompt */}
+      <WalkthroughPrompt />
+      
       {/* Header - Full width, no border radius */}
-      <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant px-3 sm:px-6 py-2 sm:py-4 text-white">
-        <div className="flex justify-between items-center">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl sm:text-3xl font-bold truncate">
-              {isMobile ? "🔥 ☕" : "🔥 Roast Buddy ☕"}
-            </h1>
-            <p className="opacity-90 text-xs sm:text-base hidden sm:block">Professional roast logging and analysis</p>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-4 ml-3">
-            {user?.user_metadata?.role === 'admin' && (
-              <button
-                onClick={() => setShowAdminPage(true)}
-                className="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm"
-                title="Admin Panel"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-                <span className="hidden sm:inline">Admin</span>
-              </button>
-            )}
-            {!isMobile && <UserProfile />}
+      <div className="relative bg-gradient-to-r from-indigo-700 via-purple-600 to-purple-700 dark:bg-accent-gradient-vibrant text-white shadow-lg">
+        <div className="px-3 sm:px-6 py-2 sm:py-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between">
+              {/* Left side - App info */}
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                <div className="flex items-center space-x-2">
+                  <span className="text-lg">🔥</span>
+                  <span className="text-lg">☕</span>
+                </div>
+                <div className="min-w-0">
+                  <h1 className="font-bold text-xl sm:text-3xl truncate">
+                    {isMobile ? "Roast Buddy" : "Roast Buddy"}
+                  </h1>
+                  <p className="opacity-90 text-xs sm:text-base hidden sm:block truncate">
+                    Professional roast logging and analysis
+                  </p>
+                </div>
+              </div>
+              
+              {/* Right side - Actions */}
+              <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 ml-4">
+                {user?.user_metadata?.role === 'admin' && (
+                  <button
+                    onClick={() => setShowAdminPage(true)}
+                    className="bg-white bg-opacity-25 hover:bg-opacity-35 backdrop-blur-sm border border-white border-opacity-30 px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium shadow-sm hover:shadow-md"
+                    title="Admin Panel"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    <span className="hidden sm:inline">Admin</span>
+                  </button>
+                )}
+                {!isMobile && <UserProfile />}
+              </div>
+            </div>
           </div>
         </div>
+        
+        {/* Subtle bottom border for better separation */}
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-white bg-opacity-20"></div>
       </div>
 
       <div className="">
@@ -1359,7 +1415,13 @@ function RoastAssistant() {
         setLoading={setLoading}
         setShowProfilePage={setShowProfilePage}
         refreshUserProfile={refreshUserProfile}
+        setShowDemoRoastDetail={setShowDemoRoastDetail}
+        setSelectedDemoRoast={setSelectedDemoRoast}
+        setShowDemoBeanProfileDetail={setShowDemoBeanProfileDetail}
+        setSelectedDemoBeanProfile={setSelectedDemoBeanProfile}
       />
+      
+      {/* Demo detail components removed - no detail pages for demo data */}
       </div>
     </div>
   );
@@ -1369,8 +1431,10 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <RoastAssistant />
-        <Analytics />
+        <WalkthroughProvider>
+          <RoastAssistant />
+          <Analytics />
+        </WalkthroughProvider>
       </AuthProvider>
     </ThemeProvider>
   );

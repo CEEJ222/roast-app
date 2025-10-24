@@ -4,14 +4,16 @@ import StandardTable from '../shared/StandardTable';
 import FloatingActionButton from '../shared/FloatingActionButton';
 import BottomSheetModal from '../shared/BottomSheetModal';
 import MobileModal from '../shared/MobileModal';
+import { useWalkthrough } from '../../contexts/WalkthroughContext';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'
   : 'https://roast-backend-production-8883.up.railway.app';
 
-const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = false, onTriggerReset = null, onProfileStateChange = null, showRoastDetail = false }) => {
+const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = false, onTriggerReset = null, onProfileStateChange = null, showRoastDetail = false, setShowDemoBeanProfileDetail, setSelectedDemoBeanProfile }) => {
   const [beanProfiles, setBeanProfiles] = useState([]);
   const [loading, setLoading] = useState(false);
+  const { isWalkthrough, getMockData } = useWalkthrough();
   const [showAll, setShowAll] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -29,6 +31,16 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
   const loadBeanProfiles = async () => {
     setLoading(true);
     try {
+      // Use mock data if in walkthrough mode
+      if (isWalkthrough) {
+        const mockData = getMockData('/bean-profiles');
+        if (mockData) {
+          setBeanProfiles(mockData);
+          return;
+        }
+      }
+
+      // Otherwise, fetch real data
       const token = await getAuthToken();
       const response = await fetch(`${API_BASE}/bean-profiles`, {
         headers: {
@@ -52,6 +64,11 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
   useEffect(() => {
     loadBeanProfiles();
   }, []);
+
+  // Reload data when walkthrough mode changes
+  useEffect(() => {
+    loadBeanProfiles();
+  }, [isWalkthrough]);
 
   // Mobile detection
   useEffect(() => {
@@ -92,8 +109,15 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
   }, [selectedProfile, showProfileModal, showEditForm, showCreateForm]);
 
   const handleViewProfile = (profile) => {
-    setSelectedProfile(profile);
-    setShowProfileModal(true);
+    if (isWalkthrough && profile.is_demo) {
+      // Demo profiles are display-only, no detail pages
+      console.log('Demo profile clicked - no detail page');
+      return;
+    } else {
+      // Normal profile view
+      setSelectedProfile(profile);
+      setShowProfileModal(true);
+    }
   };
 
   const handleCloseProfile = () => {
@@ -450,7 +474,11 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
                   <div 
                     key={profile.id}
                     onClick={() => handleViewProfile(profile)}
-                    className="flex flex-col p-4 sm:p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary cursor-pointer"
+                    className={`flex flex-col p-4 sm:p-4 rounded-lg border dark:border-dark-border-primary ${
+                      isWalkthrough && profile.demo_highlight 
+                        ? 'bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-2 border-yellow-400 dark:border-yellow-300 shadow-lg animate-pulse' 
+                        : 'bg-gray-50 dark:bg-dark-bg-quaternary hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors cursor-pointer'
+                    }`}
                   >
                     <div className="flex items-start space-x-3 sm:space-x-4">
                       <div className="w-10 h-10 bg-indigo-100 dark:bg-dark-bg-tertiary rounded-full flex items-center justify-center border dark:border-dark-border-primary flex-shrink-0">
@@ -459,9 +487,16 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 dark:text-dark-text-primary text-sm sm:text-base break-words">
-                          {profile.name}
-                        </p>
+                        <div className="flex items-center space-x-2">
+                          <p className="font-medium text-gray-900 dark:text-dark-text-primary text-sm sm:text-base break-words">
+                            {profile.name}
+                          </p>
+                          {isWalkthrough && profile.demo_highlight && (
+                            <span className="px-2 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full shadow-lg animate-bounce">
+                              DEMO
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary mt-1">
                           {profile.origin && (
                             <div className="break-words flex items-center">
@@ -562,7 +597,11 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
                   <div 
                     key={profile.id}
                     onClick={() => handleViewProfile(profile)}
-                    className="flex flex-col p-4 sm:p-4 bg-gray-50 dark:bg-dark-bg-quaternary rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors border dark:border-dark-border-primary cursor-pointer"
+                    className={`flex flex-col p-4 sm:p-4 rounded-lg border dark:border-dark-border-primary ${
+                      isWalkthrough && profile.demo_highlight 
+                        ? 'bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-2 border-yellow-400 dark:border-yellow-300 shadow-lg animate-pulse' 
+                        : 'bg-gray-50 dark:bg-dark-bg-quaternary hover:bg-gray-100 dark:hover:bg-dark-border-primary transition-colors cursor-pointer'
+                    }`}
                   >
                     <div className="flex items-start space-x-3 sm:space-x-4">
                       <div className="w-10 h-10 bg-indigo-100 dark:bg-dark-bg-tertiary rounded-full flex items-center justify-center border dark:border-dark-border-primary flex-shrink-0">
@@ -571,9 +610,16 @@ const BeanProfiles = ({ getAuthToken, onDataChange = null, triggerCreateModal = 
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 dark:text-dark-text-primary text-sm sm:text-base break-words">
-                          {profile.name}
-                        </p>
+                        <div className="flex items-center space-x-2">
+                          <p className="font-medium text-gray-900 dark:text-dark-text-primary text-sm sm:text-base break-words">
+                            {profile.name}
+                          </p>
+                          {isWalkthrough && profile.demo_highlight && (
+                            <span className="px-2 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full shadow-lg animate-bounce">
+                              DEMO
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary mt-1">
                           {profile.origin && (
                             <div className="break-words flex items-center">
