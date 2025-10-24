@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import RoastChatFeedback from '../RoastChatFeedback';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'
@@ -479,12 +480,24 @@ Ready to start? I'll provide specific guidance based on your actual roast progre
 
       const data = await response.json();
       
-      // Add AI response to messages
+      // Add AI response to messages with roast context
       const aiMessage = {
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         type: 'ai',
         content: formatAIResponse(data, context),
-        timestamp: new Date()
+        timestamp: new Date(),
+        roastContext: {
+          phase: currentPhase,
+          elapsed_seconds: elapsedTime,
+          current_temp: events.length > 0 ? events[events.length - 1]?.temp_f : null,
+          current_heat: events.length > 0 ? events[events.length - 1]?.heat_level : formData.heat || 0,
+          current_fan: events.length > 0 ? events[events.length - 1]?.fan_level : formData.fan || 0,
+          current_dtr: null, // DTR not available in current system
+          machine_model: formData.selectedMachine?.model || formData.model || "SR800",
+          has_extension: formData.selectedMachine?.has_extension || formData.hasExtension || false,
+          temp_sensor_type: 'builtin', // Default to builtin sensor
+          user_question: context === 'initial_setup' ? null : inputMessage
+        }
       };
 
       setMessages(prev => [...prev, aiMessage]);
@@ -627,7 +640,19 @@ Ready to start? I'll provide specific guidance based on your actual roast progre
           id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           type: 'ai',
           content: formatAutomaticResponse(data, eventData),
-          timestamp: new Date()
+          timestamp: new Date(),
+          roastContext: {
+            phase: currentPhase,
+            elapsed_seconds: elapsedTime,
+            current_temp: eventData.temp_f,
+            current_heat: eventData.heat_level || formData.heat || 0,
+            current_fan: eventData.fan_level || formData.fan || 0,
+            current_dtr: null,
+            machine_model: formData.selectedMachine?.model || formData.model || "SR800",
+            has_extension: formData.selectedMachine?.has_extension || formData.hasExtension || false,
+            temp_sensor_type: 'builtin',
+            user_question: null
+          }
         };
 
         setMessages(prev => [...prev, aiResponse]);
@@ -713,7 +738,7 @@ ${data.recommendations?.map(rec => `• ${rec}`).join('\n') || '• Continue mon
       return `🎯 **FreshRoast Pre-Roast Strategy:**
 
 **Machine Setup:** ${machineName}${hasExtension ? ' + Extension Tube' : ''}
-**Expected Time:** ${data.recommended_profile?.estimated_time || '12-15'} minutes
+**Expected Time:** ${data.recommended_profile?.estimated_time || '8-10'} minutes
 
 **Bean-Specific Guidance:**
 ${data.recommendations?.map(rec => `• ${rec}`).join('\n') || 'Loading personalized guidance...'}
@@ -960,7 +985,19 @@ ${extensionNote}
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         type: 'ai',
         content: data.advice,
-        timestamp: new Date()
+        timestamp: new Date(),
+        roastContext: {
+          phase: currentPhase,
+          elapsed_seconds: elapsedTime,
+          current_temp: currentTemp,
+          current_heat: currentHeat,
+          current_fan: currentFan,
+          current_dtr: null,
+          machine_model: formData.selectedMachine?.model || formData.model || "SR800",
+          has_extension: formData.selectedMachine?.has_extension || formData.hasExtension || false,
+          temp_sensor_type: 'builtin',
+          user_question: userMessage.content
+        }
       };
 
       setMessages(prev => [...prev, aiResponse]);
@@ -1073,7 +1110,19 @@ ${extensionNote}
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         type: 'ai',
         content: data.advice,
-        timestamp: new Date()
+        timestamp: new Date(),
+        roastContext: {
+          phase: currentPhase,
+          elapsed_seconds: elapsedTime,
+          current_temp: currentTemp,
+          current_heat: currentHeat,
+          current_fan: currentFan,
+          current_dtr: null,
+          machine_model: formData.selectedMachine?.model || formData.model || "SR800",
+          has_extension: formData.selectedMachine?.has_extension || formData.hasExtension || false,
+          temp_sensor_type: 'builtin',
+          user_question: message
+        }
       };
 
       setMessages(prev => [...prev, aiResponse]);
@@ -1179,6 +1228,25 @@ ${extensionNote}
                     <div className="text-xs opacity-70 mt-1">
                       {message.timestamp.toLocaleTimeString()}
                     </div>
+                    
+                    {/* Add feedback component for AI messages */}
+                    {message.type === 'ai' && message.roastContext && (
+                      <RoastChatFeedback
+                        messageId={message.id}
+                        messageText={message.content}
+                        roastId={roastId}
+                        roastContext={message.roastContext}
+                        existingFeedback={message.feedback || null}
+                        onFeedbackSubmit={(feedbackType, feedbackId) => {
+                          // Update message with feedback
+                          setMessages(prev => prev.map(msg => 
+                            msg.id === message.id 
+                              ? { ...msg, feedback: feedbackType, feedbackId }
+                              : msg
+                          ));
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
               ))}

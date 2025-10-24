@@ -879,7 +879,7 @@ class DeepSeekRoastingCopilot:
         ROAST LEVEL DEFINITIONS:
         - Light/Cinnamon: Stops before first crack
         - City: Stops during first crack (8-10 minutes)
-        - City+: Stops just after first crack ends (10-12 minutes)
+        - City+: Stops just after first crack ends (6-8 minutes)
         - Full City: Stops between first and second crack (12-14 minutes)
         - Dark: Can go into second crack (14+ minutes)
         
@@ -1132,7 +1132,7 @@ class DeepSeekRoastingCopilot:
             recommendations = [
                 f"Start with Heat {heat_setting}, Fan {fan_setting}",
                 "Monitor roast progression and adjust as needed",
-                "Listen for first crack around 8-12 minutes",
+                "Listen for first crack around 5-7 minutes",
                 "Watch for even bean movement and color development"
             ]
         
@@ -1185,7 +1185,7 @@ class DeepSeekRoastingCopilot:
                 f"Start with Heat {config['heat']}, Fan {config['fan']}",
                 "AI guidance temporarily unavailable - using fallback recommendations",
                 "Monitor roast progression and adjust as needed",
-                "Listen for first crack around 8-12 minutes",
+                "Listen for first crack around 5-7 minutes",
                 "Watch for even bean movement and color development"
             ],
             "llm_advice": "LLM temporarily unavailable - using fallback recommendations"
@@ -1232,7 +1232,8 @@ class MachineAwareLLMIntegration:
         self,
         roast_progress: Dict[str, Any],
         user_message: Optional[str] = None,
-        machine_sensor_type: Optional[str] = None
+        machine_sensor_type: Optional[str] = None,
+        supabase = None
     ) -> str:
         """Generate machine-specific coaching"""
         
@@ -1334,6 +1335,40 @@ TEMPERATURE TARGETS FOR THIS SENSOR:
 - Drop (City+): {temperature_calibrator.get_target_temperature_range(machine_sensor_type, 'city_plus_drop')[0]}-{temperature_calibrator.get_target_temperature_range(machine_sensor_type, 'city_plus_drop')[1]}°F
 """
 
+        # Get golden examples for few-shot learning
+        few_shot_section = ""
+        try:
+            if supabase:
+                from .roast_chat_learning import get_golden_examples_for_context, build_few_shot_examples_section
+                
+                # Get current roast context for golden examples
+                current_phase = roast_progress.get('current_phase', 'Unknown')
+                machine_model = roast_progress.get('machine_model', 'SR800')
+                has_extension = roast_progress.get('has_extension', False)
+                sensor_type = roast_progress.get('temp_sensor_type', 'builtin')
+                
+                # Get golden examples for this context
+                golden_examples = await get_golden_examples_for_context(
+                    machine_model=machine_model,
+                    has_extension=has_extension,
+                    phase=current_phase,
+                    sensor_type=sensor_type,
+                    supabase=supabase,
+                    limit=3
+                )
+                
+                # Build few-shot section
+                few_shot_section = build_few_shot_examples_section(golden_examples)
+                
+                if golden_examples:
+                    logger.info(f"Using {len(golden_examples)} golden examples for {machine_model}/{current_phase}")
+            else:
+                logger.info("No Supabase client provided, skipping golden examples")
+                
+        except Exception as e:
+            logger.warning(f"Could not load golden examples: {e}")
+            few_shot_section = ""
+
         # Build comprehensive prompt
         system_prompt = f"""You are an EXPERT FreshRoast coffee roaster with DEEP knowledge of the {profile.display_name}.
 
@@ -1350,6 +1385,8 @@ TEMPERATURE TARGETS FOR THIS SENSOR:
 {"🎯 RECOMMENDED ACTIONS:" if recommendations else ""}
 {"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" if recommendations else ""}
 {self._format_recommendations(recommendations, current_heat, current_fan) if recommendations else ""}
+
+{few_shot_section}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 💡 {profile.display_name} PRO TIPS:
@@ -1396,7 +1433,8 @@ RESPOND IN A HELPFUL, SPECIFIC, ACTIONABLE WAY FOR THE {profile.display_name}:
         self,
         roast_progress: Dict[str, Any],
         user_message: Optional[str] = None,
-        machine_sensor_type: Optional[str] = None
+        machine_sensor_type: Optional[str] = None,
+        supabase = None
     ) -> str:
         """Generate DTR-aware coaching with machine-specific guidance"""
         
@@ -1498,7 +1536,7 @@ RESPOND IN A HELPFUL, SPECIFIC, ACTIONABLE WAY FOR THE {profile.display_name}:
             )
         
         # Build DTR-enhanced system prompt with comprehensive context
-        system_prompt = self._build_dtr_aware_system_prompt(
+        system_prompt = await self._build_dtr_aware_system_prompt(
             profile=profile,
             roast_level=roast_level,
             dtr_coaching_context=dtr_coaching_context,
@@ -1509,7 +1547,8 @@ RESPOND IN A HELPFUL, SPECIFIC, ACTIONABLE WAY FOR THE {profile.display_name}:
             user_message=user_message,
             has_extension=has_extension,
             current_heat=current_heat,
-            current_fan=current_fan
+            current_fan=current_fan,
+            supabase=supabase
         )
         
         # Call LLM with DTR-aware prompt
@@ -1528,7 +1567,7 @@ RESPOND IN A HELPFUL, SPECIFIC, ACTIONABLE WAY FOR THE {profile.display_name}:
         
         return response
     
-    def _build_dtr_aware_system_prompt(
+    async def _build_dtr_aware_system_prompt(
         self,
         profile,
         roast_level: str,
@@ -1540,7 +1579,8 @@ RESPOND IN A HELPFUL, SPECIFIC, ACTIONABLE WAY FOR THE {profile.display_name}:
         user_message: Optional[str],
         has_extension: bool = False,
         current_heat: int = 0,
-        current_fan: int = 0
+        current_fan: int = 0,
+        supabase = None
     ) -> str:
         """Build comprehensive DTR-aware system prompt"""
         
@@ -1606,6 +1646,37 @@ Current Settings: Heat {current_heat}, Fan {current_fan}
 Roast Level Target: {roast_level}
 """
         
+        # Get golden examples for few-shot learning (if supabase is available)
+        few_shot_section = ""
+        try:
+            if supabase:
+                from .roast_chat_learning import get_golden_examples_for_context, build_few_shot_examples_section
+                
+                # Get current roast context for golden examples
+                current_phase_name = current_phase
+                machine_model = profile.model
+                has_extension = has_extension
+                sensor_type = 'builtin'  # Default for DTR coaching
+                
+                # Get golden examples for this context
+                golden_examples = await get_golden_examples_for_context(
+                    machine_model=machine_model,
+                    has_extension=has_extension,
+                    phase=current_phase_name,
+                    sensor_type=sensor_type,
+                    supabase=supabase,
+                    limit=3
+                )
+                
+                # Build few-shot section
+                few_shot_section = build_few_shot_examples_section(golden_examples)
+                
+                if golden_examples:
+                    logger.info(f"Using {len(golden_examples)} golden examples for DTR coaching {machine_model}/{current_phase_name}")
+        except Exception as e:
+            logger.warning(f"Could not load golden examples for DTR coaching: {e}")
+            few_shot_section = ""
+
         # Build complete prompt
         system_prompt = f"""You are an EXPERT FreshRoast coffee roaster with DEEP knowledge of the {profile.display_name} and DTR (Development Time Ratio) optimization.
 
@@ -1615,6 +1686,8 @@ Roast Level Target: {roast_level}
 {dtr_status_section}
 
 {machine_advice_section}
+
+{few_shot_section}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🎯 YOUR DTR-AWARE COACHING GUIDELINES:

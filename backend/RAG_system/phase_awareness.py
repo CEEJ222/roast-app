@@ -78,7 +78,7 @@ class PhaseDetector:
             ),
             "development": RoastPhase(
                 name="Development Phase",
-                time_range=(480, 720),  # 8-12 minutes
+                time_range=(300, 480),  # 5-8 minutes
                 temp_range=(380, 435),
                 indicators=[
                     "First crack active or completed",
@@ -285,7 +285,7 @@ class MachineAwarePhaseDetector:
             ),
             "development": RoastPhase(
                 name="Development Phase",
-                time_range=(480, 720),  # 8-12 minutes
+                time_range=(300, 480),  # 5-8 minutes
                 temp_range=(380, 435),
                 indicators=[
                     "First crack active or completed",
@@ -467,7 +467,7 @@ class PhaseAwarePromptBuilder:
                 "strategy": "moderate heat, watch for color changes"
             },
             "development": {
-                "duration": "8-12 minutes",
+                "duration": "5-8 minutes",
                 "indicators": "first crack, flavor development", 
                 "strategy": "controlled heat, listen for cracks"
             },
@@ -564,7 +564,7 @@ class EnhancedSystemPrompt:
         ROASTING PHASES:
         1. DRYING (0-4 minutes): Remove moisture, beans turn yellow
         2. MAILLARD (4-8 minutes): Browning reactions, beans turn brown
-        3. DEVELOPMENT (8-12 minutes): First crack, flavor development
+        3. DEVELOPMENT (5-8 minutes): First crack, flavor development
         4. COOLING (12+ minutes): Stop roasting, cool beans
         
         Each phase requires different heat/fan strategies and has specific indicators.
@@ -609,7 +609,7 @@ class EnhancedSystemPrompt:
             ROASTING PHASES:
             1. DRYING (0-4 minutes): Remove moisture, beans turn yellow
             2. MAILLARD (4-8 minutes): Browning reactions, beans turn brown  
-            3. DEVELOPMENT (8-12 minutes): First crack, flavor development
+            3. DEVELOPMENT (5-8 minutes): First crack, flavor development
             4. FINISHING (12+ minutes): Second crack, oil development
             
             FRESHROAST-SPECIFIC KNOWLEDGE:
