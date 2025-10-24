@@ -191,7 +191,7 @@ const RoastCurveGraph = ({
 
   if (noContainer) {
     return (
-      <div className="bg-black w-full" style={{ height: height, backgroundColor: '#000000', margin: 0, padding: 0 }}>
+      <div className="bg-black w-full" style={{ height: height, backgroundColor: '#000000', margin: -10, padding: 0 }}>
         <style jsx>{`
           .recharts-wrapper {
             background: #000000 !important;
