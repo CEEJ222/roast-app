@@ -1332,7 +1332,8 @@ SENSOR CHARACTERISTICS:
 
 TEMPERATURE TARGETS FOR THIS SENSOR:
 - First crack: {temperature_calibrator.get_target_temperature_range(machine_sensor_type, 'first_crack')[0]}-{temperature_calibrator.get_target_temperature_range(machine_sensor_type, 'first_crack')[1]}°F
-- Drop (City+): {temperature_calibrator.get_target_temperature_range(machine_sensor_type, 'city_plus_drop')[0]}-{temperature_calibrator.get_target_temperature_range(machine_sensor_type, 'city_plus_drop')[1]}°F
+- City drop: {temperature_calibrator.get_target_temperature_range(machine_sensor_type, 'city_drop')[0]}-{temperature_calibrator.get_target_temperature_range(machine_sensor_type, 'city_drop')[1]}°F
+- City+ drop: {temperature_calibrator.get_target_temperature_range(machine_sensor_type, 'city_plus_drop')[0]}-{temperature_calibrator.get_target_temperature_range(machine_sensor_type, 'city_plus_drop')[1]}°F
 """
 
         # Get golden examples for few-shot learning
@@ -1625,7 +1626,8 @@ SENSOR CHARACTERISTICS:
 
 TEMPERATURE TARGETS FOR THIS SENSOR:
 - First crack: {temperature_calibrator.get_target_temperature_range(sensor_type, 'first_crack')[0]}-{temperature_calibrator.get_target_temperature_range(sensor_type, 'first_crack')[1]}°F
-- Drop (City+): {temperature_calibrator.get_target_temperature_range(sensor_type, 'city_plus_drop')[0]}-{temperature_calibrator.get_target_temperature_range(sensor_type, 'city_plus_drop')[1]}°F
+- City drop: {temperature_calibrator.get_target_temperature_range(sensor_type, 'city_drop')[0]}-{temperature_calibrator.get_target_temperature_range(sensor_type, 'city_drop')[1]}°F
+- City+ drop: {temperature_calibrator.get_target_temperature_range(sensor_type, 'city_plus_drop')[0]}-{temperature_calibrator.get_target_temperature_range(sensor_type, 'city_plus_drop')[1]}°F
 """
         except Exception as e:
             logger.error(f"❌ Error building sensor info: {e}")
