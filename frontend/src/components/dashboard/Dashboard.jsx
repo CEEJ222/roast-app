@@ -26,6 +26,8 @@ const Dashboard = ({
   setSelectedDemoRoast,
   setShowDemoBeanProfileDetail,
   setSelectedDemoBeanProfile,
+  setShowRoastDetail,
+  setSelectedRoast,
 }) => {
   const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const [triggerBeanProfileCreate, setTriggerBeanProfileCreate] = useState(false);
@@ -201,6 +203,8 @@ const Dashboard = ({
         setShowHistoricalRoasts={setShowHistoricalRoasts}
         setShowDemoRoastDetail={setShowDemoRoastDetail}
         setSelectedDemoRoast={setSelectedDemoRoast}
+        setShowRoastDetail={setShowRoastDetail}
+        setSelectedRoast={setSelectedRoast}
       />
 
       {/* Bean Profiles */}

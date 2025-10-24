@@ -191,16 +191,24 @@ const RoastCurveGraph = ({
 
   if (noContainer) {
     return (
-      <div className="bg-black" style={{ width: '100vw', height: height, marginLeft: '-50vw', left: '50%', position: 'relative', backgroundColor: '#000000' }}>
+      <div className="bg-black w-full" style={{ height: height, backgroundColor: '#000000', margin: 0, padding: 0 }}>
         <style jsx>{`
           .recharts-wrapper {
             background: #000000 !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
           .recharts-surface {
             background: #000000 !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
           .recharts-cartesian-axis-tick-value {
             fill: #6b7280;
+          }
+          .recharts-cartesian-axis {
+            margin: 0 !important;
+            padding: 0 !important;
           }
         `}</style>
         <ResponsiveContainer width="100%" height={height}>
@@ -213,7 +221,7 @@ const RoastCurveGraph = ({
               left: isMobile ? 0 : 0, 
               bottom: isMobile ? 5 : 10 
             }}
-            style={{ background: '#000000' }}
+            style={{ background: '#000000', margin: 0, padding: 0 }}
             {...(enableZoom && { zoom: { enabled: true } })}
             {...(enablePan && { pan: { enabled: true } })}
           >

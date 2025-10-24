@@ -14,7 +14,9 @@ const RecentRoasts = ({
   setShowStartRoastWizard,
   setShowHistoricalRoasts,
   setShowDemoRoastDetail,
-  setSelectedDemoRoast
+  setSelectedDemoRoast,
+  setShowRoastDetail,
+  setSelectedRoast
 }) => {
   const { isWalkthrough } = useWalkthrough();
   const [showFullHistoricalRoasts, setShowFullHistoricalRoasts] = useState(false);
@@ -79,8 +81,9 @@ const RecentRoasts = ({
       console.log('Demo roast clicked - no detail page');
       return;
     } else {
-      // For real roasts, you could add navigation to roast detail page here
-      console.log('Real roast clicked:', roast.id);
+      // Navigate to roast detail page
+      setSelectedRoast(roast);
+      setShowRoastDetail(true);
     }
   };
 

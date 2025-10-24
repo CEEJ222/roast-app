@@ -22,6 +22,8 @@ const RoastsPage = ({
   setActiveTab,
   showStartRoastWizard = false,
   showRoastDetail = false,
+  setShowRoastDetail,
+  setSelectedRoast,
 }) => {
   const [showFABMenu, setShowFABMenu] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -90,7 +92,8 @@ const RoastsPage = ({
       {historicalRoasts?.length > 0 && (
         <>
           {isMobile ? (
-            <RoastCurveGraph
+            <div className="w-full" style={{ margin: 0, padding: 0 }}>
+              <RoastCurveGraph
                 data={historicalRoasts.map(roast => {
                   const coffeeName = roast.bean_profile_name || 
                                     (roast.coffee_region && roast.coffee_type 
@@ -121,6 +124,7 @@ const RoastsPage = ({
                 showRoastLabels={false}
                 noContainer={true}
               />
+            </div>
           ) : (
             <div className="bg-black dark:bg-black w-full">
               <RoastCurveGraph
@@ -172,6 +176,8 @@ const RoastsPage = ({
             onDataChange={onDataChange}
             setShowStartRoastWizard={setShowStartRoastWizard}
             setShowHistoricalRoasts={setShowHistoricalRoasts}
+            setShowRoastDetail={setShowRoastDetail}
+            setSelectedRoast={setSelectedRoast}
           />
       </div>
 

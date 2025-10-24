@@ -1211,6 +1211,8 @@ function RoastAssistant() {
               showHistoricalRoasts={showHistoricalRoasts}
               showProfilePage={showProfilePage}
               showRoastDetail={showRoastDetail}
+              setShowRoastDetail={setShowRoastDetail}
+              setSelectedRoast={setSelectedRoast}
             />
           )}
 

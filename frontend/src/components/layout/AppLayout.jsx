@@ -30,7 +30,9 @@ const AppLayout = ({
   showStartRoastWizard = false,
   showHistoricalRoasts = false,
   showProfilePage = false,
-  showRoastDetail = false
+  showRoastDetail = false,
+  setShowRoastDetail,
+  setSelectedRoast
 }) => {
   const [activeTab, setActiveTab] = useState('roasts');
   const [isMobile, setIsMobile] = useState(false);
@@ -88,6 +90,8 @@ const AppLayout = ({
           onDataChange={onDataChange}
           showStartRoastWizard={showStartRoastWizard}
           showRoastDetail={showRoastDetail}
+          setShowRoastDetail={setShowRoastDetail}
+          setSelectedRoast={setSelectedRoast}
         />
       );
     }
@@ -113,6 +117,8 @@ const AppLayout = ({
             setActiveTab={setActiveTab}
             showStartRoastWizard={showStartRoastWizard}
             showRoastDetail={showRoastDetail}
+            setShowRoastDetail={setShowRoastDetail}
+            setSelectedRoast={setSelectedRoast}
           />
         );
       case 'beans':
