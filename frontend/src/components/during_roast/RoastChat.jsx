@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import RoastChatFeedback from '../RoastChatFeedback';
+import RoastChatFeedback from '../RoastChatFeedback.jsx';
 
 const API_BASE = import.meta.env.DEV 
   ? 'http://localhost:8000'
