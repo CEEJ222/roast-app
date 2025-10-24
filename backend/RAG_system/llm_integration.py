@@ -16,6 +16,7 @@ from .phase_awareness import PhaseDetector, MachineAwarePhaseDetector, PhaseAwar
 from .conversation_state import conversation_manager
 from .machine_profiles import FreshRoastMachineProfiles
 from .dtr_coaching import build_dtr_coaching_context, DTRTargets
+from .temperature_calibration import temperature_calibrator
 
 # Load environment variables
 load_dotenv()
@@ -242,7 +243,8 @@ class DeepSeekRoastingCopilot:
                               user_id: Optional[str] = None,
                               roast_id: Optional[str] = None,
                               machine_model: Optional[str] = None,
-                              has_extension: Optional[bool] = None) -> str:
+                              has_extension: Optional[bool] = None,
+                              machine_sensor_type: Optional[str] = None) -> str:
         """
         Get real-time roasting advice during the roast with enhanced phase awareness
         """
@@ -255,6 +257,16 @@ class DeepSeekRoastingCopilot:
             # Detect current roasting phase with machine awareness
             elapsed_seconds = context.get('elapsed_time', 0) * 60  # Convert minutes to seconds
             current_temp = context.get('current_temp_f')
+            
+            # Calibrate temperature reading if sensor type is available
+            calibrated_temp_info = None
+            if current_temp and machine_sensor_type:
+                calibrated_temp_info = temperature_calibrator.calibrate_reading(
+                    raw_temp_f=current_temp,
+                    sensor_type=machine_sensor_type,
+                    elapsed_seconds=elapsed_seconds
+                )
+                logger.info(f"🌡️ Temperature calibration: {calibrated_temp_info.raw_temp_f:.1f}°F → {calibrated_temp_info.calibrated_temp_f:.1f}°F ({machine_sensor_type})")
             
             # Use machine-aware phase detection if machine info available
             if machine_model and has_extension is not None:
@@ -286,15 +298,30 @@ class DeepSeekRoastingCopilot:
                     user_id, roast_id, user_question
                 )
             else:
+                # Add sensor-aware temperature information to prompt
+                temp_info = ""
+                if calibrated_temp_info:
+                    sensor_characteristics = temperature_calibrator.get_sensor_characteristics(machine_sensor_type)
+                    temp_info = f"""
+            TEMPERATURE SENSOR: {machine_sensor_type.upper()}
+            Current Reading: {calibrated_temp_info.raw_temp_f:.0f}°F
+            {"Calibrated Bean Temp: " + f"{calibrated_temp_info.calibrated_temp_f:.0f}°F" if machine_sensor_type == 'builtin' else ""}
+            
+            SENSOR CHARACTERISTICS:
+            {sensor_characteristics.get('measures', 'Unknown')} - {sensor_characteristics.get('accuracy', 'Unknown')}
+            {calibrated_temp_info.notes}
+            """
+                
                 prompt = f"""
                 {phase_context}
                 
             Current roast status:
             - Elapsed time: {context.get('elapsed_time', 'Unknown')} minutes
-                - Current phase: {current_phase.name}
+            - Current phase: {current_phase.name}
             - Recent events: {context.get('recent_events', 'None')}
             - Bean type: {context.get('bean_type', 'Unknown')}
             - Target roast level: {context.get('target_roast_level', 'Unknown')}
+            {temp_info}
             
             User question: {user_question}
             
@@ -1204,7 +1231,8 @@ class MachineAwareLLMIntegration:
     async def get_machine_aware_coaching(
         self,
         roast_progress: Dict[str, Any],
-        user_message: Optional[str] = None
+        user_message: Optional[str] = None,
+        machine_sensor_type: Optional[str] = None
     ) -> str:
         """Generate machine-specific coaching"""
         
@@ -1220,6 +1248,17 @@ class MachineAwareLLMIntegration:
         current_heat = roast_progress.get('current_heat', 0)
         current_fan = roast_progress.get('current_fan', 0)
         current_temp = roast_progress.get('current_temp')
+        
+        # Calibrate temperature reading if sensor type is available
+        calibrated_temp_info = None
+        if current_temp and machine_sensor_type:
+            elapsed_seconds = roast_progress.get('elapsed_time', 0) * 60  # Convert minutes to seconds
+            calibrated_temp_info = temperature_calibrator.calibrate_reading(
+                raw_temp_f=current_temp,
+                sensor_type=machine_sensor_type,
+                elapsed_seconds=elapsed_seconds
+            )
+            logger.info(f"🌡️ Machine-aware calibration: {calibrated_temp_info.raw_temp_f:.1f}°F → {calibrated_temp_info.calibrated_temp_f:.1f}°F ({machine_sensor_type})")
         
         # Debug logging
         logger.info(f"🔧 DEBUG: roast_progress keys: {list(roast_progress.keys())}")
@@ -1274,11 +1313,33 @@ class MachineAwareLLMIntegration:
         else:
             recommendations = None
         
+        # Add sensor-aware temperature information
+        sensor_info = ""
+        if calibrated_temp_info:
+            sensor_characteristics = temperature_calibrator.get_sensor_characteristics(machine_sensor_type)
+            sensor_info = f"""
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🌡️ TEMPERATURE SENSOR: {machine_sensor_type.upper()}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Current Reading: {calibrated_temp_info.raw_temp_f:.0f}°F
+{"Calibrated Bean Temp: " + f"{calibrated_temp_info.calibrated_temp_f:.0f}°F" if machine_sensor_type == 'builtin' else ""}
+
+SENSOR CHARACTERISTICS:
+{sensor_characteristics.get('measures', 'Unknown')} - {sensor_characteristics.get('accuracy', 'Unknown')}
+{calibrated_temp_info.notes}
+
+TEMPERATURE TARGETS FOR THIS SENSOR:
+- First crack: {temperature_calibrator.get_target_temperature_range(machine_sensor_type, 'first_crack')[0]}-{temperature_calibrator.get_target_temperature_range(machine_sensor_type, 'first_crack')[1]}°F
+- Drop (City+): {temperature_calibrator.get_target_temperature_range(machine_sensor_type, 'city_plus_drop')[0]}-{temperature_calibrator.get_target_temperature_range(machine_sensor_type, 'city_plus_drop')[1]}°F
+"""
+
         # Build comprehensive prompt
         system_prompt = f"""You are an EXPERT FreshRoast coffee roaster with DEEP knowledge of the {profile.display_name}.
 
 {machine_context}
 
+{sensor_info}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📈 CURRENT ROAST STATUS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1334,9 +1395,18 @@ RESPOND IN A HELPFUL, SPECIFIC, ACTIONABLE WAY FOR THE {profile.display_name}:
     async def get_dtr_aware_coaching(
         self,
         roast_progress: Dict[str, Any],
-        user_message: Optional[str] = None
+        user_message: Optional[str] = None,
+        machine_sensor_type: Optional[str] = None
     ) -> str:
         """Generate DTR-aware coaching with machine-specific guidance"""
+        
+        # Initialize variables to ensure they're in scope
+        calibrated_temp_info = None
+        # machine_sensor_type is already a parameter, so it's in scope
+        
+        # Add explicit variable declarations to help linter
+        if machine_sensor_type is None:
+            machine_sensor_type = 'builtin'  # Default fallback
         
         # Extract roast information
         machine_info = roast_progress.get('machine_info', {})
@@ -1350,6 +1420,16 @@ RESPOND IN A HELPFUL, SPECIFIC, ACTIONABLE WAY FOR THE {profile.display_name}:
         current_fan = roast_progress.get('current_fan', 0)
         current_temp = roast_progress.get('current_temp')
         elapsed_time = roast_progress.get('elapsed_time', 0)
+        
+        # Calibrate temperature reading if sensor type is available
+        if current_temp and machine_sensor_type:
+            elapsed_seconds = int(elapsed_time * 60) if elapsed_time else 0
+            calibrated_temp_info = temperature_calibrator.calibrate_reading(
+                raw_temp_f=current_temp,
+                sensor_type=machine_sensor_type,
+                elapsed_seconds=elapsed_seconds
+            )
+            logger.info(f"🌡️ DTR-aware calibration: {calibrated_temp_info.raw_temp_f:.1f}°F → {calibrated_temp_info.calibrated_temp_f:.1f}°F ({machine_sensor_type})")
         
         # Find first crack time
         first_crack_time = None
@@ -1481,6 +1561,38 @@ Heat Recommendation: {machine_dtr_advice.get('heat_recommendation', {}).get('rea
 Fan Recommendation: {machine_dtr_advice.get('fan_recommendation', {}).get('reasoning', 'N/A')}
 """
         
+        # Add sensor-aware temperature information
+        sensor_info = ""
+        try:
+            # Access variables from method scope
+            temp_info = locals().get('calibrated_temp_info')
+            sensor_type = locals().get('machine_sensor_type')
+            
+            if temp_info and sensor_type:
+                logger.info(f"🌡️ Building sensor info: calibrated_temp_info={temp_info}, machine_sensor_type={sensor_type}")
+                sensor_characteristics = temperature_calibrator.get_sensor_characteristics(sensor_type)
+                sensor_info = f"""
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🌡️ TEMPERATURE SENSOR: {sensor_type.upper()}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Current Reading: {temp_info.raw_temp_f:.0f}°F
+{"Calibrated Bean Temp: " + f"{temp_info.calibrated_temp_f:.0f}°F" if sensor_type == 'builtin' else ""}
+
+SENSOR CHARACTERISTICS:
+{sensor_characteristics.get('measures', 'Unknown')} - {sensor_characteristics.get('accuracy', 'Unknown')}
+{temp_info.notes}
+
+TEMPERATURE TARGETS FOR THIS SENSOR:
+- First crack: {temperature_calibrator.get_target_temperature_range(sensor_type, 'first_crack')[0]}-{temperature_calibrator.get_target_temperature_range(sensor_type, 'first_crack')[1]}°F
+- Drop (City+): {temperature_calibrator.get_target_temperature_range(sensor_type, 'city_plus_drop')[0]}-{temperature_calibrator.get_target_temperature_range(sensor_type, 'city_plus_drop')[1]}°F
+"""
+        except Exception as e:
+            logger.error(f"❌ Error building sensor info: {e}")
+            logger.error(f"❌ calibrated_temp_info: {temp_info}")
+            logger.error(f"❌ machine_sensor_type: {sensor_type}")
+            sensor_info = ""
+
         # Current roast status
         current_status = f"""
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1499,6 +1611,7 @@ Roast Level Target: {roast_level}
 
 {current_status}
 
+{sensor_info}
 {dtr_status_section}
 
 {machine_advice_section}

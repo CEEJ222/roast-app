@@ -5,8 +5,30 @@ const RoastControls = ({
   formData, 
   handleInputChange, 
   logChange, 
-  loading 
+  loading,
+  machineSensorType = 'builtin',
+  elapsedTime = 0
 }) => {
+  // Calculate calibrated temperature for built-in sensor
+  const getCalibratedTemp = (rawTemp) => {
+    if (machineSensorType !== 'builtin' || !rawTemp) return null;
+    
+    const elapsedSeconds = elapsedTime * 60;
+    let offset = 8; // Default for 10+ min
+    
+    if (elapsedSeconds < 180) offset = 35;      // 0-3 min
+    else if (elapsedSeconds < 300) offset = 25; // 3-5 min  
+    else if (elapsedSeconds < 420) offset = 15; // 5-7 min
+    else if (elapsedSeconds < 600) offset = 10; // 7-10 min
+    
+    return Math.round(rawTemp - offset);
+  };
+
+  const currentTemp = parseFloat(formData.tempF) || 0;
+  const calibratedTemp = getCalibratedTemp(currentTemp);
+  const sensorLabel = machineSensorType === 'probe' ? 'Bean Temperature' : 'Air Temperature';
+  const sensorIcon = machineSensorType === 'probe' ? '🌡️' : '🌡️';
+
   return (
     <div className="w-full max-w-md lg:flex-1">
       <div className="bg-gray-900 border border-gray-700 rounded-xl p-4 sm:p-6">
@@ -118,8 +140,16 @@ const RoastControls = ({
 
           {/* Temperature Input Section */}
           <div className="bg-gray-800 rounded-lg p-3 w-full border border-gray-600">
-            <div className="text-sm font-semibold tracking-wide text-cyan-400 text-center mb-3">
-              TEMP LOG
+            <div className="text-sm font-semibold tracking-wide text-cyan-400 text-center mb-2">
+              {sensorIcon} {sensorLabel.toUpperCase()}
+            </div>
+            
+            {/* Sensor Type Indicator */}
+            <div className="text-xs text-gray-400 text-center mb-3">
+              {machineSensorType === 'builtin' 
+                ? 'Built-in FreshRoast Sensor (reads higher than bean temp)'
+                : 'External Temperature Probe (measures actual bean temp)'
+              }
             </div>
             
             <div className="flex items-center gap-3 mb-3">
@@ -133,20 +163,29 @@ const RoastControls = ({
                 −
               </button>
               
-              <input
-                type="number"
-                step="1"
-                value={formData.tempF}
-                onChange={(e) => handleInputChange('tempF', e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    logChange();
-                  }
-                }}
-                placeholder="°F"
-                className="flex-1 min-w-0 bg-gray-900 text-white text-lg font-bold text-center rounded px-3 py-2 border border-gray-600 focus:border-cyan-400 focus:outline-none"
-              />
+              <div className="flex-1 min-w-0">
+                <input
+                  type="number"
+                  step="1"
+                  value={formData.tempF}
+                  onChange={(e) => handleInputChange('tempF', e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      logChange();
+                    }
+                  }}
+                  placeholder="°F"
+                  className="w-full bg-gray-900 text-white text-lg font-bold text-center rounded px-3 py-2 border border-gray-600 focus:border-cyan-400 focus:outline-none"
+                />
+                
+                {/* Calibrated Temperature Display for Built-in Sensor */}
+                {machineSensorType === 'builtin' && currentTemp > 0 && calibratedTemp && (
+                  <div className="text-xs text-gray-400 text-center mt-1">
+                    Est. Bean Temp: {calibratedTemp}°F
+                  </div>
+                )}
+              </div>
               
               <button
                 onClick={() => {

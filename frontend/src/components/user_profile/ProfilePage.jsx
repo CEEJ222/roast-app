@@ -33,7 +33,9 @@ const ProfilePage = ({ onClose }) => {
   const [newMachine, setNewMachine] = useState({
     name: '',
     model: '',
-    has_extension: false
+    has_extension: false,
+    temp_sensor_type: 'builtin',
+    probe_offset_f: 0
   })
 
   useEffect(() => {
@@ -343,6 +345,73 @@ const ProfilePage = ({ onClose }) => {
                         </label>
                       </div>
                     </div>
+                    
+                    {/* Temperature Sensor Type Selection */}
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-semibold text-gray-700 dark:text-dark-text-primary">Temperature Sensor</h4>
+                      <div className="space-y-3">
+                        <div className="flex items-start space-x-3">
+                          <input
+                            type="radio"
+                            id="builtin-sensor"
+                            name="temp_sensor_type"
+                            value="builtin"
+                            checked={newMachine.temp_sensor_type === 'builtin'}
+                            onChange={(e) => setNewMachine({...newMachine, temp_sensor_type: e.target.value})}
+                            className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 mt-1"
+                          />
+                          <div className="flex-1">
+                            <label htmlFor="builtin-sensor" className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary">
+                              Built-in FreshRoast Sensor
+                            </label>
+                            <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
+                              Measures air temperature (chamber temp). Reads 10-35°F higher than actual bean temperature. 
+                              Automatically calibrated based on roast phase.
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start space-x-3">
+                          <input
+                            type="radio"
+                            id="probe-sensor"
+                            name="temp_sensor_type"
+                            value="probe"
+                            checked={newMachine.temp_sensor_type === 'probe'}
+                            onChange={(e) => setNewMachine({...newMachine, temp_sensor_type: e.target.value})}
+                            className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 mt-1"
+                          />
+                          <div className="flex-1">
+                            <label htmlFor="probe-sensor" className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary">
+                              External Temperature Probe
+                            </label>
+                            <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
+                              Measures actual bean temperature (direct contact). More accurate for precise temperature control.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Probe Offset Input */}
+                      {newMachine.temp_sensor_type === 'probe' && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-1">
+                            Probe Offset (°F)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={newMachine.probe_offset_f}
+                            onChange={(e) => setNewMachine({...newMachine, probe_offset_f: parseFloat(e.target.value) || 0})}
+                            placeholder="0.0"
+                            className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-secondary"
+                          />
+                          <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
+                            Optional calibration offset for your specific probe
+                          </p>
+                        </div>
+                      )}
+                    </div>
                     <div className="flex space-x-3">
                       <button
                         onClick={addMachine}
@@ -354,7 +423,7 @@ const ProfilePage = ({ onClose }) => {
                       <button
                         onClick={() => {
                           setShowAddMachine(false)
-                          setNewMachine({ name: '', model: '', has_extension: false })
+                          setNewMachine({ name: '', model: '', has_extension: false, temp_sensor_type: 'builtin', probe_offset_f: 0 })
                         }}
                         className="bg-gray-300 dark:bg-dark-bg-tertiary text-gray-700 dark:text-dark-text-primary px-4 py-2 rounded-lg hover:bg-gray-400 dark:hover:bg-dark-bg-quaternary font-medium transition"
                       >
@@ -413,6 +482,72 @@ const ProfilePage = ({ onClose }) => {
                               </label>
                             </div>
                           </div>
+                          
+                          {/* Temperature Sensor Type Selection */}
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-semibold text-gray-700 dark:text-dark-text-primary">Temperature Sensor</h4>
+                            <div className="space-y-3">
+                              <div className="flex items-start space-x-3">
+                                <input
+                                  type="radio"
+                                  id="edit-builtin-sensor"
+                                  name="edit_temp_sensor_type"
+                                  value="builtin"
+                                  checked={editingMachine.temp_sensor_type === 'builtin'}
+                                  onChange={(e) => setEditingMachine({...editingMachine, temp_sensor_type: e.target.value})}
+                                  className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 mt-1"
+                                />
+                                <div className="flex-1">
+                                  <label htmlFor="edit-builtin-sensor" className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary">
+                                    Built-in FreshRoast Sensor
+                                  </label>
+                                  <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
+                                    Measures air temperature (chamber temp). Reads 10-35°F higher than actual bean temperature.
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-start space-x-3">
+                                <input
+                                  type="radio"
+                                  id="edit-probe-sensor"
+                                  name="edit_temp_sensor_type"
+                                  value="probe"
+                                  checked={editingMachine.temp_sensor_type === 'probe'}
+                                  onChange={(e) => setEditingMachine({...editingMachine, temp_sensor_type: e.target.value})}
+                                  className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 mt-1"
+                                />
+                                <div className="flex-1">
+                                  <label htmlFor="edit-probe-sensor" className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary">
+                                    External Temperature Probe
+                                  </label>
+                                  <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
+                                    Measures actual bean temperature (direct contact). More accurate for precise temperature control.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Probe Offset Input */}
+                            {editingMachine.temp_sensor_type === 'probe' && (
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-1">
+                                  Probe Offset (°F)
+                                </label>
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  value={editingMachine.probe_offset_f || 0}
+                                  onChange={(e) => setEditingMachine({...editingMachine, probe_offset_f: parseFloat(e.target.value) || 0})}
+                                  placeholder="0.0"
+                                  className="w-full border border-gray-300 dark:border-dark-border-primary rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-secondary"
+                                />
+                                <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
+                                  Optional calibration offset for your specific probe
+                                </p>
+                              </div>
+                            )}
+                          </div>
                           <div className="flex space-x-3">
                             <button
                               onClick={() => updateMachine(machine.id, editingMachine)}
@@ -436,6 +571,10 @@ const ProfilePage = ({ onClose }) => {
                             <h4 className="font-medium text-gray-800 dark:text-dark-text-primary">{machine.name}</h4>
                             <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
                               {machine.model}{machine.has_extension ? ' + Extension Tube' : ''}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-dark-text-secondary">
+                              {machine.temp_sensor_type === 'probe' ? '🌡️ External Probe' : '🌡️ Built-in Sensor'}
+                              {machine.temp_sensor_type === 'probe' && machine.probe_offset_f ? ` (${machine.probe_offset_f}°F offset)` : ''}
                             </p>
                           </div>
                           

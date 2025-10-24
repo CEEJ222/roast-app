@@ -62,6 +62,8 @@ class FreshRoastMachineProfiles:
                     "recommended_heat": (7, 9),
                     "recommended_fan": (7, 9),
                     "target_temp_range": (250, 300),
+                    "target_temp_range_builtin": (280, 330),  # Built-in sensor reads higher
+                    "target_temp_range_probe": (250, 300),    # Probe measures actual bean temp
                     "advice": "SR540 runs hot - start with heat 7-8, fan 8-9. Watch for yellowing by 3 minutes.",
                     "common_mistake": "Using too much heat (9) from start causes scorching"
                 },
@@ -71,6 +73,8 @@ class FreshRoastMachineProfiles:
                     "recommended_heat": (6, 8),
                     "recommended_fan": (7, 8),
                     "target_temp_range": (300, 385),
+                    "target_temp_range_builtin": (325, 410),  # Built-in sensor reads higher
+                    "target_temp_range_probe": (300, 385),   # Probe measures actual bean temp
                     "advice": "Reduce heat to 6-7 as beans brown. Maintain fan at 8 for even roasting.",
                     "common_mistake": "Not reducing heat early enough - leads to tipping"
                 },
@@ -80,6 +84,8 @@ class FreshRoastMachineProfiles:
                     "recommended_heat": (4, 6),
                     "recommended_fan": (6, 7),
                     "target_temp_range": (385, 425),
+                    "target_temp_range_builtin": (420, 460),  # Built-in sensor reads higher
+                    "target_temp_range_probe": (385, 425),   # Probe measures actual bean temp
                     "development_time_pct": (15, 25),  # 15-25% of total roast
                     "dtr_targets": {
                         "City": (15, 18),
@@ -126,6 +132,8 @@ class FreshRoastMachineProfiles:
                     "recommended_heat": (8, 9),
                     "recommended_fan": (9, 9),  # Max fan needed
                     "target_temp_range": (250, 300),
+                    "target_temp_range_builtin": (280, 330),  # Built-in sensor reads higher
+                    "target_temp_range_probe": (250, 300),    # Probe measures actual bean temp
                     "advice": "Extension tube requires MORE heat and fan. Start heat 8-9, fan 9. Expect slower start.",
                     "common_mistake": "Not using enough heat/fan - beans stay green too long"
                 },
@@ -135,6 +143,8 @@ class FreshRoastMachineProfiles:
                     "recommended_heat": (7, 9),
                     "recommended_fan": (8, 9),
                     "target_temp_range": (300, 385),
+                    "target_temp_range_builtin": (325, 410),  # Built-in sensor reads higher
+                    "target_temp_range_probe": (300, 385),   # Probe measures actual bean temp
                     "advice": "Keep heat at 7-8. Extension tube provides more even heat distribution.",
                     "common_mistake": "Reducing heat too early - extension tube needs sustained heat"
                 },
@@ -144,6 +154,8 @@ class FreshRoastMachineProfiles:
                     "recommended_heat": (5, 7),
                     "recommended_fan": (7, 8),
                     "target_temp_range": (385, 425),
+                    "target_temp_range_builtin": (420, 460),  # Built-in sensor reads higher
+                    "target_temp_range_probe": (385, 425),   # Probe measures actual bean temp
                     "development_time_pct": (15, 25),
                     "dtr_targets": {
                         "City": (15, 18),
@@ -198,6 +210,8 @@ class FreshRoastMachineProfiles:
                     "recommended_heat": (6, 8),
                     "recommended_fan": (8, 9),
                     "target_temp_range": (250, 300),
+                    "target_temp_range_builtin": (280, 330),  # Built-in sensor reads higher
+                    "target_temp_range_probe": (250, 300),    # Probe measures actual bean temp
                     "advice": "SR800 is VERY powerful. Start heat 6-7, fan 8-9. Higher power than SR540!",
                     "common_mistake": "Using SR540 settings - SR800 needs LESS heat initially"
                 },
@@ -207,6 +221,8 @@ class FreshRoastMachineProfiles:
                     "recommended_heat": (5, 7),
                     "recommended_fan": (7, 8),
                     "target_temp_range": (300, 385),
+                    "target_temp_range_builtin": (325, 410),  # Built-in sensor reads higher
+                    "target_temp_range_probe": (300, 385),   # Probe measures actual bean temp
                     "advice": "SR800 heats aggressively. Heat 5-6 often sufficient. Monitor ROR closely.",
                     "common_mistake": "Too much heat - SR800 overshoots easily"
                 },
@@ -216,6 +232,8 @@ class FreshRoastMachineProfiles:
                     "recommended_heat": (4, 6),
                     "recommended_fan": (6, 8),
                     "target_temp_range": (385, 430),
+                    "target_temp_range_builtin": (420, 465),  # Built-in sensor reads higher
+                    "target_temp_range_probe": (385, 430),   # Probe measures actual bean temp
                     "development_time_pct": (15, 25),
                     "dtr_targets": {
                         "City": (15, 18),
@@ -262,6 +280,8 @@ class FreshRoastMachineProfiles:
                     "recommended_heat": (7, 9),
                     "recommended_fan": (9, 9),
                     "target_temp_range": (250, 300),
+                    "target_temp_range_builtin": (280, 330),  # Built-in sensor reads higher
+                    "target_temp_range_probe": (250, 300),    # Probe measures actual bean temp
                     "advice": "SR800+ET is the BEST combination - powerful heat with extension control. Heat 7-8, fan 9.",
                     "common_mistake": "Being too conservative - SR800+ET can handle higher heat than SR540+ET"
                 },
@@ -271,6 +291,8 @@ class FreshRoastMachineProfiles:
                     "recommended_heat": (6, 8),
                     "recommended_fan": (8, 9),
                     "target_temp_range": (300, 385),
+                    "target_temp_range_builtin": (325, 410),  # Built-in sensor reads higher
+                    "target_temp_range_probe": (300, 385),   # Probe measures actual bean temp
                     "advice": "Sweet spot for SR800+ET. Heat 6-7 gives excellent control and even roasting.",
                     "common_mistake": "Forgetting you have SR800 power - can use lower heat than you think"
                 },
@@ -280,6 +302,8 @@ class FreshRoastMachineProfiles:
                     "recommended_heat": (5, 7),
                     "recommended_fan": (7, 8),
                     "target_temp_range": (385, 430),
+                    "target_temp_range_builtin": (420, 465),  # Built-in sensor reads higher
+                    "target_temp_range_probe": (385, 430),   # Probe measures actual bean temp
                     "development_time_pct": (15, 25),
                     "dtr_targets": {
                         "City": (15, 18),
@@ -334,6 +358,26 @@ class FreshRoastMachineProfiles:
             raise ValueError(f"Unknown machine configuration: {model} with extension={has_extension}")
         
         return self.profiles[roast_model]
+    
+    def get_sensor_specific_temp_range(
+        self,
+        profile: MachineCharacteristics,
+        phase: str,
+        sensor_type: str
+    ) -> Tuple[float, float]:
+        """Get temperature range for specific sensor type and phase"""
+        phase_data = getattr(profile, f"{phase}_phase", None)
+        if not phase_data:
+            return (0, 0)
+        
+        # Return sensor-specific range if available
+        if sensor_type == 'builtin' and 'target_temp_range_builtin' in phase_data:
+            return phase_data['target_temp_range_builtin']
+        elif sensor_type == 'probe' and 'target_temp_range_probe' in phase_data:
+            return phase_data['target_temp_range_probe']
+        else:
+            # Fallback to default range
+            return phase_data.get('target_temp_range', (0, 0))
     
     def get_phase_specific_advice(
         self, 

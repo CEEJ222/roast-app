@@ -183,6 +183,8 @@ const ActiveRoast = ({
                 handleInputChange={handleInputChange}
                 logChange={logChange}
                 loading={loading}
+                machineSensorType={formData.selectedMachine?.temp_sensor_type || 'builtin'}
+                elapsedTime={elapsedTime}
               />
             </div>
           </div>

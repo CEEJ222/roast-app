@@ -281,10 +281,28 @@ async def during_roast_advice(
         machine_model = request.roast_progress.get('machine_model', 'SR800')
         has_extension = request.roast_progress.get('has_extension', False)
         
+        # Get machine sensor type from database
+        machine_sensor_type = None
+        try:
+            from utils.database import get_supabase
+            sb = get_supabase()
+            
+            # Get machine ID from roast_progress
+            machine_id = request.roast_progress.get('machine_id')
+            if machine_id:
+                machine_result = sb.table("machines").select("temp_sensor_type").eq("id", machine_id).execute()
+                if machine_result.data:
+                    machine_sensor_type = machine_result.data[0].get('temp_sensor_type', 'builtin')
+                    logger.info(f"🌡️ Machine sensor type: {machine_sensor_type}")
+        except Exception as e:
+            logger.warning(f"Could not fetch machine sensor type: {e}")
+            machine_sensor_type = 'builtin'  # Default fallback
+        
         # Use DTR-aware LLM for real-time advice (includes DTR coaching)
         llm_response = await machine_aware_llm.get_dtr_aware_coaching(
             roast_progress=request.roast_progress,
-            user_message=request.user_question
+            user_message=request.user_question,
+            machine_sensor_type=machine_sensor_type
         )
         
         return {
