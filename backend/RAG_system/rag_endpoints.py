@@ -302,7 +302,8 @@ async def during_roast_advice(
         llm_response = await machine_aware_llm.get_dtr_aware_coaching(
             roast_progress=request.roast_progress,
             user_message=request.user_question,
-            machine_sensor_type=machine_sensor_type
+            machine_sensor_type=machine_sensor_type,
+            supabase=sb
         )
         
         return {
@@ -402,10 +403,15 @@ async def automatic_event_response(
         machine_model = roast_progress.get('machine_model', 'SR800')
         has_extension = roast_progress.get('has_extension', False)
         
+        # Get Supabase client for golden examples
+        from utils.database import get_supabase
+        sb = get_supabase()
+        
         # Use DTR-aware LLM for automatic event response (includes DTR coaching)
         response_text = await machine_aware_llm.get_dtr_aware_coaching(
             roast_progress=roast_progress,
-            user_message=None
+            user_message=None,
+            supabase=sb
         )
         
         # Format response to match expected structure
@@ -531,10 +537,15 @@ async def get_machine_aware_coaching(
         # Extract roast_id from roast_progress
         roast_id = roast_progress.get('roast_id', 1)
         
+        # Get Supabase client for golden examples
+        from utils.database import get_supabase
+        sb = get_supabase()
+        
         # Use machine-aware LLM integration with machine info
         coaching = await machine_aware_llm.get_machine_aware_coaching(
             roast_progress=roast_progress,
-            user_message=user_message
+            user_message=user_message,
+            supabase=sb
         )
         
         return {

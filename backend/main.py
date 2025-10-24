@@ -994,6 +994,14 @@ try:
 except ImportError as e:
     print(f"⚠️ Could not import Notifications router: {e}")
 
+# Include Roast Chat Feedback router
+try:
+    from routers.roast_chat_feedback import router as feedback_router
+    app.include_router(feedback_router, tags=["Roast Chat Feedback"])
+    print("✅ Roast Chat Feedback router included successfully")
+except ImportError as e:
+    print(f"⚠️ Could not import Roast Chat Feedback router: {e}")
+
 
 if __name__ == "__main__":
     import uvicorn

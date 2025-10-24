@@ -35,6 +35,40 @@ const RecentRoasts = ({
     });
   };
 
+  const formatDuration = (roast) => {
+    // Try to get duration from roast events if available
+    if (roastDetails[roast.id] && roastDetails[roast.id].length > 0) {
+      const events = roastDetails[roast.id];
+      // Use COOL event as the end of roasting (not END event)
+      const coolEvent = events.find(e => e.kind === 'COOL');
+      if (coolEvent) {
+        const duration = coolEvent.t_offset_sec;
+        const minutes = Math.floor(duration / 60);
+        const seconds = duration % 60;
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      }
+      
+      // Fallback to END event if no COOL event exists
+      const endEvent = events.find(e => e.kind === 'END');
+      if (endEvent) {
+        const duration = endEvent.t_offset_sec;
+        const minutes = Math.floor(duration / 60);
+        const seconds = duration % 60;
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      }
+    }
+    
+    // Fallback to created_at vs updated_at if no events
+    if (roast.created_at && roast.updated_at) {
+      const duration = Math.floor((new Date(roast.updated_at) - new Date(roast.created_at)) / 1000);
+      const minutes = Math.floor(duration / 60);
+      const seconds = duration % 60;
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    return 'N/A';
+  };
+
   return (
     <div className="bg-transparent">
       <div className="px-4 sm:px-6 py-4">
@@ -111,7 +145,7 @@ const RecentRoasts = ({
                         }
                       </p>
                       <p className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary mt-1">
-                        {formatDate(roast.created_at)} • {roast.machine_label || roast.roaster_model}
+                        {formatDate(roast.created_at)} • {formatDuration(roast)}
                       </p>
                     </div>
                   </div>
